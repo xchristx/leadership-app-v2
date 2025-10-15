@@ -60,18 +60,15 @@ export const supabaseApi = createApi({
         getProjects: builder.query<Project[], { organizationId?: string }>({
             queryFn: async ({ organizationId = '' }) => {
                 try {
-                    let query = supabase
-                        .from('projects')
-                        .select('*')
+                    // Importar el servicio para usar getProjectsWithStats
+                    const { getProjectsWithStats } = await import('../../services/projectService')
 
-                    if (organizationId) {
-                        query = query.eq('organization_id', organizationId)
+                    if (!organizationId) {
+                        return { data: [] }
                     }
 
-                    const { data, error } = await query.order('created_at', { ascending: false })
-
-                    if (error) throw error
-                    return { data: (data || []) as Project[] }
+                    const data = await getProjectsWithStats(organizationId)
+                    return { data }
                 } catch (error) {
                     return { error: { status: 'FETCH_ERROR', error: String(error) } }
                 }

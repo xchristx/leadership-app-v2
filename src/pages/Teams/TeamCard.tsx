@@ -62,8 +62,14 @@ export function TeamCard({ team, onEdit, onDelete, onView, onManageInvitations, 
   };
 
   // Calcular estadísticas del equipo
-  const completionRate = 0; // TODO: Calcular desde evaluaciones
-  const invitationsCount = 0; // TODO: Obtener desde invitaciones
+  // Calcular el completion rate basado en invitaciones y evaluaciones
+  const completionRate = (() => {
+    const totalInvitations = team.invitations?.length || 0;
+    const completedEvaluations = team.evaluations?.filter(evaluation => evaluation.is_complete).length || 0;
+
+    if (totalInvitations === 0) return 0;
+    return Math.round((completedEvaluations / totalInvitations) * 100);
+  })();
 
   return (
     <Card
@@ -120,7 +126,7 @@ export function TeamCard({ team, onEdit, onDelete, onView, onManageInvitations, 
         </Box>
 
         {/* Estadísticas */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <GroupIcon fontSize="small" color="action" />
             <Typography variant="body2" color="text.secondary">
@@ -134,7 +140,7 @@ export function TeamCard({ team, onEdit, onDelete, onView, onManageInvitations, 
               {invitationsCount} invitaciones
             </Typography>
           </Box>
-        </Box>
+        </Box> */}
 
         {/* Progreso de evaluaciones */}
         <Box>

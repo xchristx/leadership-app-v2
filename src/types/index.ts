@@ -226,6 +226,51 @@ export interface EvaluationResponse {
 }
 
 // ============================================================================
+// TIPOS PARA SISTEMA JSON DE RESPUESTAS
+// ============================================================================
+
+// Estructura de una respuesta individual en JSON
+export interface JsonResponse {
+    value: any // number, string, boolean, etc.
+    timestamp: string // ISO string
+    response_time_seconds?: number
+    metadata?: Record<string, any>
+}
+
+// Metadata de la evaluación completa
+export interface EvaluationMetadata {
+    completion_time_seconds?: number
+    device_info?: string
+    browser_info?: string
+    ip_address?: string
+    started_at?: string
+    completed_at?: string
+    version: string
+    [key: string]: any
+}
+
+// Estructura completa del JSON de respuestas
+export interface ResponsesJsonData {
+    responses: Record<string, JsonResponse> // question_id -> response
+    metadata: EvaluationMetadata
+}
+
+// Tipo para el campo responses_data de la tabla evaluations
+export type EvaluationResponsesData = ResponsesJsonData | null
+
+// Helper type para trabajar con respuestas del form
+export type FormResponses = Record<string, string | number>
+
+// Tipo para convertir respuestas de form a JSON
+export interface ConvertToJsonParams {
+    formResponses: FormResponses
+    startTime: Date
+    endTime: Date
+    deviceInfo?: string
+    version?: string
+}
+
+// ============================================================================
 // TIPOS PARA FORMULARIOS Y UI
 // ============================================================================
 

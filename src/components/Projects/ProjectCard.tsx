@@ -12,7 +12,7 @@ import {
   Delete as DeleteIcon,
   Group as GroupIcon,
   DateRange as DateRangeIcon,
-  Assignment as AssignmentIcon,
+  // Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { useState } from 'react';
 import type { Project } from '../../types';
@@ -132,12 +132,12 @@ export function ProjectCard({ project, onView, onEdit, onDelete, onManageTeams, 
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          {/* <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <AssignmentIcon fontSize="small" color="action" />
             <Typography variant="caption" color="text.secondary">
               {project._stats?.completed_evaluations || 0} evaluaciones
             </Typography>
-          </Box>
+          </Box> */}
         </Box>
 
         {/* Progress bar de completitud */}

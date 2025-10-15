@@ -241,7 +241,7 @@ export function TeamInvitations({ teamId: propTeamId, onClose }: TeamInvitations
                     </Box>
                   </TableCell>
                   <TableCell>
-                    {invitation.current_uses} / {invitation.max_uses || '∞'}
+                    {invitation.current_uses ?? 0} / {invitation.max_uses || '∞'}
                   </TableCell>
                   <TableCell>{invitation.expires_at ? new Date(invitation.expires_at).toLocaleDateString() : 'Sin límite'}</TableCell>
                   <TableCell>

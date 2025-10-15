@@ -595,6 +595,198 @@ export const getTeamDashboard = async (teamId: string): Promise<TeamDashboard> =
 };
 
 /**
+ * Verificar si un email ya realizó una evaluación en un equipo
+ */
+export const checkEmailEvaluationExists = async (
+  teamId: string,
+  email: string
+): Promise<{ exists: boolean; evaluation?: object; canEdit?: boolean }> => {
+  try {
+    // Buscar evaluación existente por email y equipo
+    const { data: evaluation, error } = await supabase
+      .from('evaluations')
+      .select(`
+        id,
+        evaluator_email,
+        evaluator_name,
+        evaluator_role,
+        is_complete,
+        completion_percentage,
+        created_at,
+        updated_at,
+        team_id,
+        teams!inner(
+          project_id,
+          projects!inner(
+            project_configurations(allow_re_evaluation)
+          )
+        )
+      `)
+      .eq('team_id', teamId)
+      .eq('evaluator_email', email.toLowerCase().trim())
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No se encontró evaluación - puede proceder
+        return { exists: false };
+      }
+      throw new Error(`Error al verificar email: ${error.message}`);
+    }
+
+    // Verificar si se permite re-evaluación
+    const projectConfig = evaluation?.teams?.projects?.project_configurations;
+    const canEdit = projectConfig?.allow_re_evaluation || false;
+
+    return {
+      exists: true,
+      evaluation,
+      canEdit
+    };
+  } catch (error) {
+    console.error('Error in checkEmailEvaluationExists:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtener evaluación existente por email y equipo (para edición)
+ */
+export const getExistingEvaluation = async (
+  teamId: string,
+  email: string
+): Promise<{
+  evaluation: object | null;
+  responses: object[];
+  questions: object[];
+}> => {
+  try {
+    // 1. Obtener evaluación
+    const { data: evaluation, error: evalError } = await supabase
+      .from('evaluations')
+      .select(`
+        *,
+        teams!inner(
+          project_id,
+          projects!inner(
+            template_id,
+            project_configurations(*)
+          )
+        )
+      `)
+      .eq('team_id', teamId)
+      .eq('evaluator_email', email.toLowerCase().trim())
+      .single();
+
+    if (evalError || !evaluation) {
+      return { evaluation: null, responses: [], questions: [] };
+    }
+
+    // 2. Obtener respuestas existentes
+    const { data: responses, error: responsesError } = await supabase
+      .from('evaluation_responses')
+      .select('*')
+      .eq('evaluation_id', evaluation.id);
+
+    if (responsesError) {
+      console.warn('Error al obtener respuestas:', responsesError);
+    }
+
+    // 3. Obtener preguntas del template
+    const templateId = evaluation.teams?.projects?.template_id;
+    if (!templateId) {
+      return { evaluation, responses: responses || [], questions: [] };
+    }
+
+    const { data: questions, error: questionsError } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('template_id', templateId)
+      .eq('is_active', true)
+      .order('order_index');
+
+    if (questionsError) {
+      console.warn('Error al obtener preguntas:', questionsError);
+    }
+
+    return {
+      evaluation,
+      responses: responses || [],
+      questions: questions || []
+    };
+  } catch (error) {
+    console.error('Error in getExistingEvaluation:', error);
+    throw error;
+  }
+};
+
+/**
+ * Actualizar evaluación existente
+ */
+export const updateExistingEvaluation = async (
+  evaluationId: string,
+  responses: Record<string, string | number>,
+  evaluatorInfo?: { name: string; email: string; additionalInfo?: string }
+): Promise<void> => {
+  try {
+    // 1. Actualizar información del evaluador si se proporciona
+    if (evaluatorInfo) {
+      const { error: updateError } = await supabase
+        .from('evaluations')
+        .update({
+          evaluator_name: evaluatorInfo.name,
+          evaluator_email: evaluatorInfo.email,
+          evaluator_metadata: {
+            additional_info: evaluatorInfo.additionalInfo || '',
+            last_updated: new Date().toISOString()
+          },
+          completion_percentage: 100,
+          is_complete: true,
+          completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', evaluationId);
+
+      if (updateError) {
+        throw new Error(`Error al actualizar evaluación: ${updateError.message}`);
+      }
+    }
+
+    // 2. Eliminar respuestas existentes
+    const { error: deleteError } = await supabase
+      .from('evaluation_responses')
+      .delete()
+      .eq('evaluation_id', evaluationId);
+
+    if (deleteError) {
+      throw new Error(`Error al eliminar respuestas previas: ${deleteError.message}`);
+    }
+
+    // 3. Insertar nuevas respuestas
+    const responseData = Object.entries(responses).map(([questionId, value]) => ({
+      evaluation_id: evaluationId,
+      question_id: questionId,
+      response_value: typeof value === 'number' ? value : null,
+      response_text: typeof value === 'string' ? value : null,
+      response_data: typeof value === 'object' ? value : null,
+    }));
+
+    const { error: insertError } = await supabase
+      .from('evaluation_responses')
+      .insert(responseData);
+
+    if (insertError) {
+      throw new Error(`Error al guardar nuevas respuestas: ${insertError.message}`);
+    }
+
+    console.log('Evaluación actualizada exitosamente:', evaluationId);
+  } catch (error) {
+    console.error('Error in updateExistingEvaluation:', error);
+    throw error;
+  }
+};
+
+/**
  * Crear equipo con invitaciones automáticas
  */
 export const createTeamWithInvitations = async (teamData: CreateTeamFormData): Promise<Team> => {

@@ -36,7 +36,7 @@ import { ProjectForm, TeamForm } from '../components/Forms';
 import { useProjects, useTeams } from '../hooks';
 import type { Project, Team } from '../types';
 import { ProjectCard, ProjectEditor, ProjectViewer } from '../components/Projects';
-import { TeamCard, TeamEditor } from './Teams';
+import { TeamCard, TeamEditor } from './Teams/index';
 import type { CreateTeamFormData } from '../services/teamService';
 import type { TeamFormData } from '../components/Forms/TeamForm';
 
@@ -57,7 +57,7 @@ type SortBy = 'name' | 'created_at' | 'status' | 'completion_rate';
 
 export function ProjectsModular() {
   const { projects, isLoading, createProject, updateProject, deleteProject } = useProjects();
-  const { teams, isLoading: teamsLoading, createTeamWithInvitations, updateTeam, deleteTeam, refetch: refetchTeams } = useTeams();
+  const { teams, createTeamWithInvitations, updateTeam, deleteTeam, refetch: refetchTeams } = useTeams();
 
   // Estado de la UI
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
@@ -499,46 +499,34 @@ export function ProjectsModular() {
       />
 
       {/* Modal para gestión de equipos */}
-      <Dialog 
-        open={teamsDialogOpen} 
-        onClose={() => setTeamsDialogOpen(false)} 
-        maxWidth="lg" 
-        fullWidth
-      >
-        <DialogTitle>
-          Gestión de Equipos - {selectedProject?.name}
-        </DialogTitle>
+      <Dialog open={teamsDialogOpen} onClose={() => setTeamsDialogOpen(false)} maxWidth="lg" fullWidth>
+        <DialogTitle>Gestión de Equipos - {selectedProject?.name}</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => setTeamCreateDialogOpen(true)}
-              >
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setTeamCreateDialogOpen(true)}>
                 Crear Equipo
               </Button>
             </Box>
-            
+
             {/* Lista de equipos del proyecto */}
-            <Grid container spacing={2}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>
               {teams
                 .filter(team => team.project_id === selectedProject?.id)
                 .map(team => (
-                  <Grid item xs={12} md={6} lg={4} key={team.id}>
-                    <TeamCard
-                      team={team}
-                      onEdit={(team) => {
-                        setSelectedTeamForEdit(team);
-                        setTeamEditorOpen(true);
-                      }}
-                      onDelete={handleDeleteTeam}
-                      onViewDetails={() => console.log('Ver detalles', team)}
-                    />
-                  </Grid>
+                  <TeamCard
+                    key={team.id}
+                    team={team}
+                    onEdit={(team: Team) => {
+                      setSelectedTeamForEdit(team);
+                      setTeamEditorOpen(true);
+                    }}
+                    onDelete={handleDeleteTeam}
+                    onView={(team: Team) => console.log('Ver detalles', team)}
+                  />
                 ))}
-            </Grid>
-            
+            </Box>
+
             {teams.filter(team => team.project_id === selectedProject?.id).length === 0 && (
               <Alert severity="info" sx={{ mt: 2 }}>
                 No hay equipos creados para este proyecto. Haz clic en "Crear Equipo" para empezar.
@@ -552,12 +540,7 @@ export function ProjectsModular() {
       </Dialog>
 
       {/* Modal para crear equipo */}
-      <Dialog 
-        open={teamCreateDialogOpen} 
-        onClose={() => setTeamCreateDialogOpen(false)} 
-        maxWidth="md" 
-        fullWidth
-      >
+      <Dialog open={teamCreateDialogOpen} onClose={() => setTeamCreateDialogOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>Crear Nuevo Equipo</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>

@@ -491,34 +491,48 @@ export const activateProject = async (projectId: string): Promise<boolean> => {
  */
 export const getProjectStats = async (projectId: string): Promise<ProjectStats> => {
     try {
-        const { data, error } = await supabase.rpc('get_evaluation_stats', {
-            project_uuid: projectId
-        });
+        // Obtener cantidad de equipos
+        const { data: teamsData, error: teamsError } = await supabase
+            .from('teams')
+            .select('id')
+            .eq('project_id', projectId)
+            .eq('is_active', true);
 
-        if (error) {
-            throw new Error(`Error al obtener estadísticas del proyecto: ${error.message}`);
+        if (teamsError) {
+            console.warn('Error getting teams count:', teamsError);
         }
 
-        // Procesar datos de estadísticas
+        // Obtener cantidad de invitaciones
+        const { data: invitationsData, error: invitationsError } = await supabase
+            .from('team_invitations')
+            .select('id, is_used')
+            .in('team_id', teamsData?.map(t => t.id) || [])
+            .eq('is_active', true);
+
+        if (invitationsError) {
+            console.warn('Error getting invitations count:', invitationsError);
+        }
+
+        // Obtener evaluaciones completadas
+        const { data: evaluationsData, error: evaluationsError } = await supabase
+            .from('evaluations')
+            .select('id')
+            .eq('project_id', projectId)
+            .eq('status', 'completed');
+
+        if (evaluationsError) {
+            console.warn('Error getting evaluations count:', evaluationsError);
+        }
+
         const stats: ProjectStats = {
-            total_teams: 0,
-            total_invitations: 0,
-            completed_evaluations: 0,
+            total_teams: teamsData?.length || 0,
+            total_invitations: invitationsData?.length || 0,
+            completed_evaluations: evaluationsData?.length || 0,
             completion_rate: 0
         };
 
-        if (data && Array.isArray(data)) {
-            stats.total_teams = data.length;
-            stats.total_invitations = data.reduce((sum: number, team: Record<string, unknown>) =>
-                sum + (typeof team.total_invitations === 'number' ? team.total_invitations : 0), 0
-            );
-            stats.completed_evaluations = data.reduce((sum: number, team: Record<string, unknown>) =>
-                sum + (typeof team.completed_evaluations === 'number' ? team.completed_evaluations : 0), 0
-            );
-
-            if (stats.total_invitations > 0) {
-                stats.completion_rate = (stats.completed_evaluations / stats.total_invitations) * 100;
-            }
+        if (stats.total_invitations > 0) {
+            stats.completion_rate = (stats.completed_evaluations / stats.total_invitations) * 100;
         }
 
         return stats;

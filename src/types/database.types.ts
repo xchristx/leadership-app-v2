@@ -102,6 +102,7 @@ export type Database = {
                     id: string
                     invitation_id: string
                     is_complete: boolean | null
+                    responses_data: Json | null
                     team_id: string
                     updated_at: string
                 }
@@ -116,6 +117,7 @@ export type Database = {
                     id?: string
                     invitation_id: string
                     is_complete?: boolean | null
+                    responses_data?: Json | null
                     team_id: string
                     updated_at?: string
                 }
@@ -130,6 +132,7 @@ export type Database = {
                     id?: string
                     invitation_id?: string
                     is_complete?: boolean | null
+                    responses_data?: Json | null
                     team_id?: string
                     updated_at?: string
                 }
@@ -285,10 +288,10 @@ export type Database = {
                     hierarchy_levels?: number | null
                     id?: string
                     name: string
-                    organization_id: string | null
+                    organization_id: string
                     start_date?: string | null
                     status?: string | null
-                    template_id: string
+                    template_id?: string | null
                     updated_at?: string
                 }
                 Update: {
@@ -483,8 +486,8 @@ export type Database = {
                     department: string | null
                     id: string
                     is_active: boolean | null
-                    leader_email: string
-                    leader_name: string
+                    leader_email: string | null
+                    leader_name: string | null
                     name: string
                     project_id: string
                     team_size: number | null
@@ -495,8 +498,8 @@ export type Database = {
                     department?: string | null
                     id?: string
                     is_active?: boolean | null
-                    leader_email?: string
-                    leader_name?: string
+                    leader_email?: string | null
+                    leader_name?: string | null
                     name: string
                     project_id: string
                     team_size?: number | null
@@ -507,8 +510,8 @@ export type Database = {
                     department?: string | null
                     id?: string
                     is_active?: boolean | null
-                    leader_email?: string
-                    leader_name?: string
+                    leader_email?: string | null
+                    leader_name?: string | null
                     name?: string
                     project_id?: string
                     team_size?: number | null
