@@ -57,14 +57,7 @@ type SortBy = 'name' | 'created_at' | 'status' | 'completion_rate';
 
 export function ProjectsModular() {
   const { projects, isLoading, createProject, updateProject, deleteProject } = useProjects();
-  const { 
-    teams, 
-    isLoading: teamsLoading, 
-    createTeamWithInvitations, 
-    updateTeam, 
-    deleteTeam,
-    refetch: refetchTeams 
-  } = useTeams();
+  const { teams, isLoading: teamsLoading, createTeamWithInvitations, updateTeam, deleteTeam, refetch: refetchTeams } = useTeams();
 
   // Estado de la UI
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
@@ -142,6 +135,82 @@ export function ProjectsModular() {
   const handleManageTeams = (project: Project) => {
     setSelectedProject(project);
     setTeamsDialogOpen(true);
+  };
+
+  // Handlers para equipos
+  const handleCreateTeam = async (teamData: TeamFormData) => {
+    try {
+      // Convertir TeamFormData a CreateTeamFormData
+      const createData: CreateTeamFormData = {
+        name: teamData.name,
+        project_id: teamData.project_id,
+        leader_name: teamData.leader_name || '',
+        leader_email: teamData.leader_email || '',
+        team_size: teamData.team_size,
+        is_active: teamData.is_active,
+      };
+
+      const result = await createTeamWithInvitations(createData);
+
+      if (result.success) {
+        setTeamCreateDialogOpen(false);
+        refetchTeams();
+        return { success: true };
+      } else {
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error al crear equipo',
+      };
+    }
+  };
+
+  const handleEditTeam = async (teamData: Omit<Team, 'id' | 'created_at' | 'updated_at'>) => {
+    if (!selectedTeamForEdit) return { success: false, error: 'No hay equipo seleccionado' };
+
+    try {
+      // Convertir a UpdateTeamData
+      const updateData = {
+        name: teamData.name,
+        team_size: teamData.team_size,
+        leader_name: teamData.leader_name,
+        leader_email: teamData.leader_email,
+        is_active: teamData.is_active,
+      };
+
+      const result = await updateTeam(selectedTeamForEdit.id, updateData);
+
+      if (result.success) {
+        setSelectedTeamForEdit(null);
+        setTeamEditorOpen(false);
+        refetchTeams();
+        return { success: true };
+      } else {
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error al actualizar equipo',
+      };
+    }
+  };
+
+  const handleDeleteTeam = async (teamId: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este equipo?')) {
+      try {
+        const result = await deleteTeam(teamId);
+        if (result.success) {
+          refetchTeams();
+        } else {
+          setError(result.error || 'Error al eliminar equipo');
+        }
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Error al eliminar equipo');
+      }
+    }
   };
 
   const handleDeleteProject = async (projectId: string) => {
