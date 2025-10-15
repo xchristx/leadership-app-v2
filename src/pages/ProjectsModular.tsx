@@ -497,6 +497,91 @@ export function ProjectsModular() {
         onSave={handleEditSubmit}
         loading={operationLoading}
       />
+
+      {/* Modal para gestión de equipos */}
+      <Dialog 
+        open={teamsDialogOpen} 
+        onClose={() => setTeamsDialogOpen(false)} 
+        maxWidth="lg" 
+        fullWidth
+      >
+        <DialogTitle>
+          Gestión de Equipos - {selectedProject?.name}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setTeamCreateDialogOpen(true)}
+              >
+                Crear Equipo
+              </Button>
+            </Box>
+            
+            {/* Lista de equipos del proyecto */}
+            <Grid container spacing={2}>
+              {teams
+                .filter(team => team.project_id === selectedProject?.id)
+                .map(team => (
+                  <Grid item xs={12} md={6} lg={4} key={team.id}>
+                    <TeamCard
+                      team={team}
+                      onEdit={(team) => {
+                        setSelectedTeamForEdit(team);
+                        setTeamEditorOpen(true);
+                      }}
+                      onDelete={handleDeleteTeam}
+                      onViewDetails={() => console.log('Ver detalles', team)}
+                    />
+                  </Grid>
+                ))}
+            </Grid>
+            
+            {teams.filter(team => team.project_id === selectedProject?.id).length === 0 && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                No hay equipos creados para este proyecto. Haz clic en "Crear Equipo" para empezar.
+              </Alert>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTeamsDialogOpen(false)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal para crear equipo */}
+      <Dialog 
+        open={teamCreateDialogOpen} 
+        onClose={() => setTeamCreateDialogOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+      >
+        <DialogTitle>Crear Nuevo Equipo</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <TeamForm
+              mode="create"
+              onSubmit={handleCreateTeam}
+              onCancel={() => setTeamCreateDialogOpen(false)}
+              initialData={{ project_id: selectedProject?.id }}
+            />
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para editar equipo */}
+      <TeamEditor
+        open={teamEditorOpen}
+        team={selectedTeamForEdit}
+        onClose={() => {
+          setTeamEditorOpen(false);
+          setSelectedTeamForEdit(null);
+        }}
+        onSave={handleEditTeam}
+        loading={false}
+      />
     </Box>
   );
 }
