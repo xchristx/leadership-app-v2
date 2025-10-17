@@ -21,3 +21,6 @@ export * from './Charts'
 
 // Dashboard components
 export * from './Dashboard'
+
+// Evaluation components
+export * from './Evaluations'

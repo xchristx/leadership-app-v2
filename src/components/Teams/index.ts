@@ -18,3 +18,5 @@ export type { TeamInvitationsProps } from './TeamInvitations';
 
 export { TeamDashboard } from './TeamDashboard';
 export type { TeamDashboardProps } from './TeamDashboard';
+
+export { ComparativeAnalysisDialog } from './ComparativeAnalysisDialog';

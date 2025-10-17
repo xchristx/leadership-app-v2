@@ -201,6 +201,10 @@ export interface Evaluation {
     responses?: EvaluationResponse[]
     team?: Team
 
+    // Campos calculados para la UI
+    team_name?: string
+    template_title?: string
+
     // Estado de la evaluación
     _progress?: {
         total_questions: number
@@ -478,28 +482,6 @@ export interface ProjectInvitation {
     expires_at?: string
     created_at: string
     updated_at: string
-}
-
-// Reporte de equipo
-export interface TeamReport {
-    team_id: string
-    team_name: string
-    total_responses: number
-    average_score: number
-    category_scores: Array<{
-        category: string
-        score: number
-        response_count: number
-    }>
-    questions_analysis: Array<{
-        question_id: string
-        question_text: string
-        average_score: number
-        responses: Array<{
-            response_value?: number
-            response_text?: string
-        }>
-    }>
 }
 
 // Datos para crear proyecto

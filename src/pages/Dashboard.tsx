@@ -4,27 +4,13 @@
 // Dashboard principal con métricas, resumen de proyectos y actividad reciente
 // ============================================================================
 
-import {
-  Box,
-  Grid,
-  Typography,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Avatar,
-  Divider,
-  Button,
-  IconButton,
-  Chip,
-} from '@mui/material';
+import { Box, Grid, Typography, List, ListItem, ListItemText, ListItemAvatar, Avatar, Divider, Button, Chip } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
   Work as ProjectsIcon,
   Groups as TeamsIcon,
   Assessment as EvaluationsIcon,
   Add as AddIcon,
-  Refresh as RefreshIcon,
   ArrowForward as ArrowForwardIcon,
 } from '@mui/icons-material';
 import { StatsCard, CustomCard, DashboardMetrics } from '../components';
@@ -66,9 +52,6 @@ export function Dashboard() {
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton>
-            <RefreshIcon />
-          </IconButton>
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreateProject}>
             Nuevo Proyecto
           </Button>

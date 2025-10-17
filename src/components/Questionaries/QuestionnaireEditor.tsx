@@ -4,10 +4,11 @@
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert, Box, CircularProgress, Typography } from '@mui/material';
-import { QuestionnaireForm } from '../../components/Questionnaires';
+import { QuestionnaireForm } from '../Questionnaires';
 import { questionnaireService } from '../../services/questionnaireService';
-import type { QuestionnaireFormData } from '../../components/Questionnaires';
+import type { QuestionnaireFormData } from '../Questionnaires';
 import type { Database } from '../../types/database.types';
+import { useQuestionnaires } from '../../hooks';
 
 type QuestionTemplate = Database['public']['Tables']['question_templates']['Row'];
 type Question = Database['public']['Tables']['questions']['Row'];
@@ -26,6 +27,8 @@ export function QuestionnaireEditor({ open, templateId, onClose, onSaved }: Ques
     template: QuestionTemplate;
     questions: Question[];
   } | null>(null);
+
+  const { updateTemplate } = useQuestionnaires();
 
   // Cargar datos del template cuando se abre el diálogo
   useEffect(() => {
@@ -73,14 +76,11 @@ export function QuestionnaireEditor({ open, templateId, onClose, onSaved }: Ques
     if (!templateId) {
       return { success: false, error: 'No template ID provided' };
     }
-
     try {
-      // TODO: Implementar actualización de cuestionario
-      // Por ahora mostraremos un mensaje de que está en desarrollo
       console.log('Update template data:', formData);
 
       // Simular actualización exitosa
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await updateTemplate(templateId, formData);
 
       onSaved();
       onClose();

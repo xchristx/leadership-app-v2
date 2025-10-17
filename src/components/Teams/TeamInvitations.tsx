@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import QRCode from 'qrcode';
 import {
   Box,
   Typography,
@@ -39,6 +40,8 @@ import {
   Delete as DeleteIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
+  QrCode as QrCodeIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 
 import { useTeamInvitations } from '../../hooks/useTeams';
@@ -50,13 +53,15 @@ export interface TeamInvitationsProps {
   onClose?: () => void;
 }
 
-export function TeamInvitations({ teamId: propTeamId, onClose }: TeamInvitationsProps = {}) {
+export function TeamInvitations({ teamId: propTeamId }: TeamInvitationsProps = {}) {
   const { teamId: routeTeamId } = useParams<{ teamId: string }>();
   const teamId = propTeamId || routeTeamId;
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [selectedInvitation, setSelectedInvitation] = useState<TeamInvitation | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
@@ -84,6 +89,38 @@ export function TeamInvitations({ teamId: propTeamId, onClose }: TeamInvitations
     } catch {
       showMessage('Error al copiar enlace');
     }
+  };
+
+  const generateQRCode = async (invitation: TeamInvitation) => {
+    const url = `${window.location.origin}/evaluation/${invitation.unique_token}`;
+    try {
+      const qrCodeDataURL = await QRCode.toDataURL(url, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF',
+        },
+      });
+      setQrCodeUrl(qrCodeDataURL);
+      setSelectedInvitation(invitation);
+      setQrDialogOpen(true);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      showMessage('Error al generar código QR');
+    }
+  };
+
+  const downloadQRCode = () => {
+    if (!qrCodeUrl || !selectedInvitation) return;
+
+    const link = document.createElement('a');
+    link.download = `qr-invitacion-${selectedInvitation.role_type}-${selectedInvitation.unique_token.substring(0, 8)}.png`;
+    link.href = qrCodeUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showMessage('Código QR descargado');
   };
 
   const handleCreateInvitation = async () => {
@@ -173,13 +210,7 @@ export function TeamInvitations({ teamId: propTeamId, onClose }: TeamInvitations
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Gestión de Invitaciones</Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          {onClose && (
-            <Button variant="outlined" onClick={onClose}>
-              Cerrar
-            </Button>
-          )}
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateDialogOpen(true)}>
             Nueva Invitación
           </Button>
@@ -222,6 +253,11 @@ export function TeamInvitations({ teamId: propTeamId, onClose }: TeamInvitations
                       <Tooltip title="Copiar enlace">
                         <IconButton size="small" onClick={() => copyToClipboard(invitation.unique_token)}>
                           <ContentCopyIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Generar código QR">
+                        <IconButton size="small" onClick={() => generateQRCode(invitation)}>
+                          <QrCodeIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     </Box>
@@ -333,6 +369,69 @@ export function TeamInvitations({ teamId: propTeamId, onClose }: TeamInvitations
           <Button onClick={() => setEditDialogOpen(false)}>Cancelar</Button>
           <Button variant="contained" onClick={handleUpdateInvitation}>
             Actualizar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog para mostrar código QR */}
+      <Dialog open={qrDialogOpen} onClose={() => setQrDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ textAlign: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+            <QrCodeIcon />
+            Código QR - Invitación de {selectedInvitation?.role_type === 'leader' ? 'Líder' : 'Colaborador'}
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ textAlign: 'center', p: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+            {qrCodeUrl && (
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: 'white',
+                  borderRadius: 2,
+                  boxShadow: 1,
+                  display: 'inline-block',
+                }}
+              >
+                <img
+                  src={qrCodeUrl}
+                  alt="Código QR"
+                  style={{
+                    display: 'block',
+                    maxWidth: '100%',
+                    height: 'auto',
+                  }}
+                />
+              </Box>
+            )}
+
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Escanea este código QR para acceder directamente a la evaluación
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                {selectedInvitation && `${window.location.origin}/evaluation/${selectedInvitation.unique_token}`}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 1, width: '100%' }}>
+              <Button
+                variant="outlined"
+                startIcon={<ContentCopyIcon />}
+                onClick={() => selectedInvitation && copyToClipboard(selectedInvitation.unique_token)}
+                sx={{ flex: 1 }}
+              >
+                Copiar Enlace
+              </Button>
+              <Button variant="outlined" startIcon={<DownloadIcon />} onClick={downloadQRCode} sx={{ flex: 1 }}>
+                Descargar QR
+              </Button>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setQrDialogOpen(false)} fullWidth>
+            Cerrar
           </Button>
         </DialogActions>
       </Dialog>

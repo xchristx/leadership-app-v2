@@ -30,7 +30,7 @@ import { useState } from 'react';
 
 import { useTeams } from '../hooks/useTeams';
 import { useProjects } from '../hooks/useProjects';
-import { TeamCard, TeamEditor, TeamDashboard } from './Teams/index';
+import { TeamCard, TeamEditor, TeamDashboard } from '../components/Teams/index';
 import { TeamForm } from '../components/Forms';
 import type { Team, Project } from '../types';
 import type { CreateTeamFormData } from '../services/teamService';
@@ -189,7 +189,7 @@ export function TeamsModular() {
       </Box>
 
       {/* Estadísticas rápidas */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3, display: 'none' }}>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Card>
             <CardContent>
@@ -238,7 +238,7 @@ export function TeamsModular() {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+        <Grid sx={{ display: 'none' }} size={{ xs: 12, sm: 6, md: 4 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

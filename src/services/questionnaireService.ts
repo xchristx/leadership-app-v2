@@ -29,7 +29,8 @@ export const questionnaireService = {
                 title: formData.title_leader,
                 description: formData.description_leader || formData.description_collaborator || null,
                 organization_id: formData.organizationId,
-                is_active: formData.is_active
+                is_active: formData.is_active,
+                categories: (formData.categories as unknown as Json) || null
             };
 
             const { data: template, error: templateError } = await supabase
@@ -150,21 +151,29 @@ export const questionnaireService = {
         return count || 0;
     },
 
-    // Eliminar template (soft delete)
+    // Eliminar template (eliminación física)
     async deleteTemplate(templateId: string): Promise<void> {
-        // Primero desactivar las preguntas
-        await supabase
+        // Primero eliminar las preguntas
+        const { error: questionsError } = await supabase
             .from('questions')
-            .update({ is_active: false })
+            .delete()
             .eq('template_id', templateId);
 
-        // Luego desactivar el template
-        const { error } = await supabase
+        if (questionsError) {
+            console.error('Error deleting questions:', questionsError);
+            throw questionsError;
+        }
+
+        // Luego eliminar el template
+        const { error: templateError } = await supabase
             .from('question_templates')
-            .update({ is_active: false })
+            .delete()
             .eq('id', templateId);
 
-        if (error) throw error;
+        if (templateError) {
+            console.error('Error deleting template:', templateError);
+            throw templateError;
+        }
     },
 
     // Actualizar template
@@ -177,58 +186,232 @@ export const questionnaireService = {
         if (error) throw error;
     },
 
-    // Actualizar cuestionario completo
-    async updateQuestionnaire(
+    // Actualizar cuestionario completo (método alternativo con timestamps)
+    async updateQuestionnaireWithTimestamp(
         templateId: string,
         formData: QuestionnaireFormData & { organizationId: string }
     ): Promise<void> {
         try {
+            console.log('🔄 Iniciando actualización de cuestionario con timestamps:', templateId);
+            const timestamp = Date.now();
+
             // 1. Actualizar el template
             const templateUpdates: Partial<QuestionTemplateInsert> = {
                 title: formData.title_leader,
                 description: formData.description_leader || formData.description_collaborator || null,
+                categories: (formData.categories as unknown as Json) || null
             };
 
             await this.updateTemplate(templateId, templateUpdates);
 
-            // 2. Desactivar preguntas existentes
-            await supabase
+            // 2. Obtener y modificar order_index existente para evitar conflicto
+            const { data: existingQuestions } = await supabase
                 .from('questions')
-                .update({ is_active: false })
+                .select('id, order_index')
                 .eq('template_id', templateId);
 
-            // 3. Crear mapeo de categorías (ahora se guardan como objetos JSON completos)
-            const categoryDataMap: Record<string, CategoryData> = {};
+            if (existingQuestions && existingQuestions.length > 0) {
+                // Actualizar cada pregunta con un order_index temporal único
+                for (const question of existingQuestions) {
+                    await supabase
+                        .from('questions')
+                        .update({ order_index: question.order_index + timestamp })
+                        .eq('id', question.id);
+                }
+            }
 
+            // 3. Ahora eliminar las preguntas existentes
+            const { data: deletedData, error: deleteError } = await supabase
+                .from('questions')
+                .delete()
+                .eq('template_id', templateId)
+                .select('id');
+
+            if (deleteError) {
+                console.error('Error deleting existing questions:', deleteError);
+                throw deleteError;
+            }
+
+            console.log(`✅ Preguntas eliminadas: ${deletedData?.length || 0}`);
+
+            // 4. Crear mapeo de categorías
+            const categoryDataMap: Record<string, CategoryData> = {};
             if (formData.categories && formData.categories.length > 0) {
                 formData.categories.forEach((category) => {
                     categoryDataMap[category.id] = {
                         id: category.id,
                         name: category.name,
                         description: category.description || '',
-                        color: '#1976d2' // Color por defecto
+                        color: category.color || '#1976d2'
                     };
                 });
             }
 
-            // 4. Crear nuevas preguntas con objetos de categoría completos
+            // 5. Insertar nuevas preguntas
             const questionsToInsert: QuestionInsert[] = formData.questions.map((question, index) => ({
                 template_id: templateId,
                 text_leader: question.text_leader,
                 text_collaborator: question.text_collaborator,
                 question_type: question.question_type,
                 category: question.category_id ? (categoryDataMap[question.category_id] as unknown as Json) || null : null,
-                order_index: question.order_index || index,
+                order_index: index,
                 response_config: question.response_config as Json,
                 is_active: true
-            })); const { error: questionsError } = await supabase
-                .from('questions')
-                .insert(questionsToInsert);
+            }));
 
-            if (questionsError) throw questionsError;
+            const { data: insertedData, error: questionsError } = await supabase
+                .from('questions')
+                .insert(questionsToInsert)
+                .select('id');
+
+            if (questionsError) {
+                console.error('Error inserting new questions:', questionsError);
+                throw questionsError;
+            }
+
+            console.log(`✅ ${insertedData?.length || 0} nuevas preguntas insertadas exitosamente`);
 
         } catch (error) {
-            console.error('Error updating questionnaire:', error);
+            console.error('❌ Error updating questionnaire with timestamp:', error);
+            throw error;
+        }
+    },
+
+    // Actualizar cuestionario completo (MÉTODO CORRECTO: UPDATE + INSERT + DELETE selectivo)
+    async updateQuestionnaire(
+        templateId: string,
+        formData: QuestionnaireFormData & { organizationId: string }
+    ): Promise<void> {
+        try {
+            console.log('🔄 Iniciando actualización inteligente de cuestionario:', templateId);
+
+            // 1. Actualizar el template
+            const templateUpdates: Partial<QuestionTemplateInsert> = {
+                title: formData.title_leader,
+                description: formData.description_leader || formData.description_collaborator || null,
+                categories: (formData.categories as unknown as Json) || null
+            };
+
+            await this.updateTemplate(templateId, templateUpdates);
+
+            // 2. Obtener preguntas existentes
+            const { data: existingQuestions, error: checkError } = await supabase
+                .from('questions')
+                .select('*')
+                .eq('template_id', templateId)
+                .order('order_index');
+
+            if (checkError) {
+                console.error('Error checking existing questions:', checkError);
+                throw checkError;
+            }
+
+            const existingQuestionsMap = new Map(
+                existingQuestions?.map(q => [q.id, q]) || []
+            );
+
+            console.log(`📋 Preguntas existentes: ${existingQuestions?.length || 0}`);
+
+            // 3. Crear mapeo de categorías
+            const categoryDataMap: Record<string, CategoryData> = {};
+            if (formData.categories && formData.categories.length > 0) {
+                formData.categories.forEach((category) => {
+                    categoryDataMap[category.id] = {
+                        id: category.id,
+                        name: category.name,
+                        description: category.description || '',
+                        color: category.color || '#1976d2'
+                    };
+                });
+            }
+
+            // 4. Clasificar operaciones: UPDATE, INSERT, DELETE
+            const questionsToUpdate: Array<{id: string, updates: Partial<QuestionInsert>}> = [];
+            const questionsToInsert: QuestionInsert[] = [];
+            const questionIdsInForm = new Set<string>();
+
+            formData.questions.forEach((question, index) => {
+                const questionData = {
+                    template_id: templateId,
+                    text_leader: question.text_leader,
+                    text_collaborator: question.text_collaborator,
+                    question_type: question.question_type,
+                    category: question.category_id ? (categoryDataMap[question.category_id] as unknown as Json) || null : null,
+                    order_index: index,
+                    response_config: question.response_config as Json,
+                    is_active: true
+                };
+
+                if (question.id && existingQuestionsMap.has(question.id)) {
+                    // ACTUALIZAR pregunta existente
+                    questionsToUpdate.push({
+                        id: question.id,
+                        updates: questionData
+                    });
+                    questionIdsInForm.add(question.id);
+                } else {
+                    // INSERTAR nueva pregunta
+                    questionsToInsert.push(questionData);
+                }
+            });
+
+            // 5. Identificar preguntas a ELIMINAR (las que no están en el form)
+            const questionIdsToDelete = existingQuestions
+                ?.filter(q => !questionIdsInForm.has(q.id))
+                .map(q => q.id) || [];
+
+            console.log(`🔄 Actualizaciones: ${questionsToUpdate.length}`);
+            console.log(`➕ Inserciones: ${questionsToInsert.length}`);
+            console.log(`🗑️ Eliminaciones: ${questionIdsToDelete.length}`);
+
+            // 6. Ejecutar ACTUALIZACIONES
+            for (const { id, updates } of questionsToUpdate) {
+                const { error: updateError } = await supabase
+                    .from('questions')
+                    .update(updates)
+                    .eq('id', id);
+
+                if (updateError) {
+                    console.error(`Error updating question ${id}:`, updateError);
+                    throw updateError;
+                }
+            }
+
+            // 7. Ejecutar INSERCIONES
+            if (questionsToInsert.length > 0) {
+                const { data: insertedData, error: insertError } = await supabase
+                    .from('questions')
+                    .insert(questionsToInsert)
+                    .select('id');
+
+                if (insertError) {
+                    console.error('Error inserting new questions:', insertError);
+                    throw insertError;
+                }
+
+                console.log(`✅ ${insertedData?.length || 0} preguntas insertadas`);
+            }
+
+            // 8. Ejecutar ELIMINACIONES
+            if (questionIdsToDelete.length > 0) {
+                const { data: deletedData, error: deleteError } = await supabase
+                    .from('questions')
+                    .delete()
+                    .in('id', questionIdsToDelete)
+                    .select('id');
+
+                if (deleteError) {
+                    console.error('Error deleting questions:', deleteError);
+                    throw deleteError;
+                }
+
+                console.log(`✅ ${deletedData?.length || 0} preguntas eliminadas`);
+            }
+
+            console.log('✅ Cuestionario actualizado inteligentemente');
+
+        } catch (error) {
+            console.error('❌ Error updating questionnaire:', error);
             throw error;
         }
     },
@@ -307,6 +490,142 @@ export const questionnaireService = {
 
         } catch (error) {
             console.error('Error in debugAndCreateQuestionnaire:', error);
+            throw error;
+        }
+    },
+
+    // Crear el cuestionario específico "Inventario de Prácticas de Liderazgo"
+    async createLeadershipInventoryQuestionnaire(organizationId: string): Promise<string> {
+        const leadershipQuestions = [
+            { leader: "Demuestro con mi ejemplo lo que espero de los miembros de mi equipo.", collaborator: "Demuestra con su ejemplo lo que espera de los demás." },
+            { leader: "Hablo con mi equipo sobre las tendencias futuras de la organización y como estas podrían influenciar nuestro trabajo. Describo a los demás el futuro que me gustaría crear junto con ellos", collaborator: "Habla sobre las tendencias futuras de la Organización y como estas podrían influenciar el trabajo del equipo. Describo a los demás el futuro que me gustaría crear junto con ellos" },
+            { leader: "Busco oportunidades desafiantes que ponen a prueba mis propias habilidades y habilidades.", collaborator: "Busca oportunidades desafiantes que ponen a prueba sus propias habilidades y habilidades." },
+            { leader: "Desarrollo relaciones de cooperación con los miembros de mi equipo.", collaborator: "Desarrolla relaciones de cooperación con el equipo de trabajo." },
+            { leader: "Elogio a la gente cuando hace un buen trabajo", collaborator: "Elogia a la gente cuando hace un buen trabajo" },
+            { leader: "Gasto tiempo y energía para asegurarme que las personas cumplan los principios y estándares que hemos acordado.", collaborator: "Gasta tiempo y energía para asegurarse que los miembros del equipo cumplamos los principios y estándares que hemos acordado." },
+            { leader: "Describo a los miembros de mi equipo una imagen convincente del futuro que me gustaría crear junto a ellos", collaborator: "Suele dar una imagen convincente del futuro que le gustaría crear con el equipo de trabajo." },
+            { leader: "Incentivo y desafío a mis colaboradores para que busquen formas nuevas o innovadoras para hacer el trabajo", collaborator: "Nos incentiva y desafía para que busquemos formas nuevas o innovadoras de hacer el trabajo" },
+            { leader: "Escucho activamente puntos de vista diferentes", collaborator: "Escucha activamente puntos de vista diferentes" },
+            { leader: "Busco que el personal a mi cargo desarrolle confianza en sus propias habilidades y capacidades", collaborator: "Busca que el personal a su cargo desarrolle confianza en sus propias habilidades y capacidades" },
+            { leader: "Cumplo las promesas y los compromisos que hago", collaborator: "Cumple las promesas y los compromisos que hace." },
+            { leader: "Demuestro motivación y entusiasmo contagioso sobre las posibilidades de futuro", collaborator: "Demuestra motivación y entusiasmo contagioso sobre las posibilidades de futuro" },
+            { leader: "Busco maneras innovadoras que puedan mejorar los procesos actuales.", collaborator: "Busca maneras innovadoras que puedan mejorar los procesos actuales." },
+            { leader: "Trato con dignidad y respecto a los miembros de mi equipo.", collaborator: "Trata con dignidad y respecto a los demás" },
+            { leader: "Me aseguro que mis colaboradores sean reconocidos por las contribuciones que realizan para el éxito del trabajo.", collaborator: "Se asegura que los miembros del equipo sean reconocidos por las contribuciones que realizan para el éxito del trabajo." },
+            { leader: "Pido que me den retroalimentación sobre cómo mis acciones afectan el rendimiento del equipo.", collaborator: "Pide retroalimentación sobre cómo sus acciones afectan el rendimiento del equipo." },
+            { leader: "Demuestro a los miembros de mi equipo como las metas a largo plazo se pueden realizar mediante el compromiso con una visión compartida.", collaborator: "Demuestra a los miembros del equipo como las metas a largo plazo se pueden realizar mediante el compromiso con una visión compartida." },
+            { leader: "Cuando las cosas no salen como esperábamos pregunto: ¿qué podemos aprender?", collaborator: "Cuando las cosas no salen como esperábamos pregunta: ¿qué podemos aprender?" },
+            { leader: "Apoyo las decisiones que mis colaboradores toman por sí mismos.", collaborator: "Apoya las decisiones que los miembros del equipo toman por sí mismos." },
+            { leader: "Reconozco públicamente a los miembros de mi equipo que dan ejemplo de compromiso con los valores de la organización.", collaborator: "Reconoce públicamente a los miembros del equipo que dan ejemplo de compromiso con los valores de la organización." },
+            { leader: "Establezco consenso con el equipo sobre los valores que debemos seguir en la organización.", collaborator: "Establece consenso con el equipo sobre los valores que deben seguir en la organización." },
+            { leader: "Explico a mi personal el \"cuadro grande\" de lo que queremos alcanzar.", collaborator: "Explica al equipo el \"cuadro grande\" de lo que se quiere alcanzar." },
+            { leader: "Me aseguro que las personas que trabajan conmigo tengan claro los objetivos del trabajo, elaboren planes y establezcan metas para el trabajo", collaborator: "Se asegura que las personas del equipo tengan claro los objetivos del trabajo, elaboren planes y establezcan metas para el trabajo" },
+            { leader: "Otorgo bastante libertad a mi personal para decidir sobre la forma en que quieren realizar su trabajo", collaborator: "Otorga bastante libertad al personal para decidir sobre la forma en que quieren realizar su trabajo" },
+            { leader: "Celebro con el equipo las metas cumplidas", collaborator: "Celebra con el equipo las metas cumplidas" },
+            { leader: "Estoy claro/a de cuál es mi filosofía de liderazgo", collaborator: "Todos conocemos cuál es su filosofía de liderazgo" },
+            { leader: "Hablo con convicción sobre la trascendencia y el propósito del trabajo que hacemos", collaborator: "Habla con convicción sobre la trascendencia y el propósito del trabajo que hacemos" },
+            { leader: "Experimento y me arriesgo con nuevos enfoques en el trabajo, a pesar de que haya la posibilidad de que fallen", collaborator: "Experimenta y se arriesgo con nuevos enfoques en el trabajo, a pesar de que haya la posibilidad de que fallen" },
+            { leader: "Me aseguro de que mis colaboradores estén aprendiendo y desarrollando nuevas habilidades en el trabajo.", collaborator: "Se asegura de que sus colaboradores estén aprendiendo y desarrollando nuevas habilidades en el trabajo." },
+            { leader: "Demuestro mucho aprecio por el trabajo que hacen los miembros de mi equipo y doy soporte a las contribuciones hechas.", collaborator: "Demuestra mucho aprecio por el trabajo que hacen los miembros del equipo y da soporte a las contribuciones hechas." }
+        ];
+
+        const formData: QuestionnaireFormData & { organizationId: string } = {
+            title_leader: "DESARROLLO DE DESTREZAS DE DIRECCIÓN\nINVENTARIO DE PRÁCTICAS DE LIDERAZGO",
+            title_collaborator: "DESARROLLO DE DESTREZAS DE DIRECCIÓN\nINVENTARIO DE PRÁCTICAS DE LIDERAZGO",
+            description_leader: "POR FAVOR PIENSE EN CÓMO USTED SUELE ACTUAR GENERALMENTE EN EL TRABAJO Y COLOQUE LA FRECUENCIA CON LA QUE DEMUESTRA LOS COMPORTAMIENTOS ENUNCIADOS.\n\n1: Rara vez o Nunca\n2: De vez en cuando\n3: Algunas veces\n4: Con frecuencia\n5: Muy frecuentemente",
+            description_collaborator: "POR FAVOR, PIENSE EN CÓMO SU LÍNEA DE SUPERVISIÓN SUELE ACTUAR GENERALMENTE EN EL TRABAJO Y COLOQUE LA FRECUENCIA CON LA QUE DEMUESTRA LOS COMPORTAMIENTOS ENUNCIADOS.\nNOMBRE DE SU LÍNEA DE SUPERVISIÓN: \n\n1: Rara vez\n2: De vez en cuando\n3: Algunas veces\n4: Con frecuencia\n5: Muy frecuentemente",
+            version_type: 'both',
+            is_active: true,
+            use_categories: false,
+            organizationId,
+            categories: [
+                {
+                    "id": "cat_1760573578708",
+                    "name": "MODELAR EL CAMINO",
+                    "order_index": 0
+                },
+                {
+                    "id": "cat_1760573593956",
+                    "name": "INSPIRAR UNA VISIÓN COMPARTIDA",
+                    "order_index": 1
+                },
+                {
+                    "id": "cat_1760573609580",
+                    "name": "DESAFIAR EL PROCESO",
+                    "order_index": 2
+                },
+                {
+                    "id": "cat_1760573614485",
+                    "name": "CAPACITAR A OTROS PARA LA ACCIÓN",
+                    "order_index": 3
+                },
+                {
+                    "id": "cat_1760573662454",
+                    "name": "ESTIMULAR EMOTIVAMENTE",
+                    "order_index": 4
+                }
+            ],
+            questions: leadershipQuestions.map((question, index) => ({
+                id: `question_${index + 1}`,
+                text_leader: question.leader,
+                text_collaborator: question.collaborator,
+                question_type: 'likert' as const,
+                category_id: undefined,
+                order_index: index,
+                is_active: true,
+                response_config: {
+                    scale: 5,
+                    min_label: "Rara vez o Nunca",
+                    max_label: "Muy frecuentemente",
+                    labels: [
+                        "Rara vez o Nunca",
+                        "De vez en cuando",
+                        "Algunas veces",
+                        "Con frecuencia",
+                        "Muy frecuentemente"
+                    ]
+                }
+            }))
+        };
+
+        return await this.createQuestionnaire(formData);
+    },
+
+    // Crear cuestionario de liderazgo solo si no existe
+    async createLeadershipInventoryQuestionnaireOnce(organizationId: string): Promise<string> {
+        try {
+            // Verificar si ya existe un cuestionario de liderazgo
+            const { data: existingTemplates, error: searchError } = await supabase
+                .from('question_templates')
+                .select('id, title')
+                .eq('organization_id', organizationId)
+                .ilike('title', '%INVENTARIO DE PRÁCTICAS DE LIDERAZGO%')
+                .eq('is_active', true);
+
+            if (searchError) {
+                console.error('Error searching for existing questionnaire:', searchError);
+                throw searchError;
+            }
+
+            // Si ya existe, retornar el ID existente
+            if (existingTemplates && existingTemplates.length > 0) {
+                const existingTemplate = existingTemplates[0];
+                console.log('✅ Cuestionario de liderazgo ya existe:', {
+                    id: existingTemplate.id,
+                    titulo: existingTemplate.title
+                });
+                return existingTemplate.id;
+            }
+
+            // Si no existe, crear uno nuevo
+            console.log('📋 Creando nuevo cuestionario de liderazgo...');
+            const newQuestionnaireId = await this.createLeadershipInventoryQuestionnaire(organizationId);
+
+            console.log('✅ Nuevo cuestionario de liderazgo creado:', newQuestionnaireId);
+            return newQuestionnaireId;
+
+        } catch (error) {
+            console.error('❌ Error en createLeadershipInventoryQuestionnaireOnce:', error);
             throw error;
         }
     }

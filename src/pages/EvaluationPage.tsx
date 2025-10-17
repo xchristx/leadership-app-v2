@@ -27,16 +27,14 @@ import {
   LinearProgress,
   Grid,
   useMediaQuery,
+  alpha,
+  useTheme,
 } from '@mui/material';
-import { CheckCircle as CheckCircleIcon } from '@mui/icons-material';
+import { CheckCircle as CheckCircleIcon, Shield } from '@mui/icons-material';
 
 import { supabase } from '../lib/supabase';
 import {
   checkEmailEvaluationExists,
-  getExistingEvaluation,
-  createEvaluation,
-  updateEvaluation,
-  convertResponsesForForm,
   validateEmail,
   validateResponses,
   // Nuevas funciones JSON
@@ -99,6 +97,7 @@ export function EvaluationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [evaluationStartTime] = useState<Date>(new Date()); // Para trackear tiempo de evaluación
 
+  const theme = useTheme();
   const isMobile = useMediaQuery('(max-width:600px)');
 
   const loadInvitationData = useCallback(async () => {
@@ -235,7 +234,7 @@ export function EvaluationPage() {
         if (emailCheck.canEdit) {
           // Intentar usar el nuevo sistema JSON primero
           const existingDataJson = await getExistingEvaluationWithJson(state.team!.id, evaluatorInfo.email);
-          
+
           if (existingDataJson) {
             setResponses(existingDataJson.responses);
 
@@ -291,15 +290,24 @@ export function EvaluationPage() {
         return;
       }
 
+      // Obtener información del dispositivo
+      const deviceInfo = isMobile ? 'mobile' : 'desktop';
+
       if (state.existingEvaluation?.evaluation) {
         const existingEval = state.existingEvaluation.evaluation as Record<string, unknown>;
-        await updateEvaluation(existingEval.id as string, responses, {
-          name: evaluatorInfo.name,
-          email: evaluatorInfo.email,
-          additionalInfo: evaluatorInfo.additionalInfo,
-        });
+        await updateEvaluationWithJson(
+          existingEval.id as string,
+          responses,
+          {
+            name: evaluatorInfo.name,
+            email: evaluatorInfo.email,
+            additionalInfo: evaluatorInfo.additionalInfo,
+          },
+          evaluationStartTime,
+          deviceInfo
+        );
       } else {
-        await createEvaluation(
+        await createEvaluationWithJson(
           {
             team_id: state.team!.id,
             invitation_id: state.invitation!.id,
@@ -310,7 +318,9 @@ export function EvaluationPage() {
               additional_info: evaluatorInfo.additionalInfo,
             },
           },
-          responses
+          responses,
+          evaluationStartTime,
+          deviceInfo
         );
 
         const { error: updateError } = await supabase
@@ -326,6 +336,7 @@ export function EvaluationPage() {
       }
 
       setState(prev => ({ ...prev, step: 'complete', existingEvaluation: null }));
+      setResponses({});
     } catch (error) {
       console.error('Error al enviar evaluación:', error);
       alert(error instanceof Error ? error.message : 'Error al enviar evaluación');
@@ -364,34 +375,34 @@ export function EvaluationPage() {
   const activeStep = state.step === 'info' ? 0 : state.step === 'evaluation' || state.step === 'existing-evaluation' ? 1 : 2;
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4, px: { xs: 1, md: 4 } }}>
+    <Container maxWidth="md" sx={{ py: 4, px: { xs: 1, md: 4 } }}>
       {/* Header Premium */}
       <Paper elevation={3} sx={{ mb: 4, overflow: 'hidden' }}>
         <Box
           sx={{
             p: { xs: 3, md: 4 },
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
             color: 'white',
           }}
         >
           <Typography
-            variant="h3"
+            variant="h6"
             gutterBottom
             sx={{
               fontWeight: 'bold',
-              fontSize: { xs: '1.8rem', md: '3rem' },
+              fontSize: { xs: '0.8rem', md: '2rem' },
             }}
           >
             {state.template?.title || 'Evaluación de Liderazgo'}
           </Typography>
 
-          {state.template?.description && (
+          {state.template?.description && state.step === 'evaluation' && (
             <Typography
-              variant="h6"
               sx={{
                 opacity: 0.9,
                 mb: 3,
-                fontSize: { xs: '1rem', md: '1.25rem' },
+                fontSize: { xs: '0.6rem', md: '1rem' },
+                whiteSpace: 'break-spaces',
               }}
             >
               {state.template.description}
@@ -438,7 +449,7 @@ export function EvaluationPage() {
           {/* Progress indicator mejorado */}
           {state.step !== 'loading' && (
             <Box sx={{ mt: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
                   Progreso general
                 </Typography>
@@ -458,7 +469,7 @@ export function EvaluationPage() {
                     backgroundColor: 'white',
                   },
                 }}
-              />
+              /> */}
             </Box>
           )}
 
@@ -468,7 +479,7 @@ export function EvaluationPage() {
             sx={{
               mt: 3,
               '& .MuiStepLabel-root .Mui-completed': { color: 'white' },
-              '& .MuiStepLabel-root .Mui-active': { color: 'yellow' },
+              '& .MuiStepLabel-root .Mui-active': { color: theme.palette.warning.main },
               '& .MuiStepConnector-line': { borderColor: 'rgba(255,255,255,0.5)' },
             }}
             orientation={isMobile ? 'vertical' : 'horizontal'}
@@ -492,31 +503,28 @@ export function EvaluationPage() {
           {/* Paso: Información del evaluador */}
           {state.step === 'info' && (
             <Box>
-              <Typography
-                variant="h4"
-                gutterBottom
+              <Card
+                elevation={8}
                 sx={{
-                  fontWeight: 'bold',
-                  color: 'primary.main',
-                  fontSize: { xs: '1.5rem', md: '2rem' },
-                  textAlign: 'center',
+                  p: 3,
                   mb: 4,
+                  background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%)',
+                  border: '1px solid',
+                  borderColor: alpha(theme.palette.primary.main, 0.1),
+                  borderRadius: 3,
                 }}
               >
-                Información del Evaluador
-              </Typography>
-
-              <Typography
-                variant="body1"
-                color="text.secondary"
-                sx={{
-                  fontSize: { xs: '0.9rem', md: '1rem' },
-                  textAlign: 'center',
-                  mb: 4,
-                }}
-              >
-                Para comenzar la evaluación, necesitamos algunos datos básicos
-              </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <Shield color="primary" />
+                  <Typography variant="h6" fontWeight="600">
+                    Información Protegida
+                  </Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  Estos datos son para evitar que una persona envie un cuestionario 2 veces. Tus respuestas son completamente anónimas y
+                  confidenciales. Los resultados se presentan de forma agregada para proteger tu privacidad.
+                </Typography>
+              </Card>
 
               <Grid container spacing={3} sx={{ maxWidth: 600, mx: 'auto' }}>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -542,7 +550,7 @@ export function EvaluationPage() {
                   />
                 </Grid>
 
-                <Grid size={{ xs: 12 }}>
+                {/* <Grid size={{ xs: 12 }}>
                   <TextField
                     fullWidth
                     multiline
@@ -553,7 +561,7 @@ export function EvaluationPage() {
                     helperText="Puedes agregar cualquier contexto adicional relevante para la evaluación"
                     variant="outlined"
                   />
-                </Grid>
+                </Grid> */}
 
                 <Grid size={{ xs: 12 }} sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
                   <Button
@@ -736,64 +744,53 @@ export function EvaluationPage() {
                       sx={{
                         mb: { xs: 3, md: 4 },
                         p: { xs: 2, md: 3 },
+                        pt: { xs: 4, md: 3 }, // Más padding top en móvil para el número flotante
                         border: responses[question.id] ? '2px solid' : '1px solid',
                         borderColor: responses[question.id] ? 'success.light' : 'divider',
                         transition: 'all 0.3s ease',
                         position: 'relative',
-                        overflow: 'hidden',
+                        overflow: 'visible', // Permitir que el número sobresalga
                         '&:hover': {
                           elevation: 4,
                           borderColor: 'primary.light',
                         },
                       }}
                     >
-                      {/* Indicador de completada */}
-                      {responses[question.id] && (
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            top: 0,
-                            right: 0,
-                            background: 'linear-gradient(135deg, #4caf50, #81c784)',
-                            color: 'white',
-                            px: 2,
-                            py: 0.5,
-                            borderBottomLeftRadius: 8,
-                            fontSize: '0.75rem',
-                            fontWeight: 'bold',
-                          }}
-                        >
-                          Completada
-                        </Box>
-                      )}
+                      {/* Número de pregunta flotante en móvil */}
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: { xs: -16, md: 16 }, // Flotante arriba en móvil, normal en desktop
+                          left: { xs: 16, md: 16 },
+                          minWidth: { xs: 32, md: 40 },
+                          height: { xs: 32, md: 40 },
+                          backgroundColor: 'primary.main',
+                          color: 'white',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 'bold',
+                          fontSize: { xs: '0.875rem', md: '1rem' },
+                          flexShrink: 0,
+                          zIndex: 10,
+                          boxShadow: { xs: '0 2px 8px rgba(0,0,0,0.15)', md: 'none' }, // Sombra en móvil
+                        }}
+                      >
+                        {index + 1}
+                      </Box>
 
                       {/* Header de pregunta */}
                       <Box
                         sx={{
                           display: 'flex',
                           alignItems: 'flex-start',
-                          gap: { xs: 1.5, md: 2 },
+                          gap: { xs: 0, md: 2 }, // Sin gap en móvil porque el número está flotante
                           mb: 3,
-                          pr: responses[question.id] ? 8 : 0,
+                          pr: 0,
+                          pl: { xs: 0, md: 6 }, // Padding left en desktop para compensar el número
                         }}
                       >
-                        <Box
-                          sx={{
-                            minWidth: { xs: 32, md: 40 },
-                            height: { xs: 32, md: 40 },
-                            backgroundColor: 'primary.main',
-                            color: 'white',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 'bold',
-                            fontSize: { xs: '0.875rem', md: '1rem' },
-                            flexShrink: 0,
-                          }}
-                        >
-                          {index + 1}
-                        </Box>
                         <Typography
                           variant="h6"
                           sx={{
@@ -801,6 +798,7 @@ export function EvaluationPage() {
                             flexGrow: 1,
                             fontSize: { xs: '1rem', md: '1.25rem' },
                             lineHeight: 1.4,
+                            ml: { xs: 0, md: 0 }, // Sin margen en móvil
                           }}
                         >
                           {state.invitation?.role_type === 'leader' ? question.text_leader : question.text_collaborator}
@@ -1241,12 +1239,12 @@ export function EvaluationPage() {
                 }}
               >
                 <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', md: '1.1rem' } }}>
-                  Tu evaluación ha sido registrada exitosamente y contribuirá al desarrollo del liderazgo en tu equipo. Los resultados serán
-                  procesados y estarán disponibles para el análisis del proyecto.
+                  Tu evaluación ha sido registrada exitosamente. Los resultados serán procesados y estarán disponibles para el análisis del
+                  proyecto.
                 </Typography>
               </Box>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
+              {/* <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
                 <Chip
                   label={`Evaluado como: ${state.invitation?.role_type === 'leader' ? 'Líder' : 'Colaborador'}`}
                   color="primary"
@@ -1254,7 +1252,7 @@ export function EvaluationPage() {
                   sx={{ fontWeight: 'bold', fontSize: { xs: '0.875rem', md: '1rem' }, py: 2 }}
                 />
                 <Chip label={`Proyecto: ${state.project?.name}`} color="default" variant="outlined" sx={{ fontWeight: 'medium' }} />
-              </Box>
+              </Box> */}
             </Box>
           )}
         </CardContent>

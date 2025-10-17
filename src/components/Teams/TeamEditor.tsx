@@ -6,7 +6,7 @@
 
 import { Dialog, DialogTitle, DialogContent, IconButton } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { TeamForm } from '../../components/Forms';
+import { TeamForm } from '../Forms';
 import type { Team } from '../../types';
 
 export interface TeamEditorProps {

@@ -21,12 +21,17 @@ CREATE INDEX idx_evaluations_responses_questions
 ON evaluations USING GIN ((responses_data -> 'responses'));
 
 -- Función auxiliar para migrar datos existentes (opcional)
+-- Nota: En Supabase, las funciones deben crearse con SECURITY DEFINER si acceden a tablas con RLS
 CREATE OR REPLACE FUNCTION migrate_existing_responses_to_json()
-RETURNS void AS $$
+RETURNS void 
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
     eval_record RECORD;
     responses_json JSONB := '{}';
     response_record RECORD;
+    response_count INTEGER := 0;
 BEGIN
     -- Iterar sobre todas las evaluaciones que no tienen responses_data
     FOR eval_record IN 
@@ -34,7 +39,10 @@ BEGIN
         WHERE responses_data = '{}'::jsonb OR responses_data IS NULL
     LOOP
         -- Inicializar JSON para esta evaluación
-        responses_json := jsonb_build_object('responses', '{}'::jsonb, 'metadata', '{}'::jsonb);
+        responses_json := jsonb_build_object('responses', '{}'::jsonb, 'metadata', 
+            jsonb_build_object('version', '2.0', 'migrated_at', now()));
+        
+        response_count := 0;
         
         -- Obtener todas las respuestas para esta evaluación
         FOR response_record IN 
@@ -56,20 +64,20 @@ BEGIN
                 ),
                 true
             );
+            response_count := response_count + 1;
         END LOOP;
         
-        -- Actualizar la evaluación con el JSON construido
-        UPDATE evaluations 
-        SET responses_data = responses_json
-        WHERE id = eval_record.id;
+        -- Solo actualizar si hay respuestas
+        IF response_count > 0 THEN
+            UPDATE evaluations 
+            SET responses_data = responses_json
+            WHERE id = eval_record.id;
+        END IF;
         
-        -- Log del progreso
-        RAISE NOTICE 'Migrated evaluation ID: %, responses count: %', 
-                     eval_record.id, 
-                     jsonb_object_keys(responses_json -> 'responses');
     END LOOP;
     
-    RAISE NOTICE 'Migration completed successfully';
+    -- En Supabase, usar SELECT en lugar de RAISE NOTICE para ver resultados
+    -- RAISE NOTICE 'Migration completed successfully';
 END;
 $$ LANGUAGE plpgsql;
 
@@ -79,13 +87,18 @@ COMMENT ON FUNCTION migrate_existing_responses_to_json() IS 'Migra respuestas ex
 -- Política RLS para el nuevo campo (hereda las políticas existentes de evaluations)
 -- No se requieren cambios adicionales en RLS ya que el campo pertenece a la tabla evaluations
 
--- Crear índices adicionales para consultas comunes
+-- Crear índice adicional para consultas comunes
+-- Nota: jsonb_object_keys_count no existe en todas las versiones de PostgreSQL
+-- Usaremos una expresión más compatible
 CREATE INDEX idx_evaluations_responses_count 
-ON evaluations ((jsonb_object_keys_count(responses_data -> 'responses')));
+ON evaluations ((jsonb_array_length(jsonb_object_keys(responses_data -> 'responses'))));
 
 -- Función helper para obtener valor de respuesta específica
 CREATE OR REPLACE FUNCTION get_response_value(eval_responses_data JSONB, question_id TEXT)
-RETURNS JSONB AS $$
+RETURNS JSONB 
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
     RETURN eval_responses_data -> 'responses' -> question_id -> 'value';
 END;
@@ -95,7 +108,10 @@ COMMENT ON FUNCTION get_response_value(JSONB, TEXT) IS 'Helper function para obt
 
 -- Función helper para validar estructura JSON
 CREATE OR REPLACE FUNCTION validate_responses_json(responses_data JSONB)
-RETURNS BOOLEAN AS $$
+RETURNS BOOLEAN 
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
     -- Verificar que tiene la estructura correcta
     IF responses_data ? 'responses' AND responses_data ? 'metadata' THEN
@@ -112,6 +128,16 @@ COMMENT ON FUNCTION validate_responses_json(JSONB) IS 'Valida que responses_data
 -- ADD CONSTRAINT check_responses_data_structure 
 -- CHECK (validate_responses_json(responses_data));
 
-RAISE NOTICE 'Migration 06: responses_data JSONB field added successfully';
-RAISE NOTICE 'To migrate existing data, run: SELECT migrate_existing_responses_to_json();';
-RAISE NOTICE 'Remember to update your application code to use the new JSON field';
+-- Migration completed successfully
+-- Para migrar datos existentes, ejecutar en el SQL Editor de Supabase:
+-- SELECT migrate_existing_responses_to_json();
+
+-- Para verificar la migración:
+-- SELECT 
+--   id,
+--   evaluator_email,
+--   jsonb_array_length(jsonb_object_keys(responses_data -> 'responses')) as response_count,
+--   responses_data -> 'metadata' ->> 'version' as version
+-- FROM evaluations 
+-- WHERE responses_data != '{}'::jsonb
+-- LIMIT 10;

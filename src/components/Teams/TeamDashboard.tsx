@@ -20,6 +20,11 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   Alert,
+  IconButton,
+  Tooltip,
+  Dialog,
+  DialogContent,
+  DialogTitle,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -29,12 +34,18 @@ import {
   TrendingUp as TrendingUpIcon,
   Refresh as RefreshIcon,
   Edit,
+  Visibility as VisibilityIcon,
+  PlayArrow as PlayArrowIcon,
+  Close as CloseIcon,
+  Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
 
 import { useTeam } from '../../hooks/useTeams';
 import { TeamEditor } from './TeamEditor';
 import { TeamInvitations } from './TeamInvitations';
+import { ComparativeAnalysisDialog } from './ComparativeAnalysisDialog';
+import { EvaluationViewer } from '..';
 import type { Team } from '../../types';
 
 export interface TeamDashboardProps {
@@ -63,6 +74,9 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
   const [tabValue, setTabValue] = useState(0);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showInvitationsDialog, setShowInvitationsDialog] = useState(false);
+  const [selectedEvaluationId, setSelectedEvaluationId] = useState<string | null>(null);
+  const [evaluationViewerOpen, setEvaluationViewerOpen] = useState(false);
+  const [showComparativeDialog, setShowComparativeDialog] = useState(false);
 
   const { team, stats, dashboard, isLoading, isError, error, loadStats, loadDashboard, refetch } = useTeam(teamId);
 
@@ -97,6 +111,21 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
         error: error instanceof Error ? error.message : 'Error al actualizar equipo',
       };
     }
+  };
+
+  const handleViewEvaluation = (evaluationId: string, isComplete: boolean) => {
+    if (isComplete) {
+      setSelectedEvaluationId(evaluationId);
+      setEvaluationViewerOpen(true);
+    } else {
+      // TODO: Navegar a continuar evaluación
+      console.log('Continue evaluation:', evaluationId);
+    }
+  };
+
+  const handleCloseEvaluationViewer = () => {
+    setEvaluationViewerOpen(false);
+    setSelectedEvaluationId(null);
   };
 
   if (isLoading) {
@@ -217,11 +246,17 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
       {/* Tabs de contenido */}
       <Card>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={handleTabChange}>
-            <Tab label="Resumen" icon={<DashboardIcon />} iconPosition="start" />
-            <Tab label="Invitaciones" icon={<LinkIcon />} iconPosition="start" />
-            <Tab label="Evaluaciones" icon={<AssessmentIcon />} iconPosition="start" />
-          </Tabs>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
+            <Tabs value={tabValue} onChange={handleTabChange}>
+              <Tab label="Resumen" icon={<DashboardIcon />} iconPosition="start" />
+              <Tab label="Invitaciones" icon={<LinkIcon />} iconPosition="start" />
+              <Tab label="Evaluaciones" icon={<AssessmentIcon />} iconPosition="start" />
+            </Tabs>
+
+            <Button variant="outlined" startIcon={<TimelineIcon />} onClick={() => setShowComparativeDialog(true)} sx={{ mr: 1 }}>
+              Análisis Comparativo
+            </Button>
+          </Box>
         </Box>
 
         {/* Panel de Resumen */}
@@ -261,65 +296,112 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
           </Box>
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Alert severity="info">
-              Crea invitaciones con tokens únicos y seguros. Cada invitación puede tener límites de uso y fechas de expiración.
-            </Alert>
-
-            {team.invitations && team.invitations.length > 0 ? (
-              <Box>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Invitaciones activas: {team.invitations.filter(inv => inv.is_active).length}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Total de invitaciones: {team.invitations.length}
-                </Typography>
-              </Box>
+            {teamId ? (
+              <TeamInvitations teamId={teamId} team={team} onClose={() => setShowInvitationsDialog(false)} />
             ) : (
               <Typography variant="body2" color="text.secondary">
                 No hay invitaciones creadas. Usa el botón "Invitaciones" para crear nuevas invitaciones.
               </Typography>
             )}
 
-            <Button variant="contained" startIcon={<LinkIcon />} onClick={() => setShowInvitationsDialog(true)}>
+            {/* <Button variant="contained" startIcon={<LinkIcon />} onClick={() => setShowInvitationsDialog(true)}>
               Gestionar Invitaciones
-            </Button>
+            </Button> */}
           </Box>
         </TabPanel>
 
         {/* Panel de Evaluaciones */}
         <TabPanel value={tabValue} index={2}>
-          <Typography variant="h6" gutterBottom>
-            Evaluaciones del Equipo
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h6">Evaluaciones del Equipo</Typography>
+            <Chip label={`${dashboard?.recent_evaluations?.length || 0} evaluaciones`} color="primary" variant="outlined" />
+          </Box>
 
           {dashboard?.recent_evaluations && dashboard.recent_evaluations.length > 0 ? (
             <List>
-              {dashboard.recent_evaluations.map(evaluation => (
-                <ListItem key={evaluation.id} divider>
-                  <ListItemText
-                    primary={evaluation.evaluator_name || 'Evaluación anónima'}
-                    secondary={
-                      <Box>
-                        <Typography variant="caption" display="block">
-                          Rol: {evaluation.evaluator_role}
-                        </Typography>
-                        <Typography variant="caption" display="block">
-                          Progreso: {evaluation.completion_percentage}%
-                        </Typography>
-                        <Typography variant="caption" display="block">
-                          Fecha: {new Date(evaluation.created_at).toLocaleDateString()}
-                        </Typography>
+              {dashboard.recent_evaluations.map(evaluation => {
+                const completionPercentage = evaluation.completion_percentage || 0;
+                const isComplete = completionPercentage >= 100;
+
+                return (
+                  <ListItem key={evaluation.id} divider>
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="body1" fontWeight="medium">
+                            {evaluation.evaluator_name || 'Evaluación anónima'}
+                          </Typography>
+                          <Chip label={isComplete ? 'Completa' : 'En progreso'} color={isComplete ? 'success' : 'warning'} size="small" />
+                        </Box>
+                      }
+                      secondary={
+                        <Box sx={{ mt: 1 }}>
+                          <Grid container spacing={2}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <Typography variant="caption" display="block" color="text.secondary">
+                                <strong>ID:</strong> #{evaluation.id.slice(0, 8)}
+                              </Typography>
+                              <Typography variant="caption" display="block" color="text.secondary">
+                                <strong>Rol:</strong> {evaluation.evaluator_role === 'leader' ? 'Líder' : 'Colaborador'}
+                              </Typography>
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <Typography variant="caption" display="block" color="text.secondary">
+                                <strong>Progreso:</strong> {completionPercentage}%
+                              </Typography>
+                              <Typography variant="caption" display="block" color="text.secondary">
+                                <strong>Creada:</strong> {new Date(evaluation.created_at).toLocaleDateString('es-ES')}
+                              </Typography>
+                            </Grid>
+                          </Grid>
+
+                          <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Box sx={{ flexGrow: 1 }}>
+                              <LinearProgress
+                                variant="determinate"
+                                value={completionPercentage}
+                                sx={{
+                                  height: 8,
+                                  borderRadius: 4,
+                                  backgroundColor: 'grey.200',
+                                  '& .MuiLinearProgress-bar': {
+                                    borderRadius: 4,
+                                    backgroundColor: isComplete ? 'success.main' : 'warning.main',
+                                  },
+                                }}
+                              />
+                            </Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ minWidth: 45 }}>
+                              {completionPercentage}%
+                            </Typography>
+                          </Box>
+                        </Box>
+                      }
+                    />
+                    <ListItemSecondaryAction>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Tooltip title={isComplete ? 'Ver evaluación completa' : 'Continuar evaluación'}>
+                          <IconButton
+                            size="small"
+                            color={isComplete ? 'primary' : 'warning'}
+                            onClick={() => handleViewEvaluation(evaluation.id, isComplete)}
+                          >
+                            {isComplete ? <VisibilityIcon /> : <PlayArrowIcon />}
+                          </IconButton>
+                        </Tooltip>
                       </Box>
-                    }
-                  />
-                  <ListItemSecondaryAction>
-                    <LinearProgress variant="determinate" value={evaluation.completion_percentage || 0} sx={{ width: 100, mr: 2 }} />
-                  </ListItemSecondaryAction>
-                </ListItem>
-              ))}
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                );
+              })}
             </List>
           ) : (
-            <Alert severity="info">No hay evaluaciones registradas para este equipo.</Alert>
+            <Alert severity="info" sx={{ mt: 2 }}>
+              <Typography variant="body2">No hay evaluaciones registradas para este equipo.</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                Las evaluaciones aparecerán aquí cuando los miembros del equipo completen sus evaluaciones.
+              </Typography>
+            </Alert>
           )}
         </TabPanel>
       </Card>
@@ -328,26 +410,28 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
       <TeamEditor open={showEditDialog} team={team} onClose={() => setShowEditDialog(false)} onSave={handleEditTeam} />
 
       {/* Diálogo de invitaciones */}
-      {showInvitationsDialog && (
-        <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, bgcolor: 'rgba(0,0,0,0.5)', zIndex: 1300 }}>
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              bgcolor: 'background.paper',
-              borderRadius: 2,
-              width: '90%',
-              maxWidth: 800,
-              maxHeight: '90%',
-              overflow: 'auto',
-            }}
-          >
-            <TeamInvitations teamId={teamId} team={team} onClose={() => setShowInvitationsDialog(false)} />
-          </Box>
-        </Box>
-      )}
+      <Dialog open={showInvitationsDialog} onClose={() => setShowInvitationsDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h4">Gestión de Invitaciones</Typography>
+          <IconButton onClick={() => setShowInvitationsDialog(false)}>
+            <CloseIcon color="error" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <TeamInvitations teamId={teamId} team={team} onClose={() => setShowInvitationsDialog(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de visualización de evaluaciones */}
+      <EvaluationViewer open={evaluationViewerOpen} evaluationId={selectedEvaluationId} onClose={handleCloseEvaluationViewer} />
+
+      {/* Dialog de análisis comparativo */}
+      <ComparativeAnalysisDialog
+        open={showComparativeDialog}
+        onClose={() => setShowComparativeDialog(false)}
+        teamId={teamId}
+        teamName={team?.name}
+      />
     </Box>
   );
 }

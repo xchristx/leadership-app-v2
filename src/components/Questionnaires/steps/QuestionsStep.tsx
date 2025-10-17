@@ -37,8 +37,8 @@ interface QuestionsStepProps {
 
 const questionTypes = [
   { value: 'likert' as QuestionType, label: 'Escala Likert (Recomendado)', description: 'Escala numérica (ej: 1-5)' },
-  { value: 'text' as QuestionType, label: 'Texto Libre', description: 'Respuesta abierta' },
-  { value: 'multiple_choice' as QuestionType, label: 'Opción Múltiple', description: 'Selección única' },
+  // { value: 'text' as QuestionType, label: 'Texto Libre', description: 'Respuesta abierta' },
+  // { value: 'multiple_choice' as QuestionType, label: 'Opción Múltiple', description: 'Selección única' },
 ];
 
 export function QuestionsStep({ values, setFieldValue }: QuestionsStepProps) {
@@ -52,8 +52,8 @@ export function QuestionsStep({ values, setFieldValue }: QuestionsStepProps) {
     question_type: 'likert',
     response_config: {
       scale: 5,
-      min_label: 'Totalmente en desacuerdo',
-      max_label: 'Totalmente de acuerdo',
+      min_label: 'Muy frecuentemente',
+      max_label: 'Rara vez o Nunca',
     },
     is_active: true,
   });
@@ -67,8 +67,8 @@ export function QuestionsStep({ values, setFieldValue }: QuestionsStepProps) {
       question_type: 'likert',
       response_config: {
         scale: 5,
-        min_label: 'Totalmente en desacuerdo',
-        max_label: 'Totalmente de acuerdo',
+        min_label: 'Muy frecuentemente',
+        max_label: 'Rara vez o Nunca',
       },
       is_active: true,
     });

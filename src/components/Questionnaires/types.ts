@@ -6,6 +6,7 @@ export interface QuestionCategory {
     id: string;
     name: string;
     description?: string;
+    color?: string;
     order_index: number;
 }
 

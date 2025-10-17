@@ -6,6 +6,7 @@
 
 import { supabase } from '../lib/supabase';
 import type { Evaluation, EvaluationResponse, Question } from '../types';
+import type { Json } from '../types/database.types';
 
 // ============================================================================
 // TIPOS ESPECÍFICOS DEL SERVICIO
@@ -21,10 +22,10 @@ export interface EvaluationData {
 }
 
 // Importar tipos para sistema JSON
-import type { 
-    ResponsesJsonData, 
-    JsonResponse, 
-    EvaluationMetadata, 
+import type {
+    ResponsesJsonData,
+    JsonResponse,
+    EvaluationMetadata,
     FormResponses,
     ConvertToJsonParams
 } from '../types';
@@ -275,7 +276,8 @@ export const getTeamEvaluations = async (teamId: string): Promise<Evaluation[]> 
 // ============================================================================
 
 /**
- * Crear nueva evaluación
+ * Crear nueva evaluación (OBSOLETO - usar createEvaluationWithJson)
+ * @deprecated Usar createEvaluationWithJson para mejor performance
  */
 export const createEvaluation = async (
     evaluationData: EvaluationData,
@@ -317,7 +319,8 @@ export const createEvaluation = async (
 };
 
 /**
- * Actualizar evaluación existente
+ * Actualizar evaluación existente (OBSOLETO - usar updateEvaluationWithJson)
+ * @deprecated Usar updateEvaluationWithJson para mejor performance
  */
 export const updateEvaluation = async (
     evaluationId: string,
@@ -394,7 +397,8 @@ export const deleteEvaluation = async (evaluationId: string): Promise<void> => {
 // ============================================================================
 
 /**
- * Crear respuestas de evaluación
+ * Crear respuestas de evaluación (OBSOLETO - parte del sistema JSON)
+ * @deprecated Sistema JSON almacena respuestas directamente en evaluations.responses_data
  */
 export const createEvaluationResponses = async (
     evaluationId: string,
@@ -429,7 +433,8 @@ export const createEvaluationResponses = async (
 };
 
 /**
- * Actualizar respuestas de evaluación
+ * Actualizar respuestas de evaluación (OBSOLETO - parte del sistema JSON)
+ * @deprecated Sistema JSON actualiza respuestas directamente en evaluations.responses_data
  */
 export const updateEvaluationResponses = async (
     evaluationId: string,
@@ -588,10 +593,10 @@ export const validateResponses = (
  */
 export const convertFormResponsesToJson = (params: ConvertToJsonParams): ResponsesJsonData => {
     const { formResponses, startTime, endTime, deviceInfo, version = '1.0' } = params;
-    
+
     const responses: Record<string, JsonResponse> = {};
     const currentTime = new Date().toISOString();
-    
+
     // Convertir cada respuesta
     Object.entries(formResponses).forEach(([questionId, value]) => {
         responses[questionId] = {
@@ -630,7 +635,7 @@ export const convertJsonToFormResponses = (jsonData: ResponsesJsonData | null): 
     }
 
     const formResponses: FormResponses = {};
-    
+
     Object.entries(jsonData.responses).forEach(([questionId, responseData]) => {
         formResponses[questionId] = responseData.value;
     });
@@ -651,7 +656,7 @@ export const createEvaluationWithJson = async (
         console.log('Creando nueva evaluación con sistema JSON para:', evaluationData.evaluator_email);
 
         const endTime = new Date();
-        
+
         // Convertir respuestas a formato JSON
         const responsesJsonData = convertFormResponsesToJson({
             formResponses: responses,
@@ -674,7 +679,7 @@ export const createEvaluationWithJson = async (
                 completion_percentage: 100,
                 completed_at: endTime.toISOString(),
                 evaluator_metadata: evaluationData.evaluator_metadata as Record<string, string | number | boolean> || null,
-                responses_data: JSON.stringify(responsesJsonData) as unknown as Record<string, unknown> // Serializar para JSONB
+                responses_data: responsesJsonData as unknown as Json // Usar tipo Json de Supabase
             })
             .select()
             .single();
@@ -683,10 +688,8 @@ export const createEvaluationWithJson = async (
             throw new Error(`Error al crear evaluación: ${evaluationError.message}`);
         }
 
-        // Crear respuestas individuales también para compatibilidad
-        await createEvaluationResponses(evaluation.id, responses);
-
-        console.log('Evaluación creada exitosamente con sistema JSON:', evaluation.id);
+        // Ya no creamos respuestas individuales - solo usamos sistema JSON
+        console.log('Evaluación creada exitosamente con sistema JSON (solo JSON):', evaluation.id);
         return evaluation as Evaluation;
     } catch (error) {
         console.error('Error in createEvaluationWithJson:', error);
@@ -729,7 +732,7 @@ export const updateEvaluationWithJson = async (
             is_complete: true,
             completed_at: endTime.toISOString(),
             updated_at: endTime.toISOString(),
-            responses_data: JSON.stringify(responsesJsonData) as unknown as Record<string, unknown>
+            responses_data: responsesJsonData as unknown as Json
         };
 
         if (evaluatorInfo) {
@@ -750,10 +753,8 @@ export const updateEvaluationWithJson = async (
             throw new Error(`Error al actualizar evaluación: ${updateError.message}`);
         }
 
-        // Actualizar respuestas individuales también para compatibilidad
-        await updateEvaluationResponses(evaluationId, responses);
-
-        console.log('Evaluación actualizada exitosamente con sistema JSON:', evaluationId);
+        // Ya no actualizamos respuestas individuales - solo usamos sistema JSON
+        console.log('Evaluación actualizada exitosamente con sistema JSON (solo JSON):', evaluationId);
     } catch (error) {
         console.error('Error in updateEvaluationWithJson:', error);
         throw error;
@@ -766,9 +767,9 @@ export const updateEvaluationWithJson = async (
 export const getExistingEvaluationWithJson = async (
     teamId: string,
     email: string
-): Promise<{ 
-    evaluation: Evaluation; 
-    responses: FormResponses; 
+): Promise<{
+    evaluation: Evaluation;
+    responses: FormResponses;
     canEdit: boolean;
     metadata?: EvaluationMetadata;
 } | null> => {
@@ -813,7 +814,7 @@ export const getExistingEvaluationWithJson = async (
 
         if (evaluation.responses_data) {
             try {
-                const jsonData = typeof evaluation.responses_data === 'string' 
+                const jsonData = typeof evaluation.responses_data === 'string'
                     ? JSON.parse(evaluation.responses_data) as ResponsesJsonData
                     : evaluation.responses_data as unknown as ResponsesJsonData;
                 responses = convertJsonToFormResponses(jsonData);
@@ -821,10 +822,11 @@ export const getExistingEvaluationWithJson = async (
             } catch (error) {
                 console.warn('Error parsing JSON responses_data, falling back to individual responses:', error);
             }
-        } 
-        
+        }
+
         if (Object.keys(responses).length === 0) {
-            // Fallback: obtener respuestas de tabla individual
+            // Fallback: obtener respuestas de tabla individual (SOLO para evaluaciones migradas sin JSON)
+            console.warn(`Evaluación ${evaluation.id} no tiene datos JSON, usando fallback a evaluation_responses`);
             const { data: individualResponses } = await supabase
                 .from('evaluation_responses')
                 .select('*')
@@ -832,6 +834,11 @@ export const getExistingEvaluationWithJson = async (
 
             if (individualResponses) {
                 responses = convertResponsesForForm(individualResponses as EvaluationResponse[]);
+                metadata = {
+                    version: '1.0',
+                    fallback_used: true,
+                    fallback_timestamp: new Date().toISOString()
+                } as EvaluationMetadata;
             }
         }
 

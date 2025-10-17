@@ -12,18 +12,34 @@ interface BarChartData {
   value: number;
   label?: string;
   color?: string;
+  [key: string]: string | number | undefined;
+}
+
+interface TooltipPayload {
+  value: number;
+  dataKey: string;
+  color: string;
+  name: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: string | number;
 }
 
 interface CustomBarChartProps {
-  data: BarChartData[];
+  data: BarChartData[] | Record<string, string | number>[];
   title?: string;
   dataKey?: string;
   nameKey?: string;
+  xKey?: string;
+  yKeys?: string[];
+  colors?: string[];
   height?: number;
   color?: string;
   showLegend?: boolean;
   showGrid?: boolean;
-  formatTooltip?: (value: number, name: string) => string;
 }
 
 export function CustomBarChart({
@@ -31,21 +47,30 @@ export function CustomBarChart({
   title,
   dataKey = 'value',
   nameKey = 'name',
+  xKey,
+  yKeys,
+  colors = [],
   height = 300,
   color,
   showLegend = false,
   showGrid = true,
-  formatTooltip,
 }: CustomBarChartProps) {
   const theme = useTheme();
 
   const defaultColor = color || theme.palette.primary.main;
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  // Determine which key to use for X axis
+  const xAxisKey = xKey || nameKey;
+
+  // Determine which keys to use for bars
+  const barKeys = yKeys || [dataKey];
+
+  // Generate colors for multiple bars
+  const barColors = colors.length > 0 ? colors : [defaultColor];
+
+  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
-      const value = payload[0].value;
       const displayLabel = String(label || '');
-      const formattedValue = formatTooltip ? formatTooltip(value, displayLabel) : `${displayLabel}: ${value}`;
 
       return (
         <Paper
@@ -56,9 +81,14 @@ export function CustomBarChart({
             border: `1px solid ${theme.palette.divider}`,
           }}
         >
-          <Typography variant="body2" color="text.primary">
-            {formattedValue}
+          <Typography variant="body2" color="text.primary" sx={{ mb: 1 }}>
+            {displayLabel}
           </Typography>
+          {payload.map((entry, index) => (
+            <Typography key={index} variant="body2" color="text.primary">
+              <span style={{ color: entry.color }}>●</span> {entry.name}: {entry.value}
+            </Typography>
+          ))}
         </Paper>
       );
     }
@@ -85,13 +115,13 @@ export function CustomBarChart({
         >
           {showGrid && <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />}
 
-          <XAxis dataKey={nameKey} tick={{ fontSize: 12, fill: theme.palette.text.secondary }} stroke={theme.palette.text.secondary} />
+          <XAxis dataKey={xAxisKey} tick={{ fontSize: 12, fill: theme.palette.text.secondary }} stroke={theme.palette.text.secondary} />
 
           <YAxis tick={{ fontSize: 12, fill: theme.palette.text.secondary }} stroke={theme.palette.text.secondary} />
 
           <Tooltip content={CustomTooltip} />
 
-          {showLegend && (
+          {(showLegend || yKeys) && (
             <Legend
               wrapperStyle={{
                 color: theme.palette.text.secondary,
@@ -100,7 +130,16 @@ export function CustomBarChart({
             />
           )}
 
-          <Bar dataKey={dataKey} fill={defaultColor} radius={[4, 4, 0, 0]} stroke={theme.palette.background.paper} strokeWidth={1} />
+          {barKeys.map((key, index) => (
+            <Bar
+              key={key}
+              dataKey={key}
+              fill={barColors[index % barColors.length]}
+              radius={[4, 4, 0, 0]}
+              stroke={theme.palette.background.paper}
+              strokeWidth={1}
+            />
+          ))}
         </BarChart>
       </ResponsiveContainer>
     </Box>

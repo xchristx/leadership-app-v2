@@ -67,6 +67,7 @@ export function QuestionnaireForm({ initialData, onSubmit, onCancel, mode }: Que
 
       // Validar que si usa categorías, todas las preguntas tengan categoría
       if (values.use_categories && values.questions.some(q => !q.category_id)) {
+        alert('Si usa categorías, todas las preguntas deben tener una categoría asignada');
         throw new Error('Todas las preguntas deben tener una categoría asignada');
       }
 

@@ -14,8 +14,19 @@ interface LineChartData {
   [key: string]: string | number | undefined;
 }
 
+interface CustomLineTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    value: number;
+    dataKey: string;
+    color: string;
+    name: string;
+  }>;
+  label?: string | number;
+}
+
 interface CustomLineChartProps {
-  data: LineChartData[];
+  data: LineChartData[] | Record<string, string | number>[];
   title?: string;
   dataKey?: string;
   nameKey?: string;
@@ -25,7 +36,6 @@ interface CustomLineChartProps {
   showGrid?: boolean;
   showDots?: boolean;
   strokeWidth?: number;
-  formatTooltip?: (value: number, name: string) => string;
 }
 
 export function CustomLineChart({
@@ -39,17 +49,15 @@ export function CustomLineChart({
   showGrid = true,
   showDots = true,
   strokeWidth = 2,
-  formatTooltip,
 }: CustomLineChartProps) {
   const theme = useTheme();
 
   const defaultColor = color || theme.palette.primary.main;
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: CustomLineTooltipProps) => {
     if (active && payload && payload.length) {
       const value = payload[0].value;
       const displayLabel = String(label || '');
-      const formattedValue = formatTooltip ? formatTooltip(value, displayLabel) : `${displayLabel}: ${value}`;
 
       return (
         <Paper
@@ -61,7 +69,7 @@ export function CustomLineChart({
           }}
         >
           <Typography variant="body2" color="text.primary">
-            {formattedValue}
+            {displayLabel}: {value}
           </Typography>
         </Paper>
       );

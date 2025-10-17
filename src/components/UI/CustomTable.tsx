@@ -24,7 +24,7 @@ import {
   Chip,
   Skeleton,
 } from '@mui/material';
-import { Search as SearchIcon, FilterList as FilterIcon, MoreVert as MoreVertIcon } from '@mui/icons-material';
+import { Search as SearchIcon, FilterList as FilterIcon } from '@mui/icons-material';
 import { useState, useMemo } from 'react';
 
 export interface Column<T = Record<string, unknown>> {
@@ -290,7 +290,6 @@ export function CustomTable<T extends { id: string }>({
                   )}
                 </TableCell>
               ))}
-              <TableCell align="right">Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -336,11 +335,6 @@ export function CustomTable<T extends { id: string }>({
                         </TableCell>
                       );
                     })}
-                    <TableCell align="right">
-                      <IconButton size="small" onClick={e => e.stopPropagation()}>
-                        <MoreVertIcon />
-                      </IconButton>
-                    </TableCell>
                   </TableRow>
                 );
               })

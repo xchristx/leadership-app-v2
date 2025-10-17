@@ -36,7 +36,7 @@ import { ProjectForm, TeamForm } from '../components/Forms';
 import { useProjects, useTeams } from '../hooks';
 import type { Project, Team } from '../types';
 import { ProjectCard, ProjectEditor, ProjectViewer } from '../components/Projects';
-import { TeamCard, TeamEditor } from './Teams/index';
+import { TeamCard, TeamEditor } from '../components/Teams/index';
 import type { CreateTeamFormData } from '../services/teamService';
 import type { TeamFormData } from '../components/Forms/TeamForm';
 

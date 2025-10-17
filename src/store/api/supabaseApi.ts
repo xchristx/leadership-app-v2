@@ -129,7 +129,21 @@ export const supabaseApi = createApi({
                 try {
                     let query = supabase
                         .from('evaluations')
-                        .select('*')
+                        .select(`
+                            *,
+                            teams!inner(
+                                id,
+                                name,
+                                projects!inner(
+                                    id,
+                                    name,
+                                    question_templates!inner(
+                                        id,
+                                        title
+                                    )
+                                )
+                            )
+                        `)
 
                     if (projectId) query = query.eq('project_id', projectId)
                     if (teamId) query = query.eq('team_id', teamId)
@@ -137,7 +151,24 @@ export const supabaseApi = createApi({
                     const { data, error } = await query.order('created_at', { ascending: false })
 
                     if (error) throw error
-                    return { data: (data || []) as Evaluation[] }
+
+                    // Transformar los datos para incluir los campos relacionados
+                    const evaluationsWithRelations = (data || []).map((evaluation: Record<string, unknown>) => {
+                        const teams = evaluation.teams as {
+                            name?: string;
+                            projects?: {
+                                question_templates?: { title?: string }
+                            }
+                        } | undefined;
+
+                        return {
+                            ...evaluation,
+                            team_name: teams?.name || 'Equipo sin nombre',
+                            template_title: teams?.projects?.question_templates?.title || 'Template sin título'
+                        };
+                    });
+
+                    return { data: evaluationsWithRelations as Evaluation[] }
                 } catch (error) {
                     return { error: { status: 'FETCH_ERROR', error: String(error) } }
                 }

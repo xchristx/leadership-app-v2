@@ -9,6 +9,7 @@ export { useProjects, useProject } from './useProjects'
 export { useTeams, useTeam } from './useTeams'
 export { useEvaluations, usePublicEvaluation } from './useEvaluations'
 export { useQuestionnaires } from './useQuestionnaires'
+export { useLeadershipQuestionnaire } from './useLeadershipQuestionnaire'
 
 // Re-export de hooks de Redux store
 export { useAppDispatch, useAppSelector } from '../store/hooks'
