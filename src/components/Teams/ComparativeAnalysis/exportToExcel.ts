@@ -494,7 +494,7 @@ export async function exportToExcelEnhanced(
 // ============================================================================
 
 export async function exportToExcelSimple(
-    comparativeData: ComparativeData[],
+    _comparativeData: ComparativeData[],
     categoryData: CategoryData[],
     categorySummary: CategorySummary[]
 ) {

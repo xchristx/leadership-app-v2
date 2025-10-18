@@ -1,7 +1,7 @@
 # Configuración de Netlify para Leadership App
 [build]
   # Comando de build
-  command = "npm run build"
+  command = "pnpm run build"
   # Directorio donde se genera el build
   publish = "dist"
 
@@ -73,16 +73,16 @@
 
 # Configuración específica por entorno
 [context.production]
-  command = "npm run build"
+  command = "pnpm run build"
   [context.production.environment]
     NODE_ENV = "production"
 
 [context.deploy-preview]
-  command = "npm run build"
+  command = "pnpm run build"
   [context.deploy-preview.environment]
     NODE_ENV = "production"
 
 [context.branch-deploy]
-  command = "npm run build"
+  command = "pnpm run build"
   [context.branch-deploy.environment]
     NODE_ENV = "production"

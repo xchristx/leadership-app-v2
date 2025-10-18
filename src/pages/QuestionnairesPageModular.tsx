@@ -9,9 +9,9 @@ import { QuestionnaireForm } from '../components/Questionnaires';
 import { useQuestionnaires } from '../hooks/useQuestionnaires';
 import { useAuth } from '../hooks/useAuth';
 import type { QuestionnaireFormData } from '../components/Questionnaires';
-import { QuestionnaireList } from './components/QuestionnaireList';
-import { QuestionnaireViewer } from './components/QuestionnaireViewer';
-import { QuestionnaireEditor } from './components/QuestionnaireEditor';
+import { QuestionnaireList } from '../components/Questionaries/QuestionnaireList';
+import { QuestionnaireViewer } from '../components/Questionaries/QuestionnaireViewer';
+import { QuestionnaireEditor } from '../components/Questionaries/QuestionnaireEditor';
 import type { Database } from '../types/database.types';
 
 type QuestionTemplate = Database['public']['Tables']['question_templates']['Row'];

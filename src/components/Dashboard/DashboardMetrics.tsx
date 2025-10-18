@@ -63,12 +63,7 @@ export function DashboardMetrics({
               Puntuación por Equipo
             </Typography>
             <Box sx={{ height: '320px' }}>
-              <CustomBarChart
-                data={teamData}
-                height={320}
-                color={theme.palette.primary.main}
-                formatTooltip={(value, name) => `${name}: ${value} puntos`}
-              />
+              <CustomBarChart data={teamData} height={320} color={theme.palette.primary.main} />
             </Box>
           </CardContent>
         </Card>
@@ -80,13 +75,7 @@ export function DashboardMetrics({
               Tendencia de Evaluaciones
             </Typography>
             <Box sx={{ height: '320px' }}>
-              <CustomLineChart
-                data={trendData}
-                height={320}
-                color={theme.palette.secondary.main}
-                strokeWidth={3}
-                formatTooltip={(value, name) => `${name}: ${value}% completado`}
-              />
+              <CustomLineChart data={trendData} height={320} color={theme.palette.secondary.main} strokeWidth={3} />
             </Box>
           </CardContent>
         </Card>
