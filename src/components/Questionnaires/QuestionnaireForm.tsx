@@ -133,28 +133,38 @@ export function QuestionnaireForm({ initialData, onSubmit, onCancel, mode }: Que
 
               {/* Botones de navegación */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Box>{activeStep > 0 && <Button onClick={handleBack}>Anterior</Button>}</Box>
+                <Box>
+                  {activeStep > 0 && (
+                    <Button type="button" onClick={handleBack}>
+                      Anterior
+                    </Button>
+                  )}
+                </Box>
 
                 <Box sx={{ display: 'flex', gap: 2 }}>
                   {onCancel && (
-                    <Button variant="outlined" onClick={onCancel}>
+                    <Button type="button" variant="outlined" onClick={onCancel}>
                       Cancelar
                     </Button>
                   )}
 
-                  {activeStep < steps.length - 1 ? (
-                    <Button
-                      variant="contained"
-                      onClick={handleNext}
-                      disabled={activeStep === 1 && values.use_categories && values.categories.length === 0}
-                    >
-                      Siguiente
-                    </Button>
-                  ) : (
-                    <Button type="submit" variant="contained" disabled={isSubmitting || values.questions.length === 0}>
-                      {isSubmitting ? 'Guardando...' : mode === 'create' ? 'Crear Cuestionario' : 'Guardar Cambios'}
-                    </Button>
-                  )}
+                  <Button
+                    sx={{ display: activeStep < steps.length - 1 ? 'inline-flex' : 'none' }}
+                    type="button"
+                    variant="contained"
+                    onClick={handleNext}
+                    disabled={activeStep === 1 && values.use_categories && values.categories.length === 0}
+                  >
+                    Siguiente
+                  </Button>
+                  <Button
+                    sx={{ display: activeStep === steps.length - 1 ? 'inline-flex' : 'none' }}
+                    type="submit"
+                    variant="contained"
+                    disabled={isSubmitting || values.questions.length === 0}
+                  >
+                    {isSubmitting ? 'Guardando...' : mode === 'create' ? 'Crear Cuestionario' : 'Guardar Cambios'}
+                  </Button>
                 </Box>
               </Box>
             </Form>

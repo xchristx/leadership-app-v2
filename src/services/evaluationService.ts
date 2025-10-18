@@ -19,6 +19,8 @@ export interface EvaluationData {
     evaluator_email: string;
     evaluator_role: 'leader' | 'collaborator';
     evaluator_metadata?: Record<string, unknown>;
+    template_id: string
+    project_id: string
 }
 
 // Importar tipos para sistema JSON
@@ -270,6 +272,27 @@ export const getTeamEvaluations = async (teamId: string): Promise<Evaluation[]> 
         throw error;
     }
 };
+export const getProjectEvaluations = async (projectId: string): Promise<Evaluation[]> => {
+    try {
+        const { data, error } = await supabase
+            .from('evaluations')
+            .select(`
+        *,
+        evaluation_responses(count)
+      `)
+            .eq('project_id', projectId)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            throw new Error(`Error al obtener evaluaciones del equipo: ${error.message}`);
+        }
+
+        return (data || []) as Evaluation[];
+    } catch (error) {
+        console.error('Error in getTeamEvaluations:', error);
+        throw error;
+    }
+};
 
 // ============================================================================
 // CREAR Y ACTUALIZAR EVALUACIONES
@@ -295,10 +318,12 @@ export const createEvaluation = async (
                 evaluator_name: evaluationData.evaluator_name,
                 evaluator_email: evaluationData.evaluator_email.toLowerCase().trim(),
                 evaluator_role: evaluationData.evaluator_role,
+                template_id: evaluationData.template_id,
                 is_complete: true,
                 completion_percentage: 100,
                 completed_at: new Date().toISOString(),
-                evaluator_metadata: evaluationData.evaluator_metadata as Record<string, string | number | boolean> || null
+                evaluator_metadata: evaluationData.evaluator_metadata as Record<string, string | number | boolean> || null,
+                project_id: evaluationData.project_id
             })
             .select()
             .single();
@@ -679,13 +704,36 @@ export const createEvaluationWithJson = async (
                 completion_percentage: 100,
                 completed_at: endTime.toISOString(),
                 evaluator_metadata: evaluationData.evaluator_metadata as Record<string, string | number | boolean> || null,
-                responses_data: responsesJsonData as unknown as Json // Usar tipo Json de Supabase
+                responses_data: responsesJsonData as unknown as Json, // Usar tipo Json de Supabase
+                template_id: evaluationData.template_id,
+                project_id: evaluationData.project_id
             })
             .select()
             .single();
 
         if (evaluationError) {
             throw new Error(`Error al crear evaluación: ${evaluationError.message}`);
+        }
+
+        // Si es un líder completando su primera evaluación, actualizar la información del equipo
+        if (evaluationData.evaluator_role === 'leader') {
+            try {
+                // Importar dinámicamente para evitar dependencias circulares
+                const { updateTeamLeaderInfo } = await import('./teamService');
+                const updateResult = await updateTeamLeaderInfo(
+                    evaluationData.team_id,
+                    evaluationData.evaluator_name,
+                    evaluationData.evaluator_email
+                );
+
+                if (updateResult.success) {
+                    console.log('Información del líder actualizada automáticamente en el equipo');
+                } else {
+                    console.warn('No se pudo actualizar información del líder:', updateResult.error);
+                }
+            } catch (updateError) {
+                console.warn('Error al actualizar información del líder (no crítico):', updateError);
+            }
         }
 
         // Ya no creamos respuestas individuales - solo usamos sistema JSON

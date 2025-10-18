@@ -100,6 +100,12 @@ export function EvaluationPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery('(max-width:600px)');
 
+  // Función helper para validar email
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
+
   const loadInvitationData = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -227,6 +233,12 @@ export function EvaluationPage() {
       return;
     }
 
+    // Validación de formato de email
+    if (!isValidEmail(evaluatorInfo.email)) {
+      alert('Por favor ingresa un email válido (ejemplo: usuario@dominio.com)');
+      return;
+    }
+
     try {
       const emailCheck = await checkEmailEvaluationExists(state.team!.id, evaluatorInfo.email);
 
@@ -278,13 +290,44 @@ export function EvaluationPage() {
     try {
       setIsSubmitting(true);
 
+      // Validación de email mejorada
+      if (!isValidEmail(evaluatorInfo.email)) {
+        alert('Por favor ingresa un email válido antes de enviar la evaluación');
+        return;
+      }
+
       const emailValidation = validateEmail(evaluatorInfo.email);
       if (!emailValidation.isValid) {
         alert(emailValidation.message);
         return;
       }
 
-      const responsesValidation = validateResponses(responses, 1);
+      // Validación completa: todas las preguntas deben tener respuesta
+      const totalQuestions = state.questions.length;
+      const answeredQuestions = Object.keys(responses).length;
+
+      if (answeredQuestions < totalQuestions) {
+        alert(`Por favor responde todas las preguntas. Has respondido ${answeredQuestions} de ${totalQuestions} preguntas.`);
+        return;
+      }
+
+      // Validación adicional: verificar que las respuestas no estén vacías
+      const emptyResponses = Object.entries(responses).filter(([, value]) => {
+        if (typeof value === 'string') {
+          return !value.trim();
+        }
+        if (typeof value === 'number') {
+          return value === 0 || isNaN(value);
+        }
+        return !value;
+      });
+
+      if (emptyResponses.length > 0) {
+        alert('Por favor completa todas las respuestas. Algunas preguntas tienen respuestas vacías.');
+        return;
+      }
+
+      const responsesValidation = validateResponses(responses, totalQuestions);
       if (!responsesValidation.isValid) {
         alert(responsesValidation.message);
         return;
@@ -292,6 +335,8 @@ export function EvaluationPage() {
 
       // Obtener información del dispositivo
       const deviceInfo = isMobile ? 'mobile' : 'desktop';
+
+      const isNewEvaluation = !state.existingEvaluation?.evaluation;
 
       if (state.existingEvaluation?.evaluation) {
         const existingEval = state.existingEvaluation.evaluation as Record<string, unknown>;
@@ -317,24 +362,61 @@ export function EvaluationPage() {
             evaluator_metadata: {
               additional_info: evaluatorInfo.additionalInfo,
             },
+            template_id: state.template!.id,
+            project_id: state.project!.id,
           },
           responses,
           evaluationStartTime,
           deviceInfo
         );
+      }
 
+      // Actualizar contador de usos solo para nuevas evaluaciones
+      if (isNewEvaluation) {
+        // Obtener el valor actual más reciente de la base de datos
+        const { data: currentInvitation, error: fetchError } = await supabase
+          .from('team_invitations')
+          .select('current_uses')
+          .eq('id', state.invitation!.id)
+          .single();
+
+        if (fetchError) {
+          console.error('Error al obtener invitación actual:', fetchError);
+          return;
+        }
+
+        const currentUses = currentInvitation?.current_uses || 0;
+
+        // Actualizar contador de usos
         const { error: updateError } = await supabase
           .from('team_invitations')
           .update({
-            current_uses: (state.invitation!.current_uses || 0) + 1,
+            current_uses: currentUses + 1,
           })
-          .eq('id', state.invitation!.id);
+          .eq('id', state.invitation!.id)
+          .select();
 
         if (updateError) {
-          console.warn('Error al actualizar contador de usos:', updateError);
+          console.error('Error al actualizar contador de usos:', updateError);
+
+          // Intento alternativo usando token único
+          const { error: altError } = await supabase
+            .from('team_invitations')
+            .update({ current_uses: currentUses + 1 })
+            .eq('unique_token', token!)
+            .select();
+
+          if (altError) {
+            console.error('Error en actualización alternativa:', altError);
+          } else {
+            console.log('Contador actualizado exitosamente (método alternativo)');
+          }
+        } else {
+          console.log('Contador de usos actualizado exitosamente');
         }
       }
 
+      // Completar proceso de evaluación
       setState(prev => ({ ...prev, step: 'complete', existingEvaluation: null }));
       setResponses({});
     } catch (error) {
@@ -530,7 +612,7 @@ export function EvaluationPage() {
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
-                    label="Nombre completo *"
+                    label="Nombre completo"
                     value={evaluatorInfo.name}
                     onChange={e => setEvaluatorInfo(prev => ({ ...prev, name: e.target.value }))}
                     required
@@ -547,6 +629,12 @@ export function EvaluationPage() {
                     onChange={e => setEvaluatorInfo(prev => ({ ...prev, email: e.target.value }))}
                     required
                     variant="outlined"
+                    error={evaluatorInfo.email.trim() !== '' && !isValidEmail(evaluatorInfo.email)}
+                    helperText={
+                      evaluatorInfo.email.trim() !== '' && !isValidEmail(evaluatorInfo.email)
+                        ? 'Ingresa un email válido (ejemplo: usuario@dominio.com)'
+                        : ''
+                    }
                   />
                 </Grid>
 
@@ -568,7 +656,7 @@ export function EvaluationPage() {
                     variant="contained"
                     size="large"
                     onClick={handleEvaluatorInfoSubmit}
-                    disabled={!evaluatorInfo.name.trim() || !evaluatorInfo.email.trim()}
+                    disabled={!evaluatorInfo.name.trim() || !evaluatorInfo.email.trim() || !isValidEmail(evaluatorInfo.email)}
                     sx={{
                       px: { xs: 4, md: 6 },
                       py: 1.5,
@@ -742,9 +830,9 @@ export function EvaluationPage() {
                       key={question.id}
                       elevation={2}
                       sx={{
-                        mb: { xs: 3, md: 4 },
-                        p: { xs: 2, md: 3 },
-                        pt: { xs: 4, md: 3 }, // Más padding top en móvil para el número flotante
+                        mb: { xs: 2, md: 3 }, // Reducido de 3-4 a 2-3
+                        p: { xs: 1.5, md: 2.5 }, // Reducido de 2-3 a 1.5-2.5
+                        pt: { xs: 3, md: 2.5 }, // Reducido padding top
                         border: responses[question.id] ? '2px solid' : '1px solid',
                         borderColor: responses[question.id] ? 'success.light' : 'divider',
                         transition: 'all 0.3s ease',
@@ -760,10 +848,10 @@ export function EvaluationPage() {
                       <Box
                         sx={{
                           position: 'absolute',
-                          top: { xs: -16, md: 16 }, // Flotante arriba en móvil, normal en desktop
-                          left: { xs: 16, md: 16 },
-                          minWidth: { xs: 32, md: 40 },
-                          height: { xs: 32, md: 40 },
+                          top: { xs: -14, md: 14 }, // Reducido de -16/16 a -14/14
+                          left: { xs: 14, md: 14 }, // Reducido de 16 a 14
+                          minWidth: { xs: 28, md: 36 }, // Reducido de 32/40 a 28/36
+                          height: { xs: 28, md: 36 }, // Reducido de 32/40 a 28/36
                           backgroundColor: 'primary.main',
                           color: 'white',
                           borderRadius: '50%',
@@ -771,10 +859,10 @@ export function EvaluationPage() {
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: 'bold',
-                          fontSize: { xs: '0.875rem', md: '1rem' },
+                          fontSize: { xs: '0.8rem', md: '0.95rem' }, // Reducido ligeramente
                           flexShrink: 0,
                           zIndex: 10,
-                          boxShadow: { xs: '0 2px 8px rgba(0,0,0,0.15)', md: 'none' }, // Sombra en móvil
+                          boxShadow: { xs: '0 2px 6px rgba(0,0,0,0.12)', md: 'none' }, // Sombra más sutil
                         }}
                       >
                         {index + 1}
@@ -785,10 +873,10 @@ export function EvaluationPage() {
                         sx={{
                           display: 'flex',
                           alignItems: 'flex-start',
-                          gap: { xs: 0, md: 2 }, // Sin gap en móvil porque el número está flotante
-                          mb: 3,
+                          gap: { xs: 0, md: 1.5 }, // Reducido gap en desktop
+                          mb: 2, // Reducido de 3 a 2
                           pr: 0,
-                          pl: { xs: 0, md: 6 }, // Padding left en desktop para compensar el número
+                          pl: { xs: 0, md: 5 }, // Reducido padding left de 6 a 5
                         }}
                       >
                         <Typography
@@ -796,9 +884,9 @@ export function EvaluationPage() {
                           sx={{
                             fontWeight: 'medium',
                             flexGrow: 1,
-                            fontSize: { xs: '1rem', md: '1.25rem' },
-                            lineHeight: 1.4,
-                            ml: { xs: 0, md: 0 }, // Sin margen en móvil
+                            fontSize: { xs: '0.95rem', md: '1.2rem' }, // Ligeramente más pequeño
+                            lineHeight: 1.3, // Reducido de 1.4 a 1.3
+                            ml: { xs: 0, md: 0 },
                           }}
                         >
                           {state.invitation?.role_type === 'leader' ? question.text_leader : question.text_collaborator}
@@ -807,25 +895,26 @@ export function EvaluationPage() {
 
                       {/* Pregunta tipo Likert */}
                       {question.question_type === 'likert' && (
-                        <Box sx={{ mt: 3 }}>
+                        <Box sx={{ mt: 2 }}>
+                          {' '}
+                          {/* Reducido de 3 a 2 */}
                           <Typography
                             variant="subtitle1"
                             sx={{
                               fontWeight: 'bold',
-                              mb: 3,
+                              mb: 2, // Reducido de 3 a 2
                               color: 'primary.main',
-                              fontSize: { xs: '1rem', md: '1.1rem' },
+                              fontSize: { xs: '0.9rem', md: '1rem' }, // Ligeramente más pequeño
                             }}
                           >
                             Escala de Evaluación (1-{scale})
                           </Typography>
-
                           {/* Etiquetas de extremos */}
                           <Box
                             sx={{
                               display: 'flex',
                               justifyContent: 'space-between',
-                              mb: 3,
+                              mb: 2, // Reducido de 3 a 2
                               px: 1,
                               flexDirection: { xs: 'row', sm: 'row' },
                               gap: { xs: 1, sm: 0 },
@@ -862,7 +951,6 @@ export function EvaluationPage() {
                               </Typography>
                             </Box>
                           </Box>
-
                           <RadioGroup
                             value={responses[question.id] || ''}
                             onChange={e => handleResponseChange(question.id, parseInt(e.target.value))}
@@ -876,7 +964,7 @@ export function EvaluationPage() {
                                 alignItems: 'stretch',
                               }}
                             >
-                              {Array.from({ length: scale }, (_, i) => i + 1).map(value => {
+                              {Array.from({ length: scale }, (_, i) => i + 1).map((value, index) => {
                                 const isSelected = responses[question.id] === value;
                                 const intensity = (value - 1) / (scale - 1);
 
@@ -888,11 +976,12 @@ export function EvaluationPage() {
                                       md: 12 / scale,
                                     }}
                                     sx={{ display: 'flex', justifyContent: 'center' }}
+                                    key={index}
                                   >
                                     <Paper
                                       elevation={isSelected ? 6 : 2}
                                       sx={{
-                                        p: { xs: 0.5, md: 2.5 },
+                                        p: { xs: 0.4, md: 1.2 }, // Más compacto en web
                                         cursor: 'pointer',
                                         backgroundColor: isSelected
                                           ? intensity < 0.3
@@ -910,7 +999,7 @@ export function EvaluationPage() {
                                             : 'success.main'
                                           : 'divider',
                                         transition: 'all 0.3s ease',
-                                        minHeight: { xs: 30, md: 90 },
+                                        minHeight: { xs: 28, md: 60 }, // Más compacto en web
                                         height: '100%',
                                         display: 'flex',
                                         flexDirection: 'column',
@@ -931,17 +1020,17 @@ export function EvaluationPage() {
                                         value={value}
                                         control={<Radio sx={{ display: 'none' }} />}
                                         label={
-                                          <Box sx={{ textAlign: 'center' }}>
+                                          <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                             <Box
                                               sx={{
-                                                width: { xs: 24, md: 40 },
-                                                height: { xs: 24, md: 40 },
+                                                width: { xs: 22, md: 30 }, // Más compacto en web
+                                                height: { xs: 22, md: 30 }, // Más compacto en web
                                                 borderRadius: '50%',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                margin: '0 auto 4px',
-                                                fontSize: { xs: '0.8rem', md: '1.2rem' },
+                                                mb: 0.5, // Margen inferior para separar del label
+                                                fontSize: { xs: '0.75rem', md: '0.95rem' }, // Más compacto
                                                 fontWeight: 'bold',
                                                 color: isSelected ? 'black' : 'text.primary',
                                                 background: isSelected
@@ -951,7 +1040,7 @@ export function EvaluationPage() {
                                                     ? 'warning.main'
                                                     : 'success.main'
                                                   : 'grey.400',
-                                                boxShadow: isSelected ? `0 4px 12px rgba(0,0,0,0.3)` : `0 2px 8px rgba(0,0,0,0.2)`,
+                                                boxShadow: isSelected ? `0 3px 10px rgba(0,0,0,0.25)` : `0 2px 6px rgba(0,0,0,0.15)`,
                                               }}
                                             >
                                               {value}
@@ -962,8 +1051,13 @@ export function EvaluationPage() {
                                                 sx={{
                                                   fontWeight: isSelected ? 'bold' : 'medium',
                                                   color: isSelected ? 'primary.main' : 'text.secondary',
-                                                  fontSize: { xs: '0.6rem', md: '0.8rem' },
+                                                  fontSize: { xs: '0.55rem', md: '0.65rem' }, // Más pequeño y compacto
                                                   display: { xs: 'none', sm: 'block' },
+                                                  lineHeight: 1.1, // Líneas más compactas
+                                                  textAlign: 'center',
+                                                  maxWidth: '100%', // Evitar overflow
+                                                  overflow: 'hidden',
+                                                  textOverflow: 'ellipsis',
                                                 }}
                                               >
                                                 {labels[value - 1]}
@@ -979,19 +1073,20 @@ export function EvaluationPage() {
                               })}
                             </Grid>
                           </RadioGroup>
-
                           {/* Barra de progreso visual */}
                           {responses[question.id] && (
-                            <Box sx={{ mt: 3, px: 1 }}>
+                            <Box sx={{ mt: 2, px: 1 }}>
+                              {' '}
+                              {/* Reducido de mt: 3 a mt: 2 */}
                               <LinearProgress
                                 variant="determinate"
                                 value={((responses[question.id] as number) / scale) * 100}
                                 sx={{
-                                  height: 8,
-                                  borderRadius: 4,
+                                  height: 6, // Reducido de 8 a 6
+                                  borderRadius: 3, // Reducido de 4 a 3
                                   backgroundColor: 'grey.200',
                                   '& .MuiLinearProgress-bar': {
-                                    borderRadius: 4,
+                                    borderRadius: 3,
                                     backgroundColor:
                                       (responses[question.id] as number) < scale * 0.3
                                         ? 'error.main'
@@ -1005,10 +1100,10 @@ export function EvaluationPage() {
                                 variant="caption"
                                 color="text.secondary"
                                 sx={{
-                                  mt: 1,
+                                  mt: 0.5, // Reducido de 1 a 0.5
                                   display: 'block',
                                   textAlign: 'center',
-                                  fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                  fontSize: { xs: '0.7rem', md: '0.8rem' }, // Ligeramente más pequeño
                                 }}
                               >
                                 Seleccionado: {responses[question.id]}/{scale}
@@ -1020,14 +1115,21 @@ export function EvaluationPage() {
 
                       {/* Pregunta tipo Text */}
                       {question.question_type === 'text' && (
-                        <Box sx={{ mt: 3 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2, color: 'primary.main' }}>
+                        <Box sx={{ mt: 2 }}>
+                          {' '}
+                          {/* Reducido de 3 a 2 */}
+                          <Typography
+                            variant="subtitle1"
+                            sx={{ fontWeight: 'bold', mb: 1.5, color: 'primary.main', fontSize: { xs: '0.9rem', md: '1rem' } }}
+                          >
+                            {' '}
+                            {/* Reducido mb y fontSize */}
                             Respuesta Abierta
                           </Typography>
                           <Paper
                             elevation={1}
                             sx={{
-                              p: 2,
+                              p: 1.5, // Reducido de 2 a 1.5
                               backgroundColor: 'background.default',
                               border: '2px dashed',
                               borderColor: responses[question.id] ? 'primary.main' : 'grey.300',
@@ -1037,7 +1139,7 @@ export function EvaluationPage() {
                             <TextField
                               fullWidth
                               multiline
-                              rows={6}
+                              rows={4} // Reducido de 6 a 4 filas
                               value={responses[question.id] || ''}
                               onChange={e => handleResponseChange(question.id, e.target.value)}
                               placeholder="Comparte tus ideas, experiencias o comentarios aquí..."
@@ -1052,11 +1154,19 @@ export function EvaluationPage() {
                               }}
                             />
                           </Paper>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, px: 1 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, px: 1 }}>
+                            {' '}
+                            {/* Reducido mt de 2 a 1 */}
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ fontStyle: 'italic', fontSize: { xs: '0.7rem', md: '0.75rem' } }}
+                            >
+                              {' '}
+                              {/* Texto más pequeño */}
                               Tip: Sé específico y proporciona ejemplos cuando sea posible
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', md: '0.75rem' } }}>
                               {(responses[question.id] as string)?.length || 0} caracteres
                             </Typography>
                           </Box>
@@ -1065,8 +1175,15 @@ export function EvaluationPage() {
 
                       {/* Pregunta tipo Multiple Choice */}
                       {question.question_type === 'multiple_choice' && (
-                        <Box sx={{ mt: 3 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2, color: 'primary.main' }}>
+                        <Box sx={{ mt: 2 }}>
+                          {' '}
+                          {/* Reducido de 3 a 2 */}
+                          <Typography
+                            variant="subtitle1"
+                            sx={{ fontWeight: 'bold', mb: 1.5, color: 'primary.main', fontSize: { xs: '0.9rem', md: '1rem' } }}
+                          >
+                            {' '}
+                            {/* Reducido mb y fontSize */}
                             Selección Múltiple
                           </Typography>
                           <RadioGroup
@@ -1172,11 +1289,21 @@ export function EvaluationPage() {
                     sx={{ height: 8, borderRadius: 4, mb: 3 }}
                   />
 
+                  {/* Alerta para respuestas incompletas */}
+                  {Object.keys(responses).length > 0 && Object.keys(responses).length < state.questions.length && (
+                    <Alert severity="warning" sx={{ mb: 3 }}>
+                      <Typography variant="body2">
+                        <strong>Atención:</strong> Te faltan {state.questions.length - Object.keys(responses).length} preguntas por
+                        responder. Debes completar todas las preguntas antes de enviar la evaluación.
+                      </Typography>
+                    </Alert>
+                  )}
+
                   <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                     <Button
                       variant="contained"
                       onClick={handleSubmitEvaluation}
-                      disabled={isSubmitting || Object.keys(responses).length === 0}
+                      disabled={isSubmitting || Object.keys(responses).length < state.questions.length}
                       size="large"
                       sx={{
                         px: { xs: 6, md: 8 },
@@ -1185,6 +1312,7 @@ export function EvaluationPage() {
                         fontWeight: 'bold',
                         borderRadius: 3,
                         minWidth: { xs: '200px', md: '250px' },
+                        opacity: Object.keys(responses).length < state.questions.length ? 0.7 : 1,
                       }}
                     >
                       {isSubmitting ? (
@@ -1192,6 +1320,8 @@ export function EvaluationPage() {
                           <CircularProgress size={24} sx={{ mr: 1 }} />
                           {state.existingEvaluation?.evaluation ? 'Actualizando...' : 'Enviando...'}
                         </>
+                      ) : Object.keys(responses).length < state.questions.length ? (
+                        `Completa todas las preguntas (${Object.keys(responses).length}/${state.questions.length})`
                       ) : (
                         <>{state.existingEvaluation?.evaluation ? 'Actualizar Evaluación' : 'Enviar Evaluación'}</>
                       )}

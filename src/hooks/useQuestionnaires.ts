@@ -19,7 +19,7 @@ interface UseQuestionnairesResult {
     loadTemplates: () => Promise<void>;
     createTemplate: (formData: QuestionnaireFormData) => Promise<string>;
     deleteTemplate: (templateId: string) => Promise<void>;
-    updateTemplate: (templateId: string, formData: QuestionnaireFormData) => Promise<void>;
+    updateTemplate: (templateId: string, formData: QuestionnaireFormData) => Promise<{ templateId: string; isNewVersion: boolean; message?: string }>;
     getTemplateWithQuestions: (templateId: string) => Promise<{ template: QuestionTemplate; questions: Database['public']['Tables']['questions']['Row'][]; categories: Array<{ id: string; name: string; description?: string; color?: string }> }>;
     getCategoriesByTemplate: (templateId: string) => Promise<Array<{ id: string; name: string; description?: string; color?: string }>>;
     clearError: () => void;
@@ -93,18 +93,19 @@ export function useQuestionnaires(): UseQuestionnairesResult {
         }
     }, []);
 
-    const updateTemplate = useCallback(async (templateId: string, formData: QuestionnaireFormData): Promise<void> => {
+    const updateTemplate = useCallback(async (templateId: string, formData: QuestionnaireFormData): Promise<{ templateId: string; isNewVersion: boolean; message?: string }> => {
         if (!organizationId) {
             throw new Error('Organization ID is required');
         }
 
         try {
             setError(null);
-            await questionnaireService.updateQuestionnaire(templateId, {
+            const result = await questionnaireService.updateQuestionnaireIntelligent(templateId, {
                 ...formData,
                 organizationId
             });
             await loadTemplates(); // Recargar lista
+            return result;
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Error updating template';
             setError(errorMessage);

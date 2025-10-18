@@ -37,7 +37,7 @@ import { useProjects, useTeams } from '../hooks';
 import type { Project, Team } from '../types';
 import { ProjectCard, ProjectEditor, ProjectViewer } from '../components/Projects';
 import { TeamCard, TeamEditor } from '../components/Teams/index';
-import type { CreateTeamFormData } from '../services/teamService';
+import type { CreateTeamData } from '../services/teamService';
 import type { TeamFormData } from '../components/Forms/TeamForm';
 
 // Tipo para datos del formulario de creación de proyecto
@@ -59,6 +59,7 @@ export function ProjectsModular() {
   const { projects, isLoading, createProject, updateProject, deleteProject } = useProjects();
   const { teams, createTeamWithInvitations, updateTeam, deleteTeam, refetch: refetchTeams } = useTeams();
 
+  console.log({ teams, projects });
   // Estado de la UI
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [searchTerm, setSearchTerm] = useState('');
@@ -140,12 +141,10 @@ export function ProjectsModular() {
   // Handlers para equipos
   const handleCreateTeam = async (teamData: TeamFormData) => {
     try {
-      // Convertir TeamFormData a CreateTeamFormData
-      const createData: CreateTeamFormData = {
+      // Convertir TeamFormData a CreateTeamData
+      const createData: CreateTeamData = {
         name: teamData.name,
         project_id: teamData.project_id,
-        leader_name: teamData.leader_name || '',
-        leader_email: teamData.leader_email || '',
         team_size: teamData.team_size,
         is_active: teamData.is_active,
       };

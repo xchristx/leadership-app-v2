@@ -56,12 +56,10 @@ const projectValidationSchema = Yup.object({
 
   start_date: Yup.date()
     .nullable()
-    .test('is-valid-future-date', 'La fecha de inicio debe ser válida y no anterior a hoy', function (value) {
+    .test('is-valid-date', 'La fecha de inicio debe ser válida', function (value) {
       if (!value) return true; // null es válido
       if (!isValidDate(value)) return this.createError({ message: 'Fecha inválida' });
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return value >= today;
+      return true; // Permitir cualquier fecha válida
     }),
 
   end_date: Yup.date()
@@ -130,11 +128,15 @@ export interface ProjectFormProps {
   onCancel?: () => void;
   isLoading?: boolean;
   mode: 'create' | 'edit';
+  hasEvaluations?: boolean; // Nueva prop para indicar si el proyecto tiene evaluaciones
 }
 
-export function ProjectForm({ initialData, onSubmit, onCancel, isLoading = false, mode }: ProjectFormProps) {
+export function ProjectForm({ initialData, onSubmit, onCancel, isLoading = false, mode, hasEvaluations = false }: ProjectFormProps) {
   // Hook para obtener datos del usuario y templates
   const { templates, loading: templatesLoading } = useQuestionnaires();
+
+  // Determinar si el cuestionario debe estar bloqueado
+  const isQuestionnaireDisabled = mode === 'edit' && hasEvaluations;
   // Valores iniciales del formulario
 
   const initialValues: ProjectFormData = {
@@ -147,7 +149,7 @@ export function ProjectForm({ initialData, onSubmit, onCancel, isLoading = false
     max_teams: null,
     template_id: initialData?.template_id || '',
     // Configuraciones con valores por defecto
-    allow_re_evaluation: initialData?.configuration?.allow_re_evaluation || false,
+    allow_re_evaluation: initialData?.configuration?.allow_re_evaluation ?? false,
     require_evaluator_info: initialData?.configuration?.require_evaluator_info ?? true,
     evaluation_deadline: initialData?.configuration?.evaluation_deadline ? new Date(initialData.configuration.evaluation_deadline) : null,
     reminder_days: initialData?.configuration?.reminder_days || [7, 3, 1],
@@ -162,6 +164,15 @@ export function ProjectForm({ initialData, onSubmit, onCancel, isLoading = false
   ) => {
     try {
       setStatus(null);
+
+      console.log('📤 Enviando desde ProjectForm:', {
+        allow_re_evaluation: values.allow_re_evaluation,
+        require_evaluator_info: values.require_evaluator_info,
+        email_notifications: values.email_notifications,
+        evaluation_deadline: values.evaluation_deadline,
+        reminder_days: values.reminder_days,
+      });
+
       const result = await onSubmit(values);
 
       if (!result.success) {
@@ -240,11 +251,23 @@ export function ProjectForm({ initialData, onSubmit, onCancel, isLoading = false
 
                 {/* Selección de cuestionario */}
                 <Grid size={{ xs: 12 }}>
+                  {/* Alerta cuando el cuestionario no se puede cambiar */}
+                  {isQuestionnaireDisabled && (
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      <Typography variant="body2">
+                        <strong>No se puede cambiar el cuestionario</strong>
+                        <br />
+                        Este proyecto ya tiene evaluaciones realizadas. Para mantener la consistencia de los datos, no es posible cambiar el
+                        cuestionario una vez que se han registrado respuestas.
+                      </Typography>
+                    </Alert>
+                  )}
+
                   <FormControl
                     fullWidth
                     variant="outlined"
                     error={touched.template_id && !!errors.template_id}
-                    disabled={isSubmitting || isLoading || templatesLoading}
+                    disabled={isSubmitting || isLoading || templatesLoading || isQuestionnaireDisabled}
                   >
                     <InputLabel>Cuestionario *</InputLabel>
                     <Field
@@ -253,6 +276,7 @@ export function ProjectForm({ initialData, onSubmit, onCancel, isLoading = false
                       label="Cuestionario *"
                       value={values.template_id || ''}
                       onChange={(e: React.ChangeEvent<{ value: unknown }>) => setFieldValue('template_id', e.target.value)}
+                      disabled={isQuestionnaireDisabled}
                     >
                       <MenuItem value="">
                         <em>Selecciona un cuestionario</em>
@@ -398,8 +422,11 @@ export function ProjectForm({ initialData, onSubmit, onCancel, isLoading = false
                     <FormControlLabel
                       control={
                         <Switch
-                          checked={values.allow_re_evaluation}
-                          onChange={e => setFieldValue('allow_re_evaluation', e.target.checked)}
+                          checked={Boolean(values.allow_re_evaluation)}
+                          onChange={e => {
+                            console.log('🔄 Switch allow_re_evaluation:', e.target.checked);
+                            setFieldValue('allow_re_evaluation', e.target.checked);
+                          }}
                           disabled={isSubmitting || isLoading}
                         />
                       }
@@ -408,17 +435,23 @@ export function ProjectForm({ initialData, onSubmit, onCancel, isLoading = false
                     <Typography variant="body2" color="text.secondary" sx={{ ml: 4 }}>
                       Los participantes podrán modificar sus respuestas después de enviarlas
                     </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>
+                      Valor actual: {values.allow_re_evaluation ? 'Activado' : 'Desactivado'}
+                    </Typography>
                   </FormControl>
                 </Grid>
 
                 {/* Información del evaluador */}
-                <Grid>
+                <Grid sx={{ display: 'none' }}>
                   <FormControl component="fieldset">
                     <FormControlLabel
                       control={
                         <Switch
-                          checked={values.require_evaluator_info}
-                          onChange={e => setFieldValue('require_evaluator_info', e.target.checked)}
+                          checked={Boolean(values.require_evaluator_info)}
+                          onChange={e => {
+                            console.log('🔄 Switch require_evaluator_info:', e.target.checked);
+                            setFieldValue('require_evaluator_info', e.target.checked);
+                          }}
                           disabled={isSubmitting || isLoading}
                         />
                       }
@@ -427,11 +460,14 @@ export function ProjectForm({ initialData, onSubmit, onCancel, isLoading = false
                     <Typography variant="body2" color="text.secondary" sx={{ ml: 4 }}>
                       Solicitar nombre y email antes de comenzar la evaluación
                     </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>
+                      Valor actual: {values.require_evaluator_info ? 'Activado' : 'Desactivado'}
+                    </Typography>
                   </FormControl>
                 </Grid>
 
                 {/* Fecha límite de evaluaciones */}
-                <Grid>
+                <Grid sx={{ display: 'none' }}>
                   <DatePicker
                     label="Fecha límite de evaluaciones"
                     value={values.evaluation_deadline}

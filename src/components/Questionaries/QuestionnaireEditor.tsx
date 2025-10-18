@@ -17,7 +17,7 @@ interface QuestionnaireEditorProps {
   open: boolean;
   templateId: string | null;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (message?: string, isNewVersion?: boolean) => void;
 }
 
 export function QuestionnaireEditor({ open, templateId, onClose, onSaved }: QuestionnaireEditorProps) {
@@ -79,10 +79,11 @@ export function QuestionnaireEditor({ open, templateId, onClose, onSaved }: Ques
     try {
       console.log('Update template data:', formData);
 
-      // Simular actualización exitosa
-      await updateTemplate(templateId, formData);
+      // Actualización inteligente con manejo de versionado
+      const result = await updateTemplate(templateId, formData);
 
-      onSaved();
+      // Pasar información de la actualización al componente padre
+      onSaved(result.message, result.isNewVersion);
       onClose();
 
       return { success: true };

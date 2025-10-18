@@ -13,6 +13,7 @@ import { QuestionnaireList } from '../components/Questionaries/QuestionnaireList
 import { QuestionnaireViewer } from '../components/Questionaries/QuestionnaireViewer';
 import { QuestionnaireEditor } from '../components/Questionaries/QuestionnaireEditor';
 import type { Database } from '../types/database.types';
+import { questionnaireService } from '../services/questionnaireService';
 
 type QuestionTemplate = Database['public']['Tables']['question_templates']['Row'];
 
@@ -49,6 +50,14 @@ function QuestionnairesPage() {
     }
   };
 
+  const handleUpdateResult = (message: string, isNewVersion: boolean) => {
+    if (isNewVersion) {
+      setSubmitResult(`✨ ${message}`);
+    } else {
+      setSubmitResult('¡Cuestionario actualizado exitosamente!');
+    }
+  };
+
   const handleCancel = () => {
     setViewState({ mode: 'list' });
     setSubmitResult(null);
@@ -77,6 +86,9 @@ function QuestionnairesPage() {
     setViewState({ mode: 'create' });
   };
 
+  const handleTemplate5 = async () => {
+    await questionnaireService.createLeadershipInventoryQuestionnaire('992f82cc-5bf1-4c04-ac39-120106ee05bd');
+  };
   // Renderizar según el modo actual
   const renderContent = () => {
     switch (viewState.mode) {
@@ -89,8 +101,8 @@ function QuestionnairesPage() {
             open={true}
             templateId={viewState.selectedTemplate?.id || null}
             onClose={handleCancel}
-            onSaved={() => {
-              setSubmitResult('¡Cuestionario actualizado exitosamente!');
+            onSaved={(message, isNewVersion) => {
+              handleUpdateResult(message || '¡Cuestionario actualizado exitosamente!', isNewVersion || false);
               setViewState({ mode: 'list' });
             }}
           />
@@ -121,6 +133,16 @@ function QuestionnairesPage() {
               </Box>
               <Button variant="contained" startIcon={<AddIcon />} size="large" onClick={handleCreateNew} disabled={!organizationId}>
                 Crear Cuestionario
+              </Button>
+              <Button
+                sx={{ display: 'none' }}
+                variant="contained"
+                startIcon={<AddIcon />}
+                size="large"
+                onClick={handleTemplate5}
+                disabled={!organizationId}
+              >
+                Crear template
               </Button>
             </Box>
 

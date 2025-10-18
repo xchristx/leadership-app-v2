@@ -180,10 +180,10 @@ export function QuestionsStep({ values, setFieldValue }: QuestionsStepProps) {
         </CardContent>
 
         <CardActions>
-          <Button size="small" startIcon={<EditIcon />} onClick={() => handleOpenDialog(question)}>
+          <Button type="button" size="small" startIcon={<EditIcon />} onClick={() => handleOpenDialog(question)}>
             Editar
           </Button>
-          <Button size="small" color="error" startIcon={<DeleteIcon />} onClick={() => handleDeleteQuestion(question.id!)}>
+          <Button type="button" size="small" color="error" startIcon={<DeleteIcon />} onClick={() => handleDeleteQuestion(question.id!)}>
             Eliminar
           </Button>
         </CardActions>
@@ -196,6 +196,7 @@ export function QuestionsStep({ values, setFieldValue }: QuestionsStepProps) {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h6">Preguntas ({values.questions.length})</Typography>
         <Button
+          type="button"
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
@@ -378,8 +379,11 @@ export function QuestionsStep({ values, setFieldValue }: QuestionsStepProps) {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
+          <Button type="button" onClick={() => setDialogOpen(false)}>
+            Cancelar
+          </Button>
           <Button
+            type="button"
             onClick={handleSaveQuestion}
             variant="contained"
             disabled={

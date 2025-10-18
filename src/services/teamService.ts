@@ -7,6 +7,9 @@
 import { supabase } from '../lib/supabase';
 import type { Team, CreateTeamData, UpdateTeamData, TeamInvitation } from '../types';
 
+// Re-exportar tipos para facilitar el uso
+export type { CreateTeamData, UpdateTeamData } from '../types';
+
 // ============================================================================
 // TIPOS ESPECÍFICOS DEL SERVICIO
 // ============================================================================
@@ -20,11 +23,8 @@ export interface TeamStats {
   total_members: number;
 }
 
-// Formulario para crear equipo con líder
-export interface CreateTeamFormData extends CreateTeamData {
-  leader_name: string;
-  leader_email: string;
-}
+// Ya no necesitamos CreateTeamFormData separado, usamos CreateTeamData directamente
+// Los datos del líder se completarán automáticamente cuando haga su evaluación
 
 export interface TeamDashboard {
   team: Team;
@@ -140,16 +140,25 @@ export const getTeam = async (id: string): Promise<Team | null> => {
  */
 export const createTeam = async (teamData: CreateTeamData): Promise<Team> => {
   try {
+    // Solo incluir leader_name y leader_email si están definidos y no son cadenas vacías
+    const insertData: Partial<Team> & { project_id: string; name: string; is_active: boolean } = {
+      name: teamData.name,
+      team_size: teamData.team_size,
+      project_id: teamData.project_id,
+      is_active: true
+    };
+
+    // Solo agregar campos del líder si tienen valores válidos
+    if (teamData.leader_name && teamData.leader_name.trim()) {
+      insertData.leader_name = teamData.leader_name.trim();
+    }
+    if (teamData.leader_email && teamData.leader_email.trim()) {
+      insertData.leader_email = teamData.leader_email.trim();
+    }
+
     const { data, error } = await supabase
       .from('teams')
-      .insert([{
-        name: teamData.name,
-        leader_name: teamData.leader_name,
-        leader_email: teamData.leader_email,
-        team_size: teamData.team_size,
-        project_id: teamData.project_id,
-        is_active: true
-      }])
+      .insert([insertData])
       .select(`
         id,
         name,
@@ -789,53 +798,74 @@ export const updateExistingEvaluation = async (
 /**
  * Crear equipo con invitaciones automáticas
  */
-export const createTeamWithInvitations = async (teamData: CreateTeamFormData): Promise<Team> => {
+export const createTeamWithInvitations = async (teamData: CreateTeamData): Promise<Team> => {
   try {
-    // 1. Crear el equipo básico
+    // 1. Crear el equipo básico (sin datos del líder)
     const newTeam = await createTeam({
       name: teamData.name,
       project_id: teamData.project_id,
-      team_size: teamData.team_size
+      team_size: teamData.team_size,
+      // No incluir leader_name ni leader_email - se completarán automáticamente
     });
 
     // 2. Crear invitaciones automáticamente
     const invitations = await createTeamInvitations(newTeam.id);
 
-    // 3. Agregar información del líder al equipo
-    const { data: updatedTeam, error: updateError } = await supabase
-      .from('teams')
-      .update({
-        leader_name: teamData.leader_name,
-        leader_email: teamData.leader_email,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', newTeam.id)
-      .select(`
-        id,
-        name,
-        leader_name,
-        leader_email,
-        team_size,
-        is_active,
-        project_id,
-        created_at,
-        updated_at
-      `)
-      .single();
-
-    if (updateError) {
-      console.warn('Error al actualizar información del líder:', updateError);
-      // No es crítico, devolvemos el equipo sin la info del líder
-    }
-
+    // 3. Retornar el equipo con sus invitaciones (sin datos del líder por ahora)
     console.log('Equipo creado exitosamente con invitaciones:', {
-      team: updatedTeam || newTeam,
+      team: newTeam,
       invitations: invitations.length
     });
 
-    return (updatedTeam || newTeam) as Team;
+    return {
+      ...newTeam,
+      invitations
+    };
   } catch (error) {
     console.error('Error in createTeamWithInvitations:', error);
     throw error;
+  }
+};
+
+/**
+ * Actualizar información del líder automáticamente cuando complete su primera evaluación
+ */
+export const updateTeamLeaderInfo = async (
+  teamId: string,
+  leaderName: string,
+  leaderEmail: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // Actualizar solo si los campos están vacíos (primera vez que el líder completa evaluación)
+    const { error } = await supabase
+      .from('teams')
+      .update({
+        leader_name: leaderName,
+        leader_email: leaderEmail,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', teamId)
+      .is('leader_name', null) // Solo actualizar si leader_name es NULL
+      .select('id, leader_name, leader_email')
+      .single();
+
+    if (error) {
+      // Si el error es porque no se encontró (ya tenía datos), no es un error crítico
+      if (error.code === 'PGRST116') {
+        console.log('Información del líder ya estaba completa:', { teamId });
+        return { success: true };
+      }
+      console.error('Error al actualizar información del líder:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('Información del líder actualizada exitosamente:', { teamId, leaderName, leaderEmail });
+    return { success: true };
+  } catch (error) {
+    console.error('Error in updateTeamLeaderInfo:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    };
   }
 };

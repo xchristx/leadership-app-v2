@@ -326,7 +326,7 @@ export const questionnaireService = {
             }
 
             // 4. Clasificar operaciones: UPDATE, INSERT, DELETE
-            const questionsToUpdate: Array<{id: string, updates: Partial<QuestionInsert>}> = [];
+            const questionsToUpdate: Array<{ id: string, updates: Partial<QuestionInsert> }> = [];
             const questionsToInsert: QuestionInsert[] = [];
             const questionIdsInForm = new Set<string>();
 
@@ -416,6 +416,168 @@ export const questionnaireService = {
         }
     },
 
+    // Verificar si el template ya está siendo usado en evaluaciones
+    async checkIfTemplateHasEvaluations(templateId: string): Promise<boolean> {
+        try {
+            // Verificar en la tabla evaluations si hay evaluaciones que usen este template
+            const { data, error } = await supabase
+                .from('evaluations')
+                .select('id')
+                .eq('template_id', templateId)
+                .limit(1); // Solo necesitamos saber si existe al menos una
+
+            if (error) {
+                console.error('Error checking evaluations:', error);
+                throw error;
+            }
+
+            const hasEvaluations = data && data.length > 0;
+            console.log(`📊 Template ${templateId} ${hasEvaluations ? 'tiene' : 'no tiene'} evaluaciones`);
+
+            return hasEvaluations;
+        } catch (error) {
+            console.error('Error checking if template has evaluations:', error);
+            // En caso de error, asumir que tiene evaluaciones para ser conservador
+            return true;
+        }
+    },
+
+    // Crear nueva versión del template (preserva el original)
+    async createNewTemplateVersion(
+        originalTemplateId: string,
+        formData: QuestionnaireFormData & { organizationId: string }
+    ): Promise<{ newTemplateId: string; isNewVersion: boolean }> {
+        try {
+            console.log('🔄 Creando nueva versión del cuestionario:', originalTemplateId);
+
+            // 1. Obtener el template original
+            const { data: originalTemplate, error: templateError } = await supabase
+                .from('question_templates')
+                .select('*')
+                .eq('id', originalTemplateId)
+                .single();
+
+            if (templateError || !originalTemplate) {
+                throw new Error('No se pudo obtener el template original');
+            }
+
+            // 2. Crear mapeo de categorías
+            const categoryDataMap: Record<string, CategoryData> = {};
+            if (formData.categories && formData.categories.length > 0) {
+                formData.categories.forEach((category) => {
+                    categoryDataMap[category.id] = {
+                        id: category.id,
+                        name: category.name,
+                        description: category.description || '',
+                        color: category.color || '#1976d2'
+                    };
+                });
+            }
+
+            // 3. Crear nuevo template con versioning
+            const currentDate = new Date().toISOString().split('T')[0];
+            const versionSuffix = ` (v${currentDate})`;
+
+            const newTemplateData: QuestionTemplateInsert = {
+                title: formData.title_leader + (formData.title_leader.includes('(v') ? '' : versionSuffix),
+                description: formData.description_leader || formData.description_collaborator || null,
+                organization_id: formData.organizationId,
+                is_active: true,
+                categories: (formData.categories as unknown as Json) || null
+            };
+
+            const { data: newTemplate, error: newTemplateError } = await supabase
+                .from('question_templates')
+                .insert(newTemplateData)
+                .select()
+                .single();
+
+            if (newTemplateError || !newTemplate) {
+                throw new Error('Error creando nueva versión del template');
+            }
+
+            // 4. Crear preguntas para la nueva versión
+            const questionsToInsert: QuestionInsert[] = formData.questions.map((question, index) => ({
+                template_id: newTemplate.id,
+                text_leader: question.text_leader,
+                text_collaborator: question.text_collaborator,
+                question_type: question.question_type,
+                category: question.category_id ? (categoryDataMap[question.category_id] as unknown as Json) || null : null,
+                order_index: index,
+                response_config: question.response_config as Json,
+                is_active: true
+            }));
+
+            const { data: insertedQuestions, error: questionsError } = await supabase
+                .from('questions')
+                .insert(questionsToInsert)
+                .select('id');
+
+            if (questionsError) {
+                // Si falla la inserción de preguntas, eliminar el template creado
+                await supabase
+                    .from('question_templates')
+                    .delete()
+                    .eq('id', newTemplate.id);
+
+                throw questionsError;
+            }
+
+            console.log(`✅ Nueva versión creada: ${newTemplate.id} con ${insertedQuestions?.length || 0} preguntas`);
+
+            return {
+                newTemplateId: newTemplate.id,
+                isNewVersion: true
+            };
+
+        } catch (error) {
+            console.error('❌ Error creating new template version:', error);
+            throw error;
+        }
+    },
+
+    // Actualización inteligente: edita o crea nueva versión según sea necesario
+    async updateQuestionnaireIntelligent(
+        templateId: string,
+        formData: QuestionnaireFormData & { organizationId: string }
+    ): Promise<{ templateId: string; isNewVersion: boolean; message?: string }> {
+        try {
+            console.log('🧠 Iniciando actualización inteligente de cuestionario:', templateId);
+
+            // 1. Verificar si el template ya está siendo usado en evaluaciones
+            const hasEvaluations = await this.checkIfTemplateHasEvaluations(templateId);
+
+            if (hasEvaluations) {
+                // 2a. Crear nueva versión para preservar datos existentes
+                console.log('📊 Template en uso - Creando nueva versión...');
+
+                const result = await this.createNewTemplateVersion(templateId, formData);
+
+                return {
+                    templateId: result.newTemplateId,
+                    isNewVersion: true,
+                    message: 'Este cuestionario ya está siendo usado en evaluaciones. Se ha creado una nueva versión para preservar los datos existentes.'
+                };
+
+            } else {
+                // 2b. Edición normal - no hay evaluaciones
+                console.log('📝 Template sin usar - Actualizando directamente...');
+
+                await this.updateQuestionnaire(templateId, formData);
+
+                return {
+                    templateId: templateId,
+                    isNewVersion: false,
+                    message: 'Cuestionario actualizado exitosamente.'
+                };
+            }
+
+        } catch (error) {
+            console.error('❌ Error in intelligent questionnaire update:', error);
+            throw error;
+        }
+    },
+
     // Obtener categorías de un template específico
     async getCategoriesByTemplate(templateId: string) {
         const { data, error } = await supabase
@@ -496,37 +658,45 @@ export const questionnaireService = {
 
     // Crear el cuestionario específico "Inventario de Prácticas de Liderazgo"
     async createLeadershipInventoryQuestionnaire(organizationId: string): Promise<string> {
+        const categories = [
+            "cat_1760573578708",    // MODELAR EL CAMINO
+            "cat_1760573593956",    // INSPIRAR UNA VISIÓN COMPARTIDA  
+            "cat_1760573609580",    // DESAFIAR EL PROCESO
+            "cat_1760573614485",    // CAPACITAR A OTROS PARA LA ACCIÓN
+            "cat_1760573662454"     // ESTIMULAR EMOTIVAMENTE
+        ];
+
         const leadershipQuestions = [
-            { leader: "Demuestro con mi ejemplo lo que espero de los miembros de mi equipo.", collaborator: "Demuestra con su ejemplo lo que espera de los demás." },
-            { leader: "Hablo con mi equipo sobre las tendencias futuras de la organización y como estas podrían influenciar nuestro trabajo. Describo a los demás el futuro que me gustaría crear junto con ellos", collaborator: "Habla sobre las tendencias futuras de la Organización y como estas podrían influenciar el trabajo del equipo. Describo a los demás el futuro que me gustaría crear junto con ellos" },
-            { leader: "Busco oportunidades desafiantes que ponen a prueba mis propias habilidades y habilidades.", collaborator: "Busca oportunidades desafiantes que ponen a prueba sus propias habilidades y habilidades." },
-            { leader: "Desarrollo relaciones de cooperación con los miembros de mi equipo.", collaborator: "Desarrolla relaciones de cooperación con el equipo de trabajo." },
-            { leader: "Elogio a la gente cuando hace un buen trabajo", collaborator: "Elogia a la gente cuando hace un buen trabajo" },
-            { leader: "Gasto tiempo y energía para asegurarme que las personas cumplan los principios y estándares que hemos acordado.", collaborator: "Gasta tiempo y energía para asegurarse que los miembros del equipo cumplamos los principios y estándares que hemos acordado." },
-            { leader: "Describo a los miembros de mi equipo una imagen convincente del futuro que me gustaría crear junto a ellos", collaborator: "Suele dar una imagen convincente del futuro que le gustaría crear con el equipo de trabajo." },
-            { leader: "Incentivo y desafío a mis colaboradores para que busquen formas nuevas o innovadoras para hacer el trabajo", collaborator: "Nos incentiva y desafía para que busquemos formas nuevas o innovadoras de hacer el trabajo" },
-            { leader: "Escucho activamente puntos de vista diferentes", collaborator: "Escucha activamente puntos de vista diferentes" },
-            { leader: "Busco que el personal a mi cargo desarrolle confianza en sus propias habilidades y capacidades", collaborator: "Busca que el personal a su cargo desarrolle confianza en sus propias habilidades y capacidades" },
-            { leader: "Cumplo las promesas y los compromisos que hago", collaborator: "Cumple las promesas y los compromisos que hace." },
-            { leader: "Demuestro motivación y entusiasmo contagioso sobre las posibilidades de futuro", collaborator: "Demuestra motivación y entusiasmo contagioso sobre las posibilidades de futuro" },
-            { leader: "Busco maneras innovadoras que puedan mejorar los procesos actuales.", collaborator: "Busca maneras innovadoras que puedan mejorar los procesos actuales." },
-            { leader: "Trato con dignidad y respecto a los miembros de mi equipo.", collaborator: "Trata con dignidad y respecto a los demás" },
-            { leader: "Me aseguro que mis colaboradores sean reconocidos por las contribuciones que realizan para el éxito del trabajo.", collaborator: "Se asegura que los miembros del equipo sean reconocidos por las contribuciones que realizan para el éxito del trabajo." },
-            { leader: "Pido que me den retroalimentación sobre cómo mis acciones afectan el rendimiento del equipo.", collaborator: "Pide retroalimentación sobre cómo sus acciones afectan el rendimiento del equipo." },
-            { leader: "Demuestro a los miembros de mi equipo como las metas a largo plazo se pueden realizar mediante el compromiso con una visión compartida.", collaborator: "Demuestra a los miembros del equipo como las metas a largo plazo se pueden realizar mediante el compromiso con una visión compartida." },
-            { leader: "Cuando las cosas no salen como esperábamos pregunto: ¿qué podemos aprender?", collaborator: "Cuando las cosas no salen como esperábamos pregunta: ¿qué podemos aprender?" },
-            { leader: "Apoyo las decisiones que mis colaboradores toman por sí mismos.", collaborator: "Apoya las decisiones que los miembros del equipo toman por sí mismos." },
-            { leader: "Reconozco públicamente a los miembros de mi equipo que dan ejemplo de compromiso con los valores de la organización.", collaborator: "Reconoce públicamente a los miembros del equipo que dan ejemplo de compromiso con los valores de la organización." },
-            { leader: "Establezco consenso con el equipo sobre los valores que debemos seguir en la organización.", collaborator: "Establece consenso con el equipo sobre los valores que deben seguir en la organización." },
-            { leader: "Explico a mi personal el \"cuadro grande\" de lo que queremos alcanzar.", collaborator: "Explica al equipo el \"cuadro grande\" de lo que se quiere alcanzar." },
-            { leader: "Me aseguro que las personas que trabajan conmigo tengan claro los objetivos del trabajo, elaboren planes y establezcan metas para el trabajo", collaborator: "Se asegura que las personas del equipo tengan claro los objetivos del trabajo, elaboren planes y establezcan metas para el trabajo" },
-            { leader: "Otorgo bastante libertad a mi personal para decidir sobre la forma en que quieren realizar su trabajo", collaborator: "Otorga bastante libertad al personal para decidir sobre la forma en que quieren realizar su trabajo" },
-            { leader: "Celebro con el equipo las metas cumplidas", collaborator: "Celebra con el equipo las metas cumplidas" },
-            { leader: "Estoy claro/a de cuál es mi filosofía de liderazgo", collaborator: "Todos conocemos cuál es su filosofía de liderazgo" },
-            { leader: "Hablo con convicción sobre la trascendencia y el propósito del trabajo que hacemos", collaborator: "Habla con convicción sobre la trascendencia y el propósito del trabajo que hacemos" },
-            { leader: "Experimento y me arriesgo con nuevos enfoques en el trabajo, a pesar de que haya la posibilidad de que fallen", collaborator: "Experimenta y se arriesgo con nuevos enfoques en el trabajo, a pesar de que haya la posibilidad de que fallen" },
-            { leader: "Me aseguro de que mis colaboradores estén aprendiendo y desarrollando nuevas habilidades en el trabajo.", collaborator: "Se asegura de que sus colaboradores estén aprendiendo y desarrollando nuevas habilidades en el trabajo." },
-            { leader: "Demuestro mucho aprecio por el trabajo que hacen los miembros de mi equipo y doy soporte a las contribuciones hechas.", collaborator: "Demuestra mucho aprecio por el trabajo que hacen los miembros del equipo y da soporte a las contribuciones hechas." }
+            { leader: "Demuestro con mi ejemplo lo que espero de los miembros de mi equipo.", collaborator: "Demuestra con su ejemplo lo que espera de los demás.", cat: categories[0] },
+            { leader: "Hablo con mi equipo sobre las tendencias futuras de la organización y como estas podrían influenciar nuestro trabajo. Describo a los demás el futuro que me gustaría crear junto con ellos", collaborator: "Habla sobre las tendencias futuras de la Organización y como estas podrían influenciar el trabajo del equipo. Describo a los demás el futuro que me gustaría crear junto con ellos", cat: categories[1] },
+            { leader: "Busco oportunidades desafiantes que ponen a prueba mis propias habilidades y habilidades.", collaborator: "Busca oportunidades desafiantes que ponen a prueba sus propias habilidades y habilidades.", cat: categories[2] },
+            { leader: "Desarrollo relaciones de cooperación con los miembros de mi equipo.", collaborator: "Desarrolla relaciones de cooperación con el equipo de trabajo.", cat: categories[3] },
+            { leader: "Elogio a la gente cuando hace un buen trabajo", collaborator: "Elogia a la gente cuando hace un buen trabajo", cat: categories[4] },
+            { leader: "Gasto tiempo y energía para asegurarme que las personas cumplan los principios y estándares que hemos acordado.", collaborator: "Gasta tiempo y energía para asegurarse que los miembros del equipo cumplamos los principios y estándares que hemos acordado.", cat: categories[0] },
+            { leader: "Describo a los miembros de mi equipo una imagen convincente del futuro que me gustaría crear junto a ellos", collaborator: "Suele dar una imagen convincente del futuro que le gustaría crear con el equipo de trabajo.", cat: categories[1] },
+            { leader: "Incentivo y desafío a mis colaboradores para que busquen formas nuevas o innovadoras para hacer el trabajo", collaborator: "Nos incentiva y desafía para que busquemos formas nuevas o innovadoras de hacer el trabajo", cat: categories[2] },
+            { leader: "Escucho activamente puntos de vista diferentes", collaborator: "Escucha activamente puntos de vista diferentes", cat: categories[3] },
+            { leader: "Busco que el personal a mi cargo desarrolle confianza en sus propias habilidades y capacidades", collaborator: "Busca que el personal a su cargo desarrolle confianza en sus propias habilidades y capacidades", cat: categories[4] },
+            { leader: "Cumplo las promesas y los compromisos que hago", collaborator: "Cumple las promesas y los compromisos que hace.", cat: categories[0] },
+            { leader: "Demuestro motivación y entusiasmo contagioso sobre las posibilidades de futuro", collaborator: "Demuestra motivación y entusiasmo contagioso sobre las posibilidades de futuro", cat: categories[1] },
+            { leader: "Busco maneras innovadoras que puedan mejorar los procesos actuales.", collaborator: "Busca maneras innovadoras que puedan mejorar los procesos actuales.", cat: categories[2] },
+            { leader: "Trato con dignidad y respecto a los miembros de mi equipo.", collaborator: "Trata con dignidad y respecto a los demás", cat: categories[3] },
+            { leader: "Me aseguro que mis colaboradores sean reconocidos por las contribuciones que realizan para el éxito del trabajo.", collaborator: "Se asegura que los miembros del equipo sean reconocidos por las contribuciones que realizan para el éxito del trabajo.", cat: categories[4] },
+            { leader: "Pido que me den retroalimentación sobre cómo mis acciones afectan el rendimiento del equipo.", collaborator: "Pide retroalimentación sobre cómo sus acciones afectan el rendimiento del equipo.", cat: categories[0] },
+            { leader: "Demuestro a los miembros de mi equipo como las metas a largo plazo se pueden realizar mediante el compromiso con una visión compartida.", collaborator: "Demuestra a los miembros del equipo como las metas a largo plazo se pueden realizar mediante el compromiso con una visión compartida.", cat: categories[1] },
+            { leader: "Cuando las cosas no salen como esperábamos pregunto: ¿qué podemos aprender?", collaborator: "Cuando las cosas no salen como esperábamos pregunta: ¿qué podemos aprender?", cat: categories[2] },
+            { leader: "Apoyo las decisiones que mis colaboradores toman por sí mismos.", collaborator: "Apoya las decisiones que los miembros del equipo toman por sí mismos.", cat: categories[3] },
+            { leader: "Reconozco públicamente a los miembros de mi equipo que dan ejemplo de compromiso con los valores de la organización.", collaborator: "Reconoce públicamente a los miembros del equipo que dan ejemplo de compromiso con los valores de la organización.", cat: categories[4] },
+            { leader: "Establezco consenso con el equipo sobre los valores que debemos seguir en la organización.", collaborator: "Establece consenso con el equipo sobre los valores que deben seguir en la organización.", cat: categories[0] },
+            { leader: "Explico a mi personal el \"cuadro grande\" de lo que queremos alcanzar.", collaborator: "Explica al equipo el \"cuadro grande\" de lo que se quiere alcanzar.", cat: categories[1] },
+            { leader: "Me aseguro que las personas que trabajan conmigo tengan claro los objetivos del trabajo, elaboren planes y establezcan metas para el trabajo", collaborator: "Se asegura que las personas del equipo tengan claro los objetivos del trabajo, elaboren planes y establezcan metas para el trabajo", cat: categories[2] },
+            { leader: "Otorgo bastante libertad a mi personal para decidir sobre la forma en que quieren realizar su trabajo", collaborator: "Otorga bastante libertad al personal para decidir sobre la forma en que quieren realizar su trabajo", cat: categories[3] },
+            { leader: "Celebro con el equipo las metas cumplidas", collaborator: "Celebra con el equipo las metas cumplidas", cat: categories[4] },
+            { leader: "Estoy claro/a de cuál es mi filosofía de liderazgo", collaborator: "Todos conocemos cuál es su filosofía de liderazgo", cat: categories[0] },
+            { leader: "Hablo con convicción sobre la trascendencia y el propósito del trabajo que hacemos", collaborator: "Habla con convicción sobre la trascendencia y el propósito del trabajo que hacemos", cat: categories[1] },
+            { leader: "Experimento y me arriesgo con nuevos enfoques en el trabajo, a pesar de que haya la posibilidad de que fallen", collaborator: "Experimenta y se arriesgo con nuevos enfoques en el trabajo, a pesar de que haya la posibilidad de que fallen", cat: categories[2] },
+            { leader: "Me aseguro de que mis colaboradores estén aprendiendo y desarrollando nuevas habilidades en el trabajo.", collaborator: "Se asegura de que sus colaboradores estén aprendiendo y desarrollando nuevas habilidades en el trabajo.", cat: categories[3] },
+            { leader: "Demuestro mucho aprecio por el trabajo que hacen los miembros de mi equipo y doy soporte a las contribuciones hechas.", collaborator: "Demuestra mucho aprecio por el trabajo que hacen los miembros del equipo y da soporte a las contribuciones hechas.", cat: categories[4] }
         ];
 
         const formData: QuestionnaireFormData & { organizationId: string } = {
@@ -536,32 +706,37 @@ export const questionnaireService = {
             description_collaborator: "POR FAVOR, PIENSE EN CÓMO SU LÍNEA DE SUPERVISIÓN SUELE ACTUAR GENERALMENTE EN EL TRABAJO Y COLOQUE LA FRECUENCIA CON LA QUE DEMUESTRA LOS COMPORTAMIENTOS ENUNCIADOS.\nNOMBRE DE SU LÍNEA DE SUPERVISIÓN: \n\n1: Rara vez\n2: De vez en cuando\n3: Algunas veces\n4: Con frecuencia\n5: Muy frecuentemente",
             version_type: 'both',
             is_active: true,
-            use_categories: false,
+            use_categories: true,
             organizationId,
             categories: [
                 {
                     "id": "cat_1760573578708",
                     "name": "MODELAR EL CAMINO",
+                    "color": "#1976d2",
                     "order_index": 0
                 },
                 {
                     "id": "cat_1760573593956",
                     "name": "INSPIRAR UNA VISIÓN COMPARTIDA",
+                    "color": "#388e3c",
                     "order_index": 1
                 },
                 {
                     "id": "cat_1760573609580",
                     "name": "DESAFIAR EL PROCESO",
+                    "color": "#f57c00",
                     "order_index": 2
                 },
                 {
                     "id": "cat_1760573614485",
                     "name": "CAPACITAR A OTROS PARA LA ACCIÓN",
+                    "color": "#7b1fa2",
                     "order_index": 3
                 },
                 {
                     "id": "cat_1760573662454",
                     "name": "ESTIMULAR EMOTIVAMENTE",
+                    "color": "#d32f2f",
                     "order_index": 4
                 }
             ],
@@ -570,7 +745,7 @@ export const questionnaireService = {
                 text_leader: question.leader,
                 text_collaborator: question.collaborator,
                 question_type: 'likert' as const,
-                category_id: undefined,
+                category_id: question.cat,
                 order_index: index,
                 is_active: true,
                 response_config: {

@@ -13,7 +13,7 @@ import {
 import { useAuth } from './useAuth'
 import * as teamService from '../services/teamService'
 import type { Team, CreateTeamData, UpdateTeamData, TeamInvitation } from '../types'
-import type { TeamStats, TeamDashboard, CreateTeamFormData } from '../services/teamService'
+import type { TeamStats, TeamDashboard } from '../services/teamService'
 
 // Resultado de mutación
 interface MutationResult<T = unknown> {
@@ -67,7 +67,7 @@ export function useTeams(organizationId?: string) {
     }, [refetch])
 
     // Crear equipo con invitaciones automáticas
-    const createTeamWithInvitations = useCallback(async (teamData: CreateTeamFormData): Promise<MutationResult<Team>> => {
+    const createTeamWithInvitations = useCallback(async (teamData: CreateTeamData): Promise<MutationResult<Team>> => {
         setIsCreating(true)
         try {
             const newTeam = await teamService.createTeamWithInvitations(teamData)

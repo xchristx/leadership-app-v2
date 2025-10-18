@@ -267,7 +267,7 @@ export function QuestionnaireViewer({ template, onEdit, onClose }: Questionnaire
       </Paper>
 
       {/* Tabs para vista líder y colaborador */}
-      <Card>
+      <Card sx={{ px: 2 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={selectedTab} onChange={handleTabChange} aria-label="questionnaire tabs">
             <Tab label="Vista para Líderes" id="tab-0" aria-controls="tabpanel-0" />

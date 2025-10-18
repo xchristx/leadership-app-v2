@@ -21,9 +21,17 @@ export function ProjectFormWithMutations({ projectId, onSuccess, mode, ...props 
 
   const handleSubmit = async (formData: Parameters<ProjectFormProps['onSubmit']>[0]) => {
     try {
+      console.log('📝 FormData recibida:', {
+        allow_re_evaluation: formData.allow_re_evaluation,
+        require_evaluator_info: formData.require_evaluator_info,
+        email_notifications: formData.email_notifications,
+        evaluation_deadline: formData.evaluation_deadline,
+        reminder_days: formData.reminder_days,
+      });
+
       if (mode === 'create') {
         // Crear nuevo proyecto
-        const result = await createProjectMutation.mutateAsync({
+        const createData = {
           organization_id: profile?.organization_id || '',
           name: formData.name,
           description: formData.description,
@@ -32,19 +40,22 @@ export function ProjectFormWithMutations({ projectId, onSuccess, mode, ...props 
           start_date: formData.start_date?.toISOString(),
           end_date: formData.end_date?.toISOString(),
           // Configuraciones
-          allow_re_evaluation: formData.allow_re_evaluation,
-          require_evaluator_info: formData.require_evaluator_info,
-          evaluation_deadline: formData.evaluation_deadline?.toISOString(),
-          reminder_days: formData.reminder_days,
-          email_notifications: formData.email_notifications,
-        });
+          allow_re_evaluation: Boolean(formData.allow_re_evaluation),
+          require_evaluator_info: Boolean(formData.require_evaluator_info),
+          evaluation_deadline: formData.evaluation_deadline?.toISOString() || undefined,
+          reminder_days: formData.reminder_days || [7, 3, 1],
+          email_notifications: Boolean(formData.email_notifications),
+        };
+
+        console.log('🚀 Enviando datos de creación:', createData);
+        const result = await createProjectMutation.mutateAsync(createData);
 
         console.log('Proyecto creado exitosamente:', result.id);
         onSuccess?.(result.id);
         return { success: true };
       } else if (mode === 'edit' && projectId) {
         // Actualizar proyecto existente
-        const result = await updateProjectMutation.mutateAsync({
+        const updateData = {
           projectId,
           formData: {
             name: formData.name,
@@ -53,13 +64,16 @@ export function ProjectFormWithMutations({ projectId, onSuccess, mode, ...props 
             end_date: formData.end_date?.toISOString(),
             status: formData.status,
             // Configuraciones
-            allow_re_evaluation: formData.allow_re_evaluation,
-            require_evaluator_info: formData.require_evaluator_info,
-            evaluation_deadline: formData.evaluation_deadline?.toISOString(),
-            reminder_days: formData.reminder_days,
-            email_notifications: formData.email_notifications,
+            allow_re_evaluation: Boolean(formData.allow_re_evaluation),
+            require_evaluator_info: Boolean(formData.require_evaluator_info),
+            evaluation_deadline: formData.evaluation_deadline?.toISOString() || undefined,
+            reminder_days: formData.reminder_days || [7, 3, 1],
+            email_notifications: Boolean(formData.email_notifications),
           },
-        });
+        };
+
+        console.log('🔄 Enviando datos de actualización:', updateData);
+        const result = await updateProjectMutation.mutateAsync(updateData);
 
         console.log('Proyecto actualizado exitosamente:', result.id);
         onSuccess?.(result.id);

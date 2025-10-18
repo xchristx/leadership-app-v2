@@ -33,7 +33,7 @@ import { useProjects } from '../hooks/useProjects';
 import { TeamCard, TeamEditor, TeamDashboard } from '../components/Teams/index';
 import { TeamForm } from '../components/Forms';
 import type { Team, Project } from '../types';
-import type { CreateTeamFormData } from '../services/teamService';
+import type { CreateTeamData } from '../services/teamService';
 import type { TeamFormData } from '../components/Forms/TeamForm';
 
 interface TabPanelProps {
@@ -81,12 +81,10 @@ export function TeamsModular() {
 
   const handleCreateTeam = async (teamData: TeamFormData) => {
     try {
-      // Convertir TeamFormData a CreateTeamFormData
-      const createData: CreateTeamFormData = {
+      // Convertir TeamFormData a CreateTeamData
+      const createData: CreateTeamData = {
         name: teamData.name,
         project_id: teamData.project_id,
-        leader_name: teamData.leader_name || '',
-        leader_email: teamData.leader_email || '',
         team_size: teamData.team_size,
         is_active: teamData.is_active,
       };
@@ -256,7 +254,7 @@ export function TeamsModular() {
       </Grid>
 
       {/* Tabs principales */}
-      <Card>
+      <Card sx={{ px: 2 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={tabValue} onChange={handleTabChange}>
             <Tab label="Todos los Equipos" />

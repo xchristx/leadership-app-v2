@@ -202,6 +202,82 @@ const components = {
             },
         },
     },
+
+    MuiDialog: {
+        styleOverrides: {
+            paper: {
+                borderRadius: 12,
+            },
+        },
+    },
+
+    MuiDialogContent: {
+        styleOverrides: {
+            root: {
+                // Estilos de scrollbar personalizados para todos los DialogContent
+                '&::-webkit-scrollbar': {
+                    width: '8px',
+                },
+                '&::-webkit-scrollbar-track': {
+                    background: '#f1f1f1',
+                    borderRadius: '4px',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                    background: '#888',
+                    borderRadius: '4px',
+                    '&:hover': {
+                        background: '#555',
+                    },
+                },
+                // Para Firefox
+                scrollbarWidth: 'thin' as const,
+                scrollbarColor: '#888 #f1f1f1',
+            },
+        },
+    },
+
+    // Aplicar también a otros componentes con scroll
+    MuiMenu: {
+        styleOverrides: {
+            paper: {
+                '&::-webkit-scrollbar': {
+                    width: '6px',
+                },
+                '&::-webkit-scrollbar-track': {
+                    background: '#f1f1f1',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                    background: '#888',
+                    borderRadius: '3px',
+                    '&:hover': {
+                        background: '#555',
+                    },
+                },
+                scrollbarWidth: 'thin' as const,
+                scrollbarColor: '#888 #f1f1f1',
+            },
+        },
+    },
+
+    MuiSelect: {
+        styleOverrides: {
+            select: {
+                '&::-webkit-scrollbar': {
+                    width: '6px',
+                },
+                '&::-webkit-scrollbar-track': {
+                    background: '#f1f1f1',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                    background: '#888',
+                    borderRadius: '3px',
+                    '&:hover': {
+                        background: '#555',
+                    },
+                },
+            },
+        },
+    },
 }
 
 // ============================================================================

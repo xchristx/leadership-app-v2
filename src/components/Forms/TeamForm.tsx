@@ -37,14 +37,6 @@ const validationSchema = Yup.object().shape({
 
   project_id: Yup.string().required('Debe seleccionar un proyecto'),
 
-  leader_name: Yup.string()
-    .optional()
-    .min(2, 'El nombre debe tener al menos 2 caracteres')
-    .max(50, 'El nombre no puede exceder 50 caracteres')
-    .nullable(),
-
-  leader_email: Yup.string().optional().email('Debe ser un email válido').max(100, 'El email no puede exceder 100 caracteres').nullable(),
-
   team_size: Yup.number()
     .required('El tamaño del equipo es requerido')
     .min(2, 'Un equipo debe tener al menos 2 miembros')
@@ -56,8 +48,6 @@ const validationSchema = Yup.object().shape({
 export type TeamFormData = {
   name: string;
   project_id: string;
-  leader_name?: string | null;
-  leader_email?: string | null;
   team_size: number;
   is_active: boolean;
 };
@@ -78,8 +68,6 @@ export function TeamForm({ initialData, onSubmit, onCancel, isLoading = false, m
   const initialValues: TeamFormData = {
     name: initialData?.name || '',
     project_id: initialData?.project_id || '',
-    leader_name: initialData?.leader_name || null,
-    leader_email: initialData?.leader_email || null,
     team_size: initialData?.team_size || 5,
     is_active: initialData?.is_active ?? true,
   };
@@ -175,33 +163,6 @@ export function TeamForm({ initialData, onSubmit, onCancel, isLoading = false, m
                         : 'Seleccione el proyecto al que pertenecerá este equipo'}
                     </FormHelperText>
                   </FormControl>
-                </Grid>
-
-                {/* Nombre del líder */}
-                <Grid sx={{ display: 'none' }} size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    name="leader_name"
-                    label="Nombre del Líder"
-                    value={values.leader_name}
-                    onChange={e => setFieldValue('leader_name', e.target.value)}
-                    error={touched.leader_name && !!errors.leader_name}
-                    helperText={(touched.leader_name && errors.leader_name) || 'Opcional: Nombre del líder del equipo'}
-                  />
-                </Grid>
-
-                {/* Email del líder */}
-                <Grid sx={{ display: 'none' }} size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    type="email"
-                    name="leader_email"
-                    label="Email del Líder"
-                    value={values.leader_email}
-                    onChange={e => setFieldValue('leader_email', e.target.value)}
-                    error={touched.leader_email && !!errors.leader_email}
-                    helperText={(touched.leader_email && errors.leader_email) || 'Opcional: Email del líder del equipo'}
-                  />
                 </Grid>
 
                 {/* Tamaño del equipo */}

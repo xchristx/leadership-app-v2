@@ -503,31 +503,31 @@ export const getProjectStats = async (projectId: string): Promise<ProjectStats> 
         }
 
         // Obtener cantidad de invitaciones
-        const { data: invitationsData, error: invitationsError } = await supabase
-            .from('team_invitations')
-            .select('id, is_used')
-            .in('team_id', teamsData?.map(t => t.id) || [])
-            .eq('is_active', true);
+        // const { data: invitationsData, error: invitationsError } = await supabase
+        //     .from('team_invitations')
+        //     .select('id, is_used')
+        //     .in('team_id', teamsData?.map(t => t.id) || [])
+        //     .eq('is_active', true);
 
-        if (invitationsError) {
-            console.warn('Error getting invitations count:', invitationsError);
-        }
+        // if (invitationsError) {
+        //     console.warn('Error getting invitations count:', invitationsError);
+        // }
 
         // Obtener evaluaciones completadas
-        const { data: evaluationsData, error: evaluationsError } = await supabase
-            .from('evaluations')
-            .select('id')
-            .eq('project_id', projectId)
-            .eq('status', 'completed');
+        // const { data: evaluationsData, error: evaluationsError } = await supabase
+        //     .from('evaluations')
+        //     .select('id')
+        //     .eq('project_id', projectId)
+        //     .eq('status', 'completed');
 
-        if (evaluationsError) {
-            console.warn('Error getting evaluations count:', evaluationsError);
-        }
+        // if (evaluationsError) {
+        //     console.warn('Error getting evaluations count:', evaluationsError);
+        // }
 
         const stats: ProjectStats = {
             total_teams: teamsData?.length || 0,
-            total_invitations: invitationsData?.length || 0,
-            completed_evaluations: evaluationsData?.length || 0,
+            total_invitations: 0,
+            completed_evaluations: 0,
             completion_rate: 0
         };
 

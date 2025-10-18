@@ -4,11 +4,12 @@
 // Diálogo modal para editar proyectos existentes
 // ============================================================================
 
-import { Dialog, DialogTitle, DialogContent, IconButton, Box, Alert } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, IconButton, Box, Alert, CircularProgress } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { ProjectForm } from '../../components/Forms';
 import type { Project } from '../../types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getProjectEvaluations } from '../../services/evaluationService';
 
 // Tipo local que coincide con el ProjectForm
 type ProjectFormData = {
@@ -32,6 +33,38 @@ export interface ProjectEditorProps {
 
 export function ProjectEditor({ open, project, onClose, onSave, loading = false }: ProjectEditorProps) {
   const [error, setError] = useState<string | null>(null);
+  const [hasEvaluations, setHasEvaluations] = useState<boolean>(false);
+  const [checkingEvaluations, setCheckingEvaluations] = useState<boolean>(false);
+
+  // Verificar si el proyecto tiene evaluaciones existentes
+  useEffect(() => {
+    const checkProjectEvaluations = async () => {
+      if (!project?.id || !open) {
+        setHasEvaluations(false);
+        return;
+      }
+
+      try {
+        setCheckingEvaluations(true);
+        setError(null);
+
+        const evaluations = await getProjectEvaluations(project.id);
+        setHasEvaluations(evaluations.length > 0);
+
+        if (evaluations.length > 0) {
+          console.log(`Proyecto tiene ${evaluations.length} evaluaciones existentes`);
+        }
+      } catch (err) {
+        console.error('Error al verificar evaluaciones del proyecto:', err);
+        // No es crítico, asumimos que no hay evaluaciones
+        setHasEvaluations(false);
+      } finally {
+        setCheckingEvaluations(false);
+      }
+    };
+
+    checkProjectEvaluations();
+  }, [project?.id, open]);
 
   const handleSubmit = async (data: ProjectFormData) => {
     try {
@@ -95,15 +128,31 @@ export function ProjectEditor({ open, project, onClose, onSave, loading = false 
           </Alert>
         )}
 
+        {/* Mostrar información sobre evaluaciones existentes */}
+        {project && hasEvaluations && !checkingEvaluations && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            <strong>Proyecto con evaluaciones:</strong> Este proyecto ya tiene evaluaciones completadas. Algunos campos estarán bloqueados
+            para mantener la consistencia de los datos.
+          </Alert>
+        )}
+
         {project && (
           <Box sx={{ mt: 2 }}>
-            <ProjectForm
-              initialData={getFormData(project)}
-              onSubmit={handleSubmit}
-              onCancel={handleClose}
-              isLoading={loading}
-              mode="edit"
-            />
+            {checkingEvaluations ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+                <CircularProgress size={24} sx={{ mr: 2 }} />
+                Verificando evaluaciones existentes...
+              </Box>
+            ) : (
+              <ProjectForm
+                initialData={getFormData(project)}
+                onSubmit={handleSubmit}
+                onCancel={handleClose}
+                isLoading={loading}
+                mode="edit"
+                hasEvaluations={hasEvaluations}
+              />
+            )}
           </Box>
         )}
       </DialogContent>

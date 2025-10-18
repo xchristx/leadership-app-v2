@@ -132,7 +132,7 @@ export function CategoriesStep({ values, setFieldValue }: CategoriesStepProps) {
           {/* Botón para agregar categoría */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="subtitle1">Categorías ({values.categories.length})</Typography>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
+            <Button type="button" variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
               Agregar Categoría
             </Button>
           </Box>
@@ -157,10 +157,10 @@ export function CategoriesStep({ values, setFieldValue }: CategoriesStepProps) {
                   />
 
                   <ListItemSecondaryAction>
-                    <IconButton onClick={() => handleOpenDialog(category)} size="small">
+                    <IconButton type="button" onClick={() => handleOpenDialog(category)} size="small">
                       <EditIcon />
                     </IconButton>
-                    <IconButton onClick={() => handleDeleteCategory(category.id)} size="small" color="error">
+                    <IconButton type="button" onClick={() => handleDeleteCategory(category.id)} size="small" color="error">
                       <DeleteIcon />
                     </IconButton>
                   </ListItemSecondaryAction>
@@ -196,9 +196,11 @@ export function CategoriesStep({ values, setFieldValue }: CategoriesStepProps) {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-          <Button onClick={handleSaveCategory} variant="contained" disabled={!categoryName.trim()}>
-            {editingCategory ? 'Guardar' : 'Crear'}
+          <Button type="button" onClick={() => setDialogOpen(false)}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={handleSaveCategory} variant="contained" disabled={!categoryName.trim()}>
+            {editingCategory ? 'Actualizar' : 'Crear'}
           </Button>
         </DialogActions>
       </Dialog>

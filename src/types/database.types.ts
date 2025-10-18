@@ -102,8 +102,10 @@ export type Database = {
                     id: string
                     invitation_id: string
                     is_complete: boolean | null
+                    project_id: string
                     responses_data: Json | null
                     team_id: string
+                    template_id: string
                     updated_at: string
                 }
                 Insert: {
@@ -117,8 +119,10 @@ export type Database = {
                     id?: string
                     invitation_id: string
                     is_complete?: boolean | null
+                    project_id: string
                     responses_data?: Json | null
                     team_id: string
+                    template_id: string
                     updated_at?: string
                 }
                 Update: {
@@ -132,8 +136,10 @@ export type Database = {
                     id?: string
                     invitation_id?: string
                     is_complete?: boolean | null
+                    project_id?: string
                     responses_data?: Json | null
                     team_id?: string
+                    template_id?: string
                     updated_at?: string
                 }
                 Relationships: [
@@ -145,10 +151,24 @@ export type Database = {
                         referencedColumns: ["id"]
                     },
                     {
+                        foreignKeyName: "evaluations_project_id_fkey"
+                        columns: ["project_id"]
+                        isOneToOne: false
+                        referencedRelation: "projects"
+                        referencedColumns: ["id"]
+                    },
+                    {
                         foreignKeyName: "evaluations_team_id_fkey"
                         columns: ["team_id"]
                         isOneToOne: false
                         referencedRelation: "teams"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "evaluations_template_id_fkey"
+                        columns: ["template_id"]
+                        isOneToOne: false
+                        referencedRelation: "question_templates"
                         referencedColumns: ["id"]
                     },
                 ]
@@ -334,6 +354,7 @@ export type Database = {
             }
             question_templates: {
                 Row: {
+                    categories: Json | null
                     created_at: string
                     created_by: string | null
                     description: string | null
@@ -343,9 +364,9 @@ export type Database = {
                     title: string
                     updated_at: string
                     version_type: string | null
-                    categories?: Json | null
                 }
                 Insert: {
+                    categories?: Json | null
                     created_at?: string
                     created_by?: string | null
                     description?: string | null
@@ -355,9 +376,9 @@ export type Database = {
                     title: string
                     updated_at?: string
                     version_type?: string | null
-                    categories?: Json | null
                 }
                 Update: {
+                    categories?: Json | null
                     created_at?: string
                     created_by?: string | null
                     description?: string | null
@@ -367,7 +388,6 @@ export type Database = {
                     title?: string
                     updated_at?: string
                     version_type?: string | null
-                    categories?: Json | null
                 }
                 Relationships: [
                     {
@@ -637,6 +657,14 @@ export type Database = {
                     team_name: string
                 }[]
             }
+            get_evaluation_responses: {
+                Args: { eval_id: string }
+                Returns: {
+                    question_id: string
+                    response_timestamp: string
+                    response_value: Json
+                }[]
+            }
             get_evaluation_stats: {
                 Args: { project_uuid: string }
                 Returns: {
@@ -653,6 +681,10 @@ export type Database = {
                     metric_name: string
                     metric_value: number
                 }[]
+            }
+            get_response_value: {
+                Args: { eval_responses_data: Json; question_id: string }
+                Returns: Json
             }
             get_team_results: {
                 Args: { p_team_id: string }
@@ -698,9 +730,21 @@ export type Database = {
                 Args: { "": unknown }
                 Returns: unknown
             }
+            increment_invitation_uses: {
+                Args: { invitation_id: string }
+                Returns: Json
+            }
             is_organization_admin: {
                 Args: Record<PropertyKey, never>
                 Returns: boolean
+            }
+            migrate_existing_responses_to_json: {
+                Args: Record<PropertyKey, never>
+                Returns: {
+                    evaluation_id: string
+                    responses_migrated: number
+                    status: string
+                }[]
             }
             regenerate_invitation_token: {
                 Args: { invitation_uuid: string }
@@ -730,6 +774,18 @@ export type Database = {
                     session_id: string
                     team_name: string
                 }[]
+            }
+            update_team_leader_info: {
+                Args: {
+                    p_leader_email: string
+                    p_leader_name: string
+                    p_team_id: string
+                }
+                Returns: boolean
+            }
+            validate_responses_json: {
+                Args: { responses_data: Json }
+                Returns: boolean
             }
         }
         Enums: {

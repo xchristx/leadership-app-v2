@@ -105,19 +105,6 @@ export function ComparativeAnalysisDialog({ open, onClose, teamId, teamName }: C
           px: { xs: 1, md: 3 },
           height: 'calc(100vh - 120px)',
           overflow: 'auto',
-          '&::-webkit-scrollbar': {
-            width: '8px',
-          },
-          '&::-webkit-scrollbar-track': {
-            background: '#f1f1f1',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            background: '#888',
-            borderRadius: '4px',
-          },
-          '&::-webkit-scrollbar-thumb:hover': {
-            background: '#555',
-          },
           py: 0,
         }}
       >

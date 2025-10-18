@@ -1,0 +1,35 @@
+# Redirects para aplicación React SPA con React Router
+# Orden importante: más específicos primero, comodín al final
+
+# Redirect de la raíz al dashboard (manejado por React Router, pero como backup)
+/  /dashboard  302
+
+# API proxies si tienes APIs externas (opcional)
+# /api/*  https://tu-api.supabase.co/rest/v1/:splat  200
+
+# Manejo de archivos estáticos - permitir acceso directo
+/static/*  /static/:splat  200
+/assets/*  /assets/:splat  200
+/images/*  /images/:splat  200
+/favicon.ico  /favicon.ico  200
+/manifest.json  /manifest.json  200
+/robots.txt  /robots.txt  200
+
+# Rutas específicas de la aplicación que deben servir index.html
+/login  /index.html  200
+/register  /index.html  200
+/dashboard  /index.html  200
+/projects  /index.html  200
+/teams  /index.html  200
+/evaluations  /index.html  200
+/questionnaires  /index.html  200
+/reports  /index.html  200
+/organization  /index.html  200
+/settings  /index.html  200
+
+# Rutas dinámicas - evaluation con token
+/evaluation/*  /index.html  200
+
+# Fallback para todas las demás rutas (SPA catch-all)
+# Esto debe ir al final para que React Router maneje rutas no definidas
+/*  /index.html  200

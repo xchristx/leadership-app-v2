@@ -249,7 +249,7 @@ export function useProject(id: string) {
         if (!id) return null
 
         try {
-            return await projectService.getProjectDashboard(id)
+            //return await projectService.getProjectDashboard(id)
         } catch (error) {
             console.error('Error al obtener dashboard:', error)
             throw error
