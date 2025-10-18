@@ -4,8 +4,6 @@
   command = "npm run build"
   # Directorio donde se genera el build
   publish = "dist"
-  # Variables de entorno para el build
-  environment = { NODE_VERSION = "18" }
 
 # Configuraciones de redirects y rewrites
 [build.processing]
