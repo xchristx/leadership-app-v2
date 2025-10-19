@@ -101,18 +101,17 @@ export const supabaseApi = createApi({
         getTeams: builder.query<Team[], { projectId?: string }>({
             queryFn: async ({ projectId = '' }) => {
                 try {
-                    let query = supabase
-                        .from('teams')
-                        .select('*')
+                    // Importar el servicio para usar getTeamsWithStats
+                    const { getTeamsWithStats } = await import('../../services/teamService')
 
-                    if (projectId) {
-                        query = query.eq('project_id', projectId)
-                    }
+                    // Si hay projectId, necesitamos filtrar después ya que getTeamsWithStats no soporta filtro por proyecto
+                    // TODO: Mejorar getTeamsWithStats para soportar filtro por proyecto
+                    const data = await getTeamsWithStats()
 
-                    const { data, error } = await query.order('created_at', { ascending: false })
+                    // Filtrar por proyecto si se especifica
+                    const filteredData = projectId ? data.filter(team => team.project_id === projectId) : data
 
-                    if (error) throw error
-                    return { data: (data || []) as Team[] }
+                    return { data: filteredData }
                 } catch (error) {
                     return { error: { status: 'FETCH_ERROR', error: String(error) } }
                 }

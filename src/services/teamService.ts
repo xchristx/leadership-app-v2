@@ -96,6 +96,48 @@ export const getTeams = async (organizationId?: string, includeInactive: boolean
 };
 
 /**
+ * Obtener equipos con estadísticas incluidas
+ */
+export const getTeamsWithStats = async (organizationId?: string, includeInactive: boolean = false): Promise<Team[]> => {
+  try {
+    const teams = await getTeams(organizationId, includeInactive);
+
+    // Obtener estadísticas para cada equipo
+    const teamsWithStats = await Promise.all(
+      teams.map(async (team) => {
+        try {
+          const stats = await getTeamStats(team.id);
+          return {
+            ...team,
+            _stats: {
+              ...stats,
+              total_evaluations: stats.completed_evaluations + stats.pending_evaluations
+            }
+          };
+        } catch (error) {
+          console.warn(`Error al obtener estadísticas para equipo ${team.id}:`, error);
+          return {
+            ...team,
+            _stats: {
+              total_evaluations: 0,
+              completed_evaluations: 0,
+              pending_evaluations: 0,
+              completion_rate: 0,
+              total_members: 0
+            }
+          };
+        }
+      })
+    );
+
+    return teamsWithStats;
+  } catch (error) {
+    console.error('Error in getTeamsWithStats:', error);
+    throw error;
+  }
+};
+
+/**
  * Obtener un equipo por ID con información del proyecto
  */
 export const getTeam = async (id: string): Promise<Team | null> => {

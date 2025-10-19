@@ -21,7 +21,7 @@ import {
   TableRow,
 } from '@mui/material';
 import { PictureAsPdf as PdfIcon, Description as WordIcon, Print as PrintIcon } from '@mui/icons-material';
-import { CustomBarChart } from '../../Charts/BarChart';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import type { CategoryData, CategorySummary, ComparativeData } from './types';
 
 interface CategoryReportTabProps {
@@ -59,6 +59,16 @@ const LEADERSHIP_PRACTICES = {
   },
 } as const;
 
+// Componente personalizado para mostrar etiquetas en los puntos
+const CustomLabel = (props: { x?: number; y?: number; value?: number | string; color?: string }) => {
+  const { x, y, value, color } = props;
+  return (
+    <text x={x} y={y ? y - 10 : 0} dy={0} textAnchor="middle" fill={color || '#333'} fontSize="10" fontWeight="bold">
+      {value}
+    </text>
+  );
+};
+
 export function CategoryReportTab({
   categoryData,
   categorySummary,
@@ -70,9 +80,9 @@ export function CategoryReportTab({
   const pageStyle = {
     p: { xs: 2, md: 4 },
     mb: 4,
-    minHeight: { xs: 'auto', print: '297mm' },
+    minHeight: { xs: '279mm', md: '279mm' },
     '@media print': {
-      minHeight: '297mm',
+      minHeight: '279mm',
       pageBreakAfter: 'always',
     },
   };
@@ -272,18 +282,58 @@ export function CategoryReportTab({
         </Typography>
 
         {leadershipPractices.length > 0 && (
-          <Box sx={{ height: 400, mb: 4 }}>
-            <CustomBarChart
-              data={leadershipPractices.map(practice => ({
-                categoria: practice.category.replace(/\s+/g, '\n'), // Quebrar líneas largas
-                AUTO: Number(practice.auto_total.toFixed(1)),
-                OBSERVADORES: Number(practice.otros_total.toFixed(1)),
-              }))}
-              height={400}
-              xKey="categoria"
-              yKeys={['AUTO', 'OBSERVADORES']}
-              colors={['#1976d2', '#9c27b0']}
-            />
+          <Box sx={{ height: 450, mb: 4 }}>
+            <ResponsiveContainer width="100%" height={450}>
+              <LineChart
+                data={leadershipPractices.map((practice, index) => ({
+                  practica: practice.category,
+                  AUTO: Number(practice.auto_total.toFixed(1)),
+                  OBSERVADORES: Number(practice.otros_total.toFixed(1)),
+                  index: index + 1,
+                }))}
+                margin={{ top: 20, right: 30, left: 20, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis
+                  dataKey="practica"
+                  tick={{ fontSize: 10, textAnchor: 'end' }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  interval={0}
+                />
+                <YAxis domain={[15, 30]} tick={{ fontSize: 10 }} tickCount={8} />
+                <Tooltip
+                  formatter={(value, name) => [value, name]}
+                  labelFormatter={label => label}
+                  contentStyle={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '50px' }} />
+                <Line
+                  type="monotone"
+                  dataKey="AUTO"
+                  stroke="#1976d2"
+                  strokeWidth={2}
+                  dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#1976d2', strokeWidth: 2 }}
+                  label={<CustomLabel color="#1976d2" />}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="OBSERVADORES"
+                  stroke="#d32f2f"
+                  strokeWidth={2}
+                  dot={{ fill: '#d32f2f', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#d32f2f', strokeWidth: 2 }}
+                  label={<CustomLabel color="#d32f2f" />}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </Box>
         )}
 
@@ -331,18 +381,34 @@ export function CategoryReportTab({
               <Typography variant="h6" gutterBottom>
                 Análisis Comparativo por Pregunta
               </Typography>
-              <Box sx={{ height: 300 }}>
-                <CustomBarChart
-                  data={category.questions.map(q => ({
-                    pregunta: `P${q.question_number}`,
-                    AUTO: q.leader_avg,
-                    OBSERVADORES: q.collaborator_avg,
-                  }))}
-                  height={300}
-                  xKey="pregunta"
-                  yKeys={['AUTO', 'OBSERVADORES']}
-                  colors={['#1976d2', '#9c27b0']}
-                />
+              <Box sx={{ height: 400 }}>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart
+                    data={category.questions.map(q => ({
+                      pregunta: q.question_text.length > 80 ? q.question_text.substring(0, 80) + '...' : q.question_text,
+                      AUTO: q.leader_avg,
+                      OBSERVADORES: q.collaborator_avg,
+                    }))}
+                    layout="vertical"
+                    margin={{ top: 20, right: 30, left: 5, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                    <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 10 }} tickCount={7} />
+                    <YAxis type="category" dataKey="pregunta" tick={{ fontSize: 9, width: 180 }} width={180} />
+                    <Tooltip
+                      formatter={(value, name) => [value, name]}
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #ccc',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Bar dataKey="AUTO" fill="#1976d2" name="AUTO" barSize={15} />
+                    <Bar dataKey="OBSERVADORES" fill="#d32f2f" name="OBSERVADORES" barSize={15} />
+                  </BarChart>
+                </ResponsiveContainer>
               </Box>
             </Box>
 

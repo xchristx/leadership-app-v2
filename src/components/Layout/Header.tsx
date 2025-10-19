@@ -16,12 +16,10 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
-  TextField,
-  InputAdornment,
+  CardMedia,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  Search as SearchIcon,
   Notifications as NotificationsIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
@@ -41,7 +39,6 @@ export function Header() {
 
   // Estados locales
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [searchValue, setSearchValue] = useState('');
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -85,48 +82,20 @@ export function Header() {
         </IconButton>
 
         {/* Logo/Título */}
+        <CardMedia component="img" image="/public/logo2.png" alt="Logo" sx={{ width: 'auto', height: 30, mr: 1 }} />
         <Typography
           variant="h6"
           component="div"
           sx={{
             flexGrow: 0,
             mr: 4,
-            fontWeight: 600,
+            fontWeight: 'bold',
             display: { xs: 'none', sm: 'block' },
+            fontStyle: 'italic',
           }}
         >
-          Leadership Eval
+          Hector Ordoñez Cia.
         </Typography>
-
-        {/* Barra de búsqueda */}
-        {!isMobile && (
-          <TextField
-            size="small"
-            placeholder="Buscar proyectos, equipos..."
-            value={searchValue}
-            onChange={e => setSearchValue(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              width: 300,
-              mr: 'auto',
-              '& .MuiOutlinedInput-root': {
-                bgcolor: 'action.hover',
-                '&:hover': {
-                  bgcolor: 'action.selected',
-                },
-                '&.Mui-focused': {
-                  bgcolor: 'background.paper',
-                },
-              },
-            }}
-          />
-        )}
 
         {/* Spacer */}
         <Box sx={{ flexGrow: 1 }} />

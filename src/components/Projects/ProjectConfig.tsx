@@ -240,7 +240,7 @@ export function ProjectConfig({ open, project, onClose, onSave, loading = false 
                   label="Permitir re-evaluaciones"
                 />
                 <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>
-                  Permite a los evaluadores modificar sus respuestas después de enviarlas
+                  Permite a los participantes modificar sus respuestas después de enviarlas
                 </Typography>
 
                 <FormControlLabel

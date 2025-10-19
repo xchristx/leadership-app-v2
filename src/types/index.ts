@@ -108,6 +108,7 @@ export interface Project {
         total_invitations: number
         completed_evaluations: number
         completion_rate: number
+        expected_members: number
     }
 }
 

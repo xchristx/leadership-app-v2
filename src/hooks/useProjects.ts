@@ -164,7 +164,8 @@ export function useProjects(organizationId?: string) {
                 total_teams: 0,
                 total_invitations: 0,
                 completed_evaluations: 0,
-                completion_rate: 0
+                completion_rate: 0,
+                expected_members: 0
             }
         }
     }, [])

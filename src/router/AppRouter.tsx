@@ -14,6 +14,8 @@ import { checkAuth } from '../store/slices/authSlice';
 // Lazy loading de páginas
 const Dashboard = lazy(() => import('../pages').then(m => ({ default: m.Dashboard })));
 const ProjectsModular = lazy(() => import('../pages/ProjectsModular').then(m => ({ default: m.ProjectsModular })));
+const ProjectDetailPage = lazy(() => import('../pages/ProjectDetailPageSimple'));
+const TeamDetailPage = lazy(() => import('../pages/TeamDetailPage'));
 const TeamsModular = lazy(() => import('../pages/TeamsModular').then(m => ({ default: m.TeamsModular })));
 const Evaluations = lazy(() => import('../pages').then(m => ({ default: m.Evaluations })));
 const QuestionnairesPage = lazy(() => import('../pages/QuestionnairesPage'));
@@ -128,6 +130,25 @@ export function AppRouter() {
           element={
             <ProtectedLayout>
               <TeamsModular />
+            </ProtectedLayout>
+          }
+        />
+
+        {/* Rutas de detalle para navegación jerárquica */}
+        <Route
+          path="/projects/:projectId"
+          element={
+            <ProtectedLayout>
+              <ProjectDetailPage />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/projects/:projectId/teams/:teamId"
+          element={
+            <ProtectedLayout>
+              <TeamDetailPage />
             </ProtectedLayout>
           }
         />

@@ -31,6 +31,7 @@ import {
   Download as DownloadIcon,
 } from '@mui/icons-material';
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CustomTable, type Column } from '../components';
 import { ProjectForm, TeamForm } from '../components/Forms';
 import { useProjects, useTeams } from '../hooks';
@@ -56,6 +57,7 @@ type ViewMode = 'cards' | 'table';
 type SortBy = 'name' | 'created_at' | 'status' | 'completion_rate';
 
 export function ProjectsModular() {
+  const navigate = useNavigate();
   const { projects, isLoading, createProject, updateProject, deleteProject } = useProjects();
   const { teams, createTeamWithInvitations, updateTeam, deleteTeam, refetch: refetchTeams } = useTeams();
 
@@ -118,8 +120,8 @@ export function ProjectsModular() {
   };
 
   const handleViewProject = (project: Project) => {
-    setSelectedProject(project);
-    setViewerDialogOpen(true);
+    // Navegar a la página de detalles del proyecto
+    navigate(`/projects/${project.id}`);
   };
 
   const handleEditProject = (project: Project) => {
@@ -134,8 +136,8 @@ export function ProjectsModular() {
   const [teamEditorOpen, setTeamEditorOpen] = useState(false);
 
   const handleManageTeams = (project: Project) => {
-    setSelectedProject(project);
-    setTeamsDialogOpen(true);
+    // Navegar a la página de detalles del proyecto
+    navigate(`/projects/${project.id}`);
   };
 
   // Handlers para equipos

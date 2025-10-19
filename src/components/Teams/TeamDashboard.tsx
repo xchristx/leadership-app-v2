@@ -25,6 +25,8 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  Avatar,
+  ListItemAvatar,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -145,10 +147,12 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
     );
   }
 
-  const completionRate = stats?.completion_rate || 0;
   const totalMembers = stats?.total_members || 0;
   const completedEvaluations = stats?.completed_evaluations || 0;
-  const pendingEvaluations = stats?.pending_evaluations || 0;
+
+  // Calcular progreso basado en miembros esperados del equipo
+  const expectedMembers = team.team_size || 0;
+  const actualCompletionRate = expectedMembers > 0 ? (completedEvaluations / expectedMembers) * 100 : 0;
 
   return (
     <Box sx={{ p: 3 }}>
@@ -177,66 +181,66 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
       </Box>
 
       {/* Métricas principales */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 6, sm: 3 }}>
           <Card>
-            <CardContent>
+            <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Miembros del Equipo
+                  <Typography variant="caption" color="text.secondary">
+                    Total miembros esperados
                   </Typography>
-                  <Typography variant="h4">{team.team_size || 0}</Typography>
+                  <Typography variant="h6">{team.team_size || 0}</Typography>
                 </Box>
-                <GroupIcon color="primary" sx={{ fontSize: 40 }} />
+                <GroupIcon color="primary" sx={{ fontSize: 24 }} />
               </Box>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 3 }}>
           <Card>
-            <CardContent>
+            <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Total de Miembros
+                  <Typography variant="caption" color="text.secondary">
+                    Miembros Registrados
                   </Typography>
-                  <Typography variant="h4">{totalMembers}</Typography>
+                  <Typography variant="h6">{totalMembers}</Typography>
                 </Box>
-                <GroupIcon color="success" sx={{ fontSize: 40 }} />
+                <GroupIcon color="success" sx={{ fontSize: 24 }} />
               </Box>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 3 }}>
           <Card>
-            <CardContent>
+            <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="caption" color="text.secondary">
                     Evaluaciones Completadas
                   </Typography>
-                  <Typography variant="h4">{completedEvaluations}</Typography>
+                  <Typography variant="h6">{completedEvaluations}</Typography>
                 </Box>
-                <AssessmentIcon color="info" sx={{ fontSize: 40 }} />
+                <AssessmentIcon color="info" sx={{ fontSize: 24 }} />
               </Box>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 3 }}>
           <Card>
-            <CardContent>
+            <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="caption" color="text.secondary">
                     Progreso
                   </Typography>
-                  <Typography variant="h4">{completionRate.toFixed(1)}%</Typography>
+                  <Typography variant="h6">{actualCompletionRate.toFixed(1)}%</Typography>
                 </Box>
-                <TrendingUpIcon color="warning" sx={{ fontSize: 40 }} />
+                <TrendingUpIcon color="warning" sx={{ fontSize: 24 }} />
               </Box>
             </CardContent>
           </Card>
@@ -275,14 +279,104 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
                         Completadas: {completedEvaluations}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Pendientes: {pendingEvaluations}
+                        Esperadas: {expectedMembers}
                       </Typography>
                     </Box>
-                    <LinearProgress variant="determinate" value={completionRate} sx={{ height: 12, borderRadius: 6 }} />
+                    <LinearProgress variant="determinate" value={actualCompletionRate} sx={{ height: 12, borderRadius: 6 }} />
                     <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                      {completionRate.toFixed(1)}% completado
+                      {actualCompletionRate.toFixed(1)}% completado
                     </Typography>
                   </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Miembros Registrados */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Miembros Registrados
+                  </Typography>
+                  {dashboard?.recent_evaluations && dashboard.recent_evaluations.length > 0 ? (
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {totalMembers} miembro{totalMembers !== 1 ? 's' : ''} registrado{totalMembers !== 1 ? 's' : ''}
+                      </Typography>
+                      <List dense sx={{ maxHeight: 200, overflow: 'auto' }}>
+                        {Array.from(
+                          new Map(
+                            dashboard.recent_evaluations.map(evaluation => [evaluation.evaluator_name || evaluation.id, evaluation])
+                          ).values()
+                        ).map(evaluation => (
+                          <ListItem key={evaluation.id} sx={{ py: 0.5 }}>
+                            <ListItemAvatar>
+                              <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '0.875rem' }}>
+                                {(evaluation.evaluator_name || 'A').charAt(0).toUpperCase()}
+                              </Avatar>
+                            </ListItemAvatar>
+                            <ListItemText
+                              primary={<Typography variant="body2">{evaluation.evaluator_name || 'Evaluador anónimo'}</Typography>}
+                              secondary={
+                                <Box>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {evaluation.evaluator_role === 'leader' ? 'Líder' : 'Colaborador'}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                                    • Evaluación #{evaluation.id.slice(0, 8)}
+                                  </Typography>
+                                </Box>
+                              }
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Box>
+                  ) : (
+                    <Alert severity="info">
+                      <Typography variant="body2">No hay miembros registrados aún.</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                        Los miembros aparecerán aquí cuando empiecen a completar evaluaciones a través de las invitaciones.
+                      </Typography>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Información del Equipo */}
+            <Grid size={{ xs: 12 }}>
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Información del Equipo
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Tamaño del Equipo
+                      </Typography>
+                      <Typography variant="h6">{team.team_size || 'No especificado'}</Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Líder del Equipo
+                      </Typography>
+                      <Typography variant="body1">{team.leader_name || 'No asignado'}</Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Estado
+                      </Typography>
+                      <Chip label={team.is_active ? 'Activo' : 'Inactivo'} color={team.is_active ? 'success' : 'default'} size="small" />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Fecha de Creación
+                      </Typography>
+                      <Typography variant="body2">{new Date(team.created_at).toLocaleDateString('es-ES')}</Typography>
+                    </Grid>
+                  </Grid>
                 </CardContent>
               </Card>
             </Grid>

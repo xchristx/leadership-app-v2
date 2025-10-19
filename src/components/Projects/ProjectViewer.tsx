@@ -96,7 +96,7 @@ export function ProjectViewer({
   const completionRate = project._stats?.completion_rate || 0;
   const totalTeams = project._stats?.total_teams || 0;
   const completedEvaluations = project._stats?.completed_evaluations || 0;
-  const totalInvitations = project._stats?.total_invitations || 0;
+  const expectedMembers = project._stats?.expected_members || 0;
 
   if (loading) {
     return (
@@ -205,9 +205,9 @@ export function ProjectViewer({
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <DateRangeIcon color="warning" />
                 <Box>
-                  <Typography variant="h4">{totalInvitations}</Typography>
+                  <Typography variant="h4">{expectedMembers}</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Invitaciones Enviadas
+                    Miembros Esperados
                   </Typography>
                 </Box>
               </Box>
@@ -228,7 +228,7 @@ export function ProjectViewer({
             </Box>
             <LinearProgress variant="determinate" value={completionRate} sx={{ height: 8, borderRadius: 4 }} />
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              {completedEvaluations} de {totalInvitations} evaluaciones completadas
+              {completedEvaluations} evaluaciones completadas • {totalTeams} equipos • {expectedMembers} miembros esperados
             </Typography>
           </CardContent>
         </Card>
@@ -311,7 +311,7 @@ export function ProjectViewer({
 
       {project.status === 'active' && completionRate < 50 && (
         <Alert severity="warning" sx={{ mt: 3 }}>
-          El progreso del proyecto está por debajo del 50%. Considera enviar recordatorios a los evaluadores.
+          El progreso del proyecto está por debajo del 50%. Considera enviar recordatorios a los participante.
         </Alert>
       )}
     </Box>

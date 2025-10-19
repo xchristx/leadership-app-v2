@@ -4,7 +4,20 @@
 // Tarjeta reutilizable para mostrar información de equipos
 // ============================================================================
 
-import { Card, CardContent, Typography, Box, Chip, IconButton, Menu, MenuItem, Avatar, LinearProgress } from '@mui/material';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Chip,
+  IconButton,
+  Menu,
+  MenuItem,
+  Avatar,
+  LinearProgress,
+  Tooltip,
+  Badge,
+} from '@mui/material';
 import {
   MoreVert as MoreVertIcon,
   Group as GroupIcon,
@@ -13,6 +26,8 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as VisibilityIcon,
+  TrendingUp as TrendingUpIcon,
+  AccessTime as AccessTimeIcon,
 } from '@mui/icons-material';
 import { useState } from 'react';
 import type { Team } from '../../types';
@@ -61,115 +76,181 @@ export function TeamCard({ team, onEdit, onDelete, onView, onManageInvitations, 
     onManageInvitations?.(team);
   };
 
-  // Calcular estadísticas del equipo
-  // Calcular el completion rate basado en invitaciones y evaluaciones
-  const completionRate = (() => {
-    const totalInvitations = team.invitations?.length || 0;
-    const completedEvaluations = team.evaluations?.filter(evaluation => evaluation.is_complete).length || 0;
+  // Calcular estadísticas del equipo - usar _stats si están disponibles, sino calcular
+  const expectedMembers = team.team_size || 0;
+  const completedEvaluations =
+    team._stats?.completed_evaluations || team.evaluations?.filter(evaluation => evaluation.is_complete).length || 0;
+  const actualCompletionRate = team._stats?.completion_rate || (expectedMembers > 0 ? (completedEvaluations / expectedMembers) * 100 : 0);
 
-    if (totalInvitations === 0) return 0;
-    return Math.round((completedEvaluations / totalInvitations) * 100);
-  })();
+  // Calcular días desde creación
+  const daysSinceCreated = Math.floor((Date.now() - new Date(team.created_at).getTime()) / (1000 * 60 * 60 * 24));
 
   return (
     <Card
       sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         cursor: onView ? 'pointer' : 'default',
-        transition: 'all 0.2s',
-        '&:hover': {
-          boxShadow: 2,
-          transform: onView ? 'translateY(-2px)' : 'none',
-        },
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         position: 'relative',
+        overflow: 'visible',
+        '&:hover': {
+          boxShadow: theme => (theme.palette.mode === 'light' ? '0 8px 24px rgba(0, 0, 0, 0.12)' : '0 8px 24px rgba(0, 0, 0, 0.6)'),
+          transform: onView ? 'translateY(-4px)' : 'translateY(-2px)',
+        },
+        border: theme => `1px solid ${theme.palette.divider}`,
       }}
       onClick={onView ? handleView : undefined}
     >
-      <CardContent>
-        {/* Header con título y acciones */}
+      <CardContent sx={{ p: 3, pb: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Header con avatar y estado */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h6" component="h3" gutterBottom>
-              {team.name}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <Chip label={team.is_active ? 'Activo' : 'Inactivo'} color={team.is_active ? 'success' : 'default'} size="small" />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1 }}>
+            <Avatar
+              sx={{
+                bgcolor: team.is_active ? 'success.main' : 'grey.400',
+                width: 40,
+                height: 40,
+                fontSize: '1.2rem',
+                fontWeight: 'bold',
+              }}
+            >
+              {team.name.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 600, lineHeight: 1.3, mb: 0.5 }}>
+                {team.name}
+              </Typography>
+              <Badge
+                badgeContent={completedEvaluations}
+                color="primary"
+                sx={{
+                  '& .MuiBadge-badge': {
+                    right: -3,
+                    top: 3,
+                  },
+                }}
+              >
+                <Chip
+                  label={team.is_active ? 'Activo' : 'Inactivo'}
+                  color={team.is_active ? 'success' : 'default'}
+                  size="small"
+                  sx={{ fontWeight: 'medium', minWidth: 70 }}
+                />
+              </Badge>
             </Box>
           </Box>
 
           {showActions && (
-            <IconButton
-              onClick={handleMenuClick}
-              size="small"
-              sx={{
-                opacity: 0.7,
-                '&:hover': { opacity: 1 },
-              }}
-            >
-              <MoreVertIcon />
-            </IconButton>
+            <Tooltip title="Más opciones">
+              <IconButton
+                onClick={handleMenuClick}
+                size="small"
+                sx={{
+                  opacity: 0.7,
+                  '&:hover': { opacity: 1, bgcolor: 'action.hover' },
+                }}
+              >
+                <MoreVertIcon />
+              </IconButton>
+            </Tooltip>
           )}
         </Box>
 
-        {/* Información del equipo */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <Avatar sx={{ width: 32, height: 32 }}>
-            <GroupIcon />
-          </Avatar>
-          <Box>
-            <Typography variant="body2" fontWeight="medium">
-              {team.team_size || 'Sin especificar'} miembros
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Tamaño del equipo
-            </Typography>
-          </Box>
+        {/* Estadísticas del equipo */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+          <Tooltip title="Miembros esperados del equipo">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Avatar sx={{ bgcolor: 'primary.main', width: 24, height: 24 }}>
+                <GroupIcon sx={{ fontSize: 14 }} />
+              </Avatar>
+              <Box>
+                <Typography variant="h6" sx={{ lineHeight: 1, fontWeight: 600, fontSize: '1rem' }}>
+                  {expectedMembers}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Miembros
+                </Typography>
+              </Box>
+            </Box>
+          </Tooltip>
+
+          <Tooltip title="Evaluaciones completadas">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Avatar sx={{ bgcolor: 'success.main', width: 24, height: 24 }}>
+                <AssignmentIcon sx={{ fontSize: 14 }} />
+              </Avatar>
+              <Box>
+                <Typography variant="h6" sx={{ lineHeight: 1, fontWeight: 600, fontSize: '1rem' }}>
+                  {completedEvaluations}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Completadas
+                </Typography>
+              </Box>
+            </Box>
+          </Tooltip>
+
+          <Tooltip title="Progreso del equipo">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Avatar sx={{ bgcolor: 'warning.main', width: 24, height: 24 }}>
+                <TrendingUpIcon sx={{ fontSize: 14 }} />
+              </Avatar>
+              <Box>
+                <Typography variant="h6" sx={{ lineHeight: 1, fontWeight: 600, fontSize: '1rem' }}>
+                  {actualCompletionRate.toFixed(0)}%
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Progreso
+                </Typography>
+              </Box>
+            </Box>
+          </Tooltip>
         </Box>
 
-        {/* Estadísticas */}
-        {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <GroupIcon fontSize="small" color="action" />
-            <Typography variant="body2" color="text.secondary">
-              {team.team_size} miembros
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <LinkIcon fontSize="small" color="action" />
-            <Typography variant="body2" color="text.secondary">
-              {invitationsCount} invitaciones
-            </Typography>
-          </Box>
-        </Box> */}
-
-        {/* Progreso de evaluaciones */}
-        <Box>
+        {/* Progreso de evaluaciones mejorado */}
+        <Box sx={{ mb: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              Progreso de evaluaciones
+            <Typography variant="caption" color="text.secondary" fontWeight={500}>
+              Progreso del equipo ({completedEvaluations} de {expectedMembers})
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {completionRate}%
-            </Typography>
+            <Chip
+              label={`${((completedEvaluations / expectedMembers) * 100 || 0).toFixed(1)}%`}
+              size="small"
+              color={actualCompletionRate > 75 ? 'success' : actualCompletionRate > 50 ? 'warning' : 'default'}
+              sx={{ minWidth: 50, height: 20, fontSize: '0.65rem' }}
+            />
           </Box>
-          <LinearProgress variant="determinate" value={completionRate} sx={{ height: 6, borderRadius: 3 }} />
+          <LinearProgress
+            variant="determinate"
+            value={(completedEvaluations / expectedMembers) * 100 || 0}
+            sx={{
+              height: 8,
+              borderRadius: 4,
+              bgcolor: 'grey.200',
+              '& .MuiLinearProgress-bar': {
+                borderRadius: 4,
+                bgcolor: actualCompletionRate > 75 ? 'success.main' : actualCompletionRate > 50 ? 'warning.main' : 'primary.main',
+              },
+            }}
+          />
         </Box>
 
-        {/* Información del proyecto */}
-        <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AssignmentIcon fontSize="small" color="action" />
-            <Typography variant="caption" color="text.secondary">
-              ID del Proyecto: {team.project_id}
-            </Typography>
-          </Box>
-        </Box>
+        {/* Información adicional */}
+        <Box sx={{ mt: 'auto', pt: 2, borderTop: 1, borderColor: 'divider' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <AccessTimeIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+              <Typography variant="caption" color="text.secondary">
+                Hace {daysSinceCreated} días
+              </Typography>
+            </Box>
 
-        {/* Fechas */}
-        <Box sx={{ mt: 1 }}>
-          <Typography variant="caption" color="text.secondary">
-            Creado: {new Date(team.created_at).toLocaleDateString()}
-          </Typography>
+            <Tooltip title={`ID del Proyecto: ${team.project_id}`}>
+              <Chip icon={<AssignmentIcon />} label="Proyecto" size="small" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />
+            </Tooltip>
+          </Box>
         </Box>
       </CardContent>
 

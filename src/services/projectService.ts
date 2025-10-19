@@ -20,6 +20,7 @@ export interface ProjectStats {
     total_invitations: number;
     completed_evaluations: number;
     completion_rate: number;
+    expected_members: number;
 }
 
 export interface CreateProjectWithConfigData {
@@ -491,10 +492,10 @@ export const activateProject = async (projectId: string): Promise<boolean> => {
  */
 export const getProjectStats = async (projectId: string): Promise<ProjectStats> => {
     try {
-        // Obtener cantidad de equipos
+        // Obtener cantidad de equipos con su tamaño
         const { data: teamsData, error: teamsError } = await supabase
             .from('teams')
-            .select('id')
+            .select('id, team_size')
             .eq('project_id', projectId)
             .eq('is_active', true);
 
@@ -502,37 +503,44 @@ export const getProjectStats = async (projectId: string): Promise<ProjectStats> 
             console.warn('Error getting teams count:', teamsError);
         }
 
-        // Obtener cantidad de invitaciones
-        // const { data: invitationsData, error: invitationsError } = await supabase
-        //     .from('team_invitations')
-        //     .select('id, is_used')
-        //     .in('team_id', teamsData?.map(t => t.id) || [])
-        //     .eq('is_active', true);
+        // Obtener cantidad total de invitaciones activas del proyecto
+        const { data: invitationsData, error: invitationsError } = await supabase
+            .from('team_invitations')
+            .select('id')
+            .in('team_id', teamsData?.map(t => t.id) || [])
+            .eq('is_active', true);
 
-        // if (invitationsError) {
-        //     console.warn('Error getting invitations count:', invitationsError);
-        // }
+        if (invitationsError) {
+            console.warn('Error getting invitations count:', invitationsError);
+        }
 
-        // Obtener evaluaciones completadas
-        // const { data: evaluationsData, error: evaluationsError } = await supabase
-        //     .from('evaluations')
-        //     .select('id')
-        //     .eq('project_id', projectId)
-        //     .eq('status', 'completed');
+        // Obtener evaluaciones completadas del proyecto
+        const { data: evaluationsData, error: evaluationsError } = await supabase
+            .from('evaluations')
+            .select('id, is_complete')
+            .in('team_id', teamsData?.map(t => t.id) || [])
+            .eq('is_complete', true);
 
-        // if (evaluationsError) {
-        //     console.warn('Error getting evaluations count:', evaluationsError);
-        // }
+        if (evaluationsError) {
+            console.warn('Error getting evaluations count:', evaluationsError);
+        }
+
+        // Calcular número esperado de evaluaciones (tamaño de equipos)
+        const expectedEvaluations = teamsData?.reduce((total, team) => total + (team.team_size || 0), 0) || 0;
+        const totalInvitations = invitationsData?.length || 0;
+        const completedEvaluations = evaluationsData?.length || 0;
 
         const stats: ProjectStats = {
             total_teams: teamsData?.length || 0,
-            total_invitations: 0,
-            completed_evaluations: 0,
-            completion_rate: 0
+            total_invitations: totalInvitations,
+            completed_evaluations: completedEvaluations,
+            completion_rate: 0,
+            expected_members: expectedEvaluations
         };
 
-        if (stats.total_invitations > 0) {
-            stats.completion_rate = (stats.completed_evaluations / stats.total_invitations) * 100;
+        // Calcular progreso basado en evaluaciones completadas vs esperadas
+        if (expectedEvaluations > 0) {
+            stats.completion_rate = (completedEvaluations / expectedEvaluations) * 100;
         }
 
         return stats;
@@ -543,7 +551,8 @@ export const getProjectStats = async (projectId: string): Promise<ProjectStats> 
             total_teams: 0,
             total_invitations: 0,
             completed_evaluations: 0,
-            completion_rate: 0
+            completion_rate: 0,
+            expected_members: 0
         };
     }
 };

@@ -173,7 +173,7 @@ export function ProjectDashboard({ projectId, onEditProject, onManageTeams, onEx
   const completionRate = stats?.completion_rate || 0;
   const totalTeams = stats?.total_teams || 0;
   const completedEvaluations = stats?.completed_evaluations || 0;
-  const totalInvitations = stats?.total_invitations || 0;
+  const expectedMembers = stats?.expected_members || 0;
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -228,9 +228,9 @@ export function ProjectDashboard({ projectId, onEditProject, onManageTeams, onEx
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <AssignmentIcon color="info" fontSize="large" />
                 <Box>
-                  <Typography variant="h4">{totalInvitations}</Typography>
+                  <Typography variant="h4">{expectedMembers}</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Invitaciones Enviadas
+                    Miembros Esperados
                   </Typography>
                 </Box>
               </Box>
@@ -277,7 +277,7 @@ export function ProjectDashboard({ projectId, onEditProject, onManageTeams, onEx
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">Progreso del Proyecto</Typography>
             <Typography variant="h6" color="primary">
-              {completedEvaluations} / {totalInvitations} evaluaciones
+              {completedEvaluations} / {expectedMembers} evaluaciones
             </Typography>
           </Box>
           <LinearProgress variant="determinate" value={completionRate} sx={{ height: 8, borderRadius: 4, mb: 1 }} />
@@ -414,7 +414,7 @@ export function ProjectDashboard({ projectId, onEditProject, onManageTeams, onEx
                 </Button>
 
                 <Typography variant="body2" color="text.secondary">
-                  {totalTeams} equipos registrados • {completedEvaluations} de {totalInvitations} evaluaciones completadas
+                  {totalTeams} equipos registrados • {completedEvaluations} de {expectedMembers} evaluaciones completadas
                 </Typography>
               </Box>
             )}

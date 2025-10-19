@@ -4,7 +4,7 @@
 // Sistema de temas personalizado con soporte para modo claro/oscuro
 // ============================================================================
 
-import { createTheme, type ThemeOptions } from '@mui/material/styles'
+import { createTheme, type ThemeOptions, type Theme } from '@mui/material/styles'
 import { type PaletteMode } from '@mui/material'
 
 // ============================================================================
@@ -151,11 +151,26 @@ const components = {
 
     MuiCard: {
         styleOverrides: {
-            root: {
+            root: ({ theme }: { theme: Theme }) => ({
                 borderRadius: 12,
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
-                border: '1px solid rgba(0, 0, 0, 0.05)',
-            },
+                boxShadow: theme.palette.mode === 'light'
+                    ? '0 2px 12px rgba(0, 0, 0, 0.08)'
+                    : '0 2px 12px rgba(0, 0, 0, 0.3)',
+                border: `1px solid ${theme.palette.divider}`,
+                backgroundColor: theme.palette.mode === 'light'
+                    ? '#fff7f7'  // Blanco puro para contraste con el fondo #fafafa
+                    : '#2a2a2a', // Gris más claro que el fondo #1e1e1e para diferenciación
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                    backgroundColor: theme.palette.mode === 'light'
+                        ? '#f8f9fa'
+                        : '#333333',
+                    transform: 'translateY(-1px)',
+                    boxShadow: theme.palette.mode === 'light'
+                        ? '0 4px 16px rgba(0, 0, 0, 0.12)'
+                        : '0 4px 16px rgba(0, 0, 0, 0.4)',
+                },
+            }),
         },
     },
 
@@ -300,8 +315,8 @@ export const createAppTheme = (mode: PaletteMode = 'light') => {
             },
             ...statusColors,
             background: {
-                default: isLight ? '#fafafa' : '#121212',
-                paper: isLight ? '#ffffff' : '#1e1e1e',
+                default: isLight ? '#e8e5e5' : '#2c2c2c',
+                paper: isLight ? '#ebebeb' : '#282828',
             },
             text: {
                 primary: isLight ? 'rgba(0, 0, 0, 0.87)' : 'rgba(255, 255, 255, 0.87)',

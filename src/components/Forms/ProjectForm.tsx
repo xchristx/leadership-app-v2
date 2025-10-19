@@ -500,7 +500,7 @@ export function ProjectForm({ initialData, onSubmit, onCancel, isLoading = false
                       label="Activar notificaciones por email"
                     />
                     <Typography variant="body2" color="text.secondary" sx={{ ml: 4 }}>
-                      Enviar recordatorios automáticos a los evaluadores
+                      Enviar recordatorios automáticos a los participantes
                     </Typography>
                   </FormControl>
                 </Grid>
