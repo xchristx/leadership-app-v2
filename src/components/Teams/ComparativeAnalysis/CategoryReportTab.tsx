@@ -675,7 +675,7 @@ export function CategoryReportTab({
                   border: '2px solid #e3f2fd',
                 }}
               >
-                <CardMedia component="img" image="/public/ho_logo.jpg" sx={{ width: 100, height: 'auto', maxHeight: 50 }} />
+                <CardMedia component="img" image="/ho_logo.jpg" sx={{ width: 100, height: 'auto', maxHeight: 50 }} />
               </Box>
             </Box>
           </Box>

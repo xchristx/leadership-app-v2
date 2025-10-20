@@ -82,7 +82,7 @@ export function Header() {
         </IconButton>
 
         {/* Logo/Título */}
-        <CardMedia component="img" image="/public/logo2.png" alt="Logo" sx={{ width: 'auto', height: 30, mr: 1 }} />
+        <CardMedia component="img" image="/logo2.png" alt="Logo" sx={{ width: 'auto', height: 30, mr: 1 }} />
         <Typography
           variant="h6"
           component="div"
