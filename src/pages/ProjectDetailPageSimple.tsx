@@ -63,7 +63,6 @@ function ProjectDetailPage() {
   // Filtrar equipos del proyecto actual
   const projectTeams = teams?.filter(team => team.project_id === projectId) || [];
   console.log({ teams });
-
   // Handlers
   const handleCreateTeam = async (teamData: TeamFormData) => {
     try {

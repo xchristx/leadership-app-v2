@@ -61,7 +61,6 @@ export function ProjectsModular() {
   const { projects, isLoading, createProject, updateProject, deleteProject } = useProjects();
   const { teams, createTeamWithInvitations, updateTeam, deleteTeam, refetch: refetchTeams } = useTeams();
 
-  console.log({ teams, projects });
   // Estado de la UI
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [searchTerm, setSearchTerm] = useState('');
