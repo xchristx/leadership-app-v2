@@ -40,6 +40,7 @@ export interface CategoryQuestionDB {
     color: string,
     id: string,
     description: string
+    order_index: number
 }
 
 export interface CategoryData {

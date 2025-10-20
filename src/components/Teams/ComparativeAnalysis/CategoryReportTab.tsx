@@ -87,8 +87,6 @@ export function CategoryReportTab({
 
   const LEADERSHIP_PRACTICES = categoryData.map(cat => cat.category);
 
-  console.log({ categoryData, categorySummary });
-
   // Función para capturar un gráfico como imagen
   const captureChart = async (chartRef: HTMLDivElement): Promise<Uint8Array | null> => {
     try {
@@ -288,31 +286,6 @@ export function CategoryReportTab({
                 spacing: { after: 300 },
               }),
 
-              // Insertar gráfico principal si existe
-              ...(lineChartImage
-                ? [
-                    new Paragraph({
-                      text: 'Gráfico Comparativo General',
-                      heading: HeadingLevel.HEADING_3,
-                      spacing: { after: 200 },
-                    }),
-                    new Paragraph({
-                      children: [
-                        new ImageRun({
-                          data: lineChartImage,
-                          transformation: {
-                            width: 500,
-                            height: 300,
-                          },
-                          type: 'png',
-                        }),
-                      ],
-                      alignment: AlignmentType.CENTER,
-                      spacing: { after: 400 },
-                    }),
-                  ]
-                : []),
-
               // Crear tabla de resumen
               new DocxTable({
                 width: {
@@ -324,12 +297,12 @@ export function CategoryReportTab({
                   new DocxTableRow({
                     children: [
                       new DocxTableCell({
-                        children: [new Paragraph({ text: 'PRÁCTICA', alignment: AlignmentType.CENTER })],
+                        children: [new Paragraph({ text: 'PRÁCTICA DE LIDERAZGO', alignment: AlignmentType.CENTER })],
                         shading: { fill: '1976d2' },
                         width: { size: 40, type: WidthType.PERCENTAGE },
                       }),
                       new DocxTableCell({
-                        children: [new Paragraph({ text: 'AUTO', alignment: AlignmentType.CENTER })],
+                        children: [new Paragraph({ text: 'AUTOPERCEPCIÓN', alignment: AlignmentType.CENTER })],
                         shading: { fill: '1976d2' },
                         width: { size: 20, type: WidthType.PERCENTAGE },
                       }),
@@ -373,6 +346,74 @@ export function CategoryReportTab({
                 ],
               }),
 
+              // Agregar interpretación después de la tabla
+              new Paragraph({
+                text: 'Interpretación',
+                heading: HeadingLevel.HEADING_3,
+                spacing: { before: 400, after: 200 },
+              }),
+              new Paragraph({
+                text: 'Este cuadro presenta la comparación entre la autopercepción del líder y la percepción de sus colaboradores en las cinco prácticas fundamentales del liderazgo. Las diferencias positivas indican que el líder se percibe con mayor competencia, mientras que las diferencias negativas sugieren áreas donde los colaboradores ven un desempeño superior al que el líder reconoce en sí mismo.',
+                spacing: { after: 400 },
+              }),
+
+              // Salto de página para análisis gráfico
+              new Paragraph({
+                children: [],
+                pageBreakBefore: true,
+              }),
+
+              // ANÁLISIS GRÁFICO COMPARATIVO
+              new Paragraph({
+                text: 'Análisis Gráfico Comparativo',
+                heading: HeadingLevel.HEADING_1,
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 400 },
+              }),
+
+              // Insertar gráfico principal en la página de análisis gráfico
+              ...(lineChartImage
+                ? [
+                    new Paragraph({
+                      children: [
+                        new ImageRun({
+                          data: lineChartImage,
+                          transformation: {
+                            width: 500,
+                            height: 300,
+                          },
+                          type: 'png',
+                        }),
+                      ],
+                      alignment: AlignmentType.CENTER,
+                      spacing: { after: 400 },
+                    }),
+                  ]
+                : []),
+
+              // Interpretación del análisis gráfico
+              new Paragraph({
+                text: 'Interpretación del Análisis',
+                heading: HeadingLevel.HEADING_3,
+                spacing: { after: 200 },
+              }),
+              new Paragraph({
+                text: 'El gráfico de líneas facilita la visualización de las diferencias entre autopercepción y percepción externa en cada práctica. Las líneas azules (autopercepción) y rojas (observadores) permiten identificar rápidamente:',
+                spacing: { after: 200 },
+              }),
+              new Paragraph({
+                text: '• Convergencias: Donde ambas líneas se aproximan, indicando alineación perceptual',
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                text: '• Divergencias: Separaciones significativas que requieren atención y desarrollo',
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                text: '• Patrones: Tendencias consistentes que revelan fortalezas o áreas de mejora',
+                spacing: { after: 400 },
+              }),
+
               // Salto de página antes del detalle
               new Paragraph({
                 children: [],
@@ -388,6 +429,7 @@ export function CategoryReportTab({
                 );
 
                 return [
+                  // PÁGINA A: TÍTULO, DESCRIPCIÓN Y GRÁFICO
                   // Título de la categoría
                   new Paragraph({
                     text: category.category.name,
@@ -411,10 +453,55 @@ export function CategoryReportTab({
                       ]
                     : []),
 
-                  // Tabla detallada por pregunta
+                  // Análisis comparativo por pregunta (con gráfico)
                   new Paragraph({
-                    text: 'Análisis Detallado de Cada Pregunta',
+                    text: 'Análisis Comparativo por Pregunta',
                     heading: HeadingLevel.HEADING_2,
+                    spacing: { after: 300 },
+                  }),
+
+                  // Insertar gráfico de barras si existe
+                  ...(barChartImages[categoryIndex]
+                    ? [
+                        new Paragraph({
+                          children: [
+                            new ImageRun({
+                              data: barChartImages[categoryIndex]!,
+                              transformation: {
+                                width: 450,
+                                height: 280,
+                              },
+                              type: 'png',
+                            }),
+                          ],
+                          alignment: AlignmentType.CENTER,
+                          spacing: { after: 300 },
+                        }),
+                      ]
+                    : []),
+
+                  // Interpretación del gráfico
+                  new Paragraph({
+                    text: 'Interpretación del Análisis',
+                    heading: HeadingLevel.HEADING_3,
+                    spacing: { after: 200 },
+                  }),
+                  new Paragraph({
+                    text: `Este gráfico muestra la comparación entre la autopercepción del líder y la percepción de los colaboradores para cada pregunta específica de la práctica ${category.category.name}. Las barras permiten identificar preguntas con mayor o menor alineación perceptual.`,
+                    spacing: { after: 400 },
+                  }),
+
+                  // Salto de página para la tabla detallada
+                  new Paragraph({
+                    children: [],
+                    pageBreakBefore: true,
+                  }),
+
+                  // PÁGINA B: TABLA DETALLADA
+                  new Paragraph({
+                    text: `Detalle por Pregunta - ${category.category.name}`,
+                    heading: HeadingLevel.HEADING_1,
+                    alignment: AlignmentType.CENTER,
                     spacing: { after: 300 },
                   }),
 
@@ -429,27 +516,27 @@ export function CategoryReportTab({
                         children: [
                           new DocxTableCell({
                             children: [new Paragraph({ text: 'No.', alignment: AlignmentType.CENTER })],
-                            shading: { fill: '1976d2' },
+                            shading: { fill: '0369a1' },
                             width: { size: 10, type: WidthType.PERCENTAGE },
                           }),
                           new DocxTableCell({
-                            children: [new Paragraph({ text: 'Pregunta', alignment: AlignmentType.CENTER })],
-                            shading: { fill: '1976d2' },
+                            children: [new Paragraph({ text: 'PREGUNTA', alignment: AlignmentType.CENTER })],
+                            shading: { fill: '0369a1' },
                             width: { size: 50, type: WidthType.PERCENTAGE },
                           }),
                           new DocxTableCell({
-                            children: [new Paragraph({ text: 'AUTO', alignment: AlignmentType.CENTER })],
-                            shading: { fill: '1976d2' },
+                            children: [new Paragraph({ text: 'AUTOPERCEPCIÓN', alignment: AlignmentType.CENTER })],
+                            shading: { fill: '0369a1' },
                             width: { size: 15, type: WidthType.PERCENTAGE },
                           }),
                           new DocxTableCell({
-                            children: [new Paragraph({ text: 'OBSERV.', alignment: AlignmentType.CENTER })],
-                            shading: { fill: '1976d2' },
+                            children: [new Paragraph({ text: 'OBSERVADORES', alignment: AlignmentType.CENTER })],
+                            shading: { fill: '0369a1' },
                             width: { size: 15, type: WidthType.PERCENTAGE },
                           }),
                           new DocxTableCell({
                             children: [new Paragraph({ text: 'DIFERENCIA', alignment: AlignmentType.CENTER })],
-                            shading: { fill: '1976d2' },
+                            shading: { fill: '0369a1' },
                             width: { size: 10, type: WidthType.PERCENTAGE },
                           }),
                         ],
@@ -491,31 +578,6 @@ export function CategoryReportTab({
                     heading: HeadingLevel.HEADING_3,
                     spacing: { before: 400, after: 200 },
                   }),
-
-                  // Insertar gráfico de barras si existe
-                  ...(barChartImages[categoryIndex]
-                    ? [
-                        new Paragraph({
-                          text: 'Gráfico Detallado de la Práctica',
-                          heading: HeadingLevel.HEADING_4,
-                          spacing: { after: 200 },
-                        }),
-                        new Paragraph({
-                          children: [
-                            new ImageRun({
-                              data: barChartImages[categoryIndex]!,
-                              transformation: {
-                                width: 450,
-                                height: 280,
-                              },
-                              type: 'png',
-                            }),
-                          ],
-                          alignment: AlignmentType.CENTER,
-                          spacing: { after: 300 },
-                        }),
-                      ]
-                    : []),
 
                   new Paragraph({
                     children: [
@@ -929,8 +991,8 @@ export function CategoryReportTab({
           sx={{
             backgroundColor: '#f8fafc',
             borderLeft: '6px solid #2563eb',
-            padding: '20px 25px',
-            marginBottom: '25px',
+            padding: '15px 25px',
+            marginBottom: '20px',
             borderRadius: '8px',
             boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
           }}
@@ -947,7 +1009,7 @@ export function CategoryReportTab({
           >
             Resumen Ejecutivo
           </Typography>
-          <Typography
+          {/* <Typography
             variant="body1"
             sx={{
               color: '#64748b',
@@ -957,7 +1019,7 @@ export function CategoryReportTab({
             }}
           >
             Análisis comparativo de prácticas de liderazgo
-          </Typography>
+          </Typography> */}
         </Box>
 
         <Typography
@@ -972,151 +1034,6 @@ export function CategoryReportTab({
         >
           Cinco Prácticas de Liderazgo - Análisis Comparativo
         </Typography>
-
-        {/* Tarjetas de métricas principales */}
-        <Grid container spacing={3} sx={{ mb: 4, display: 'none' }}>
-          {/* Puntuación General */}
-          <Grid size={{ xs: 6 }}>
-            <Box
-              sx={{
-                background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                borderRadius: '12px',
-                border: '2px solid #1e3a8a',
-                padding: '25px',
-                textAlign: 'center',
-                position: 'relative',
-                overflow: 'hidden',
-                height: '180px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-              }}
-            >
-              {/* Decoración esquina */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  width: '30px',
-                  height: '30px',
-                  backgroundColor: '#1e3a8a',
-                  clipPath: 'polygon(100% 0, 0 0, 100% 100%)',
-                }}
-              />
-
-              <Box
-                sx={{
-                  backgroundColor: '#1e3a8a',
-                  color: 'white',
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  marginBottom: '15px',
-                  display: 'inline-block',
-                  letterSpacing: '0.5px',
-                  mx: 'auto',
-                }}
-              >
-                PUNTUACIÓN GENERAL
-              </Box>
-              <Typography
-                sx={{
-                  fontSize: '42px',
-                  fontWeight: '800',
-                  color: '#1e3a8a',
-                  marginBottom: '5px',
-                  textShadow: '2px 2px 4px rgba(0,0,0,0.1)',
-                }}
-              >
-                {(
-                  (leadershipPractices.reduce((sum, p) => sum + p.auto_total, 0) +
-                    leadershipPractices.reduce((sum, p) => sum + p.otros_total, 0)) /
-                    (leadershipPractices.length * 2) || 0
-                ).toFixed(1)}
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '14px',
-                  color: '#475569',
-                  fontWeight: '600',
-                }}
-              >
-                de 6.0 puntos
-              </Typography>
-            </Box>
-          </Grid>
-
-          {/* Categorías Evaluadas */}
-          <Grid size={{ xs: 6 }}>
-            <Box
-              sx={{
-                background: 'linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%)',
-                borderRadius: '12px',
-                border: '2px solid #0369a1',
-                padding: '25px',
-                textAlign: 'center',
-                position: 'relative',
-                overflow: 'hidden',
-                height: '180px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-              }}
-            >
-              {/* Decoración esquina */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  width: '30px',
-                  height: '30px',
-                  backgroundColor: '#0369a1',
-                  clipPath: 'polygon(100% 0, 0 0, 100% 100%)',
-                }}
-              />
-
-              <Box
-                sx={{
-                  backgroundColor: '#0369a1',
-                  color: 'white',
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  marginBottom: '15px',
-                  display: 'inline-block',
-                  letterSpacing: '0.5px',
-                  mx: 'auto',
-                }}
-              >
-                PRÁCTICAS EVALUADAS
-              </Box>
-              <Typography
-                sx={{
-                  fontSize: '42px',
-                  fontWeight: '800',
-                  color: '#0369a1',
-                  marginBottom: '5px',
-                  textShadow: '2px 2px 4px rgba(0,0,0,0.1)',
-                }}
-              >
-                {leadershipPractices.length}
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '14px',
-                  color: '#475569',
-                  fontWeight: '600',
-                }}
-              >
-                áreas analizadas
-              </Typography>
-            </Box>
-          </Grid>
-        </Grid>
 
         {/* Información del equipo en tarjeta corporativa */}
         <Box
@@ -1141,19 +1058,6 @@ export function CategoryReportTab({
               background: 'linear-gradient(90deg, #1e3a8a 0%, #0369a1 100%)',
             }}
           />
-
-          <Typography
-            variant="h6"
-            sx={{
-              mb: 2,
-              color: '#1e3a8a',
-              fontWeight: '700',
-              fontSize: '16px',
-              letterSpacing: '0.5px',
-            }}
-          >
-            INFORMACIÓN DEL ANÁLISIS
-          </Typography>
 
           <Grid container spacing={3}>
             <Grid size={{ xs: 6 }}>
@@ -1197,10 +1101,9 @@ export function CategoryReportTab({
             sx={{
               border: '1px solid #d1d5db',
               borderRadius: '8px',
-              maxHeight: '300px',
             }}
           >
-            <Table size="small" stickyHeader>
+            <Table size="small">
               <TableHead>
                 <TableRow sx={{ backgroundColor: '#f9fafb' }}>
                   <TableCell
@@ -1438,7 +1341,7 @@ export function CategoryReportTab({
                     OBSERVADORES: Number(practice.otros_total.toFixed(1)),
                     index: index + 1,
                   }))}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
                   <XAxis
@@ -1484,16 +1387,18 @@ export function CategoryReportTab({
                     dataKey="AUTO"
                     stroke="#1976d2"
                     strokeWidth={4}
-                    dot={{ fill: '#1976d2', strokeWidth: 3, r: 6 }}
+                    dot={{ fill: '#1976d2', strokeWidth: 3, r: 3 }}
                     activeDot={{ r: 8, fill: '#1976d2', strokeWidth: 3, stroke: '#fff' }}
+                    label={{ position: 'top', fontSize: 10, fill: '#1976d2', fontWeight: '600' }}
                   />
                   <Line
                     type="monotone"
                     dataKey="OBSERVADORES"
                     stroke="#d32f2f"
                     strokeWidth={4}
-                    dot={{ fill: '#d32f2f', strokeWidth: 3, r: 6 }}
+                    dot={{ fill: '#d32f2f', strokeWidth: 3, r: 3 }}
                     activeDot={{ r: 8, fill: '#d32f2f', strokeWidth: 3, stroke: '#fff' }}
+                    label={{ position: 'bottom', fontSize: 10, fill: '#d32f2f', fontWeight: '600' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -1501,57 +1406,27 @@ export function CategoryReportTab({
           </Box>
         )}
 
-        {/* Interpretación del análisis con estilo corporativo */}
+        {/* Interpretación del análisis simplificada */}
         <Box
           sx={{
-            // background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-            borderRadius: '12px',
-            border: '2px solid #059669',
-            padding: '25px',
-            position: 'relative',
-            overflow: 'hidden',
+            backgroundColor: '#f9fafb',
+            borderRadius: '8px',
+            border: '1px solid #e5e7eb',
+            padding: '20px',
+            borderLeft: '4px solid #3b82f6',
           }}
         >
-          {/* Elementos decorativos */}
-          <Box
+          <Typography
+            variant="h6"
             sx={{
-              position: 'absolute',
-              top: '15px',
-              right: '20px',
-              width: '50px',
-              height: '50px',
-              backgroundColor: 'rgba(5, 150, 105, 0.1)',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Box
-              sx={{
-                width: '25px',
-                height: '25px',
-                backgroundColor: '#059669',
-                borderRadius: '50%',
-              }}
-            />
-          </Box>
-
-          <Box
-            sx={{
-              backgroundColor: '#059669',
-              color: 'white',
-              padding: '8px 16px',
-              borderRadius: '20px',
-              fontSize: '12px',
+              fontSize: '16px',
               fontWeight: '600',
-              marginBottom: '15px',
-              display: 'inline-block',
-              letterSpacing: '0.5px',
+              color: '#374151',
+              mb: 2,
             }}
           >
-            INTERPRETACIÓN DEL ANÁLISIS COMPARATIVO
-          </Box>
+            Interpretación del Análisis
+          </Typography>
 
           <Typography
             variant="body2"
@@ -1559,16 +1434,13 @@ export function CategoryReportTab({
               fontSize: '0.9rem',
               lineHeight: 1.6,
               mb: 2,
-              color: '#065f46',
-              fontWeight: '500',
-              position: 'relative',
-              zIndex: 1,
+              color: '#6b7280',
             }}
           >
             <strong>El gráfico de líneas</strong> facilita la visualización de las diferencias entre autopercepción y percepción externa en
             cada práctica.
-            <span style={{ color: '#1976d2', fontWeight: '700' }}> Las líneas azules (autopercepción)</span> y
-            <span style={{ color: '#d32f2f', fontWeight: '700' }}> rojas (observadores)</span> permiten identificar rápidamente:
+            <span style={{ color: '#1976d2', fontWeight: '600' }}> Las líneas azules (autopercepción)</span> y
+            <span style={{ color: '#d32f2f', fontWeight: '600' }}> rojas (observadores)</span> permiten identificar rápidamente:
           </Typography>
 
           <Box
@@ -1580,7 +1452,7 @@ export function CategoryReportTab({
                 fontSize: '0.85rem',
                 lineHeight: 1.5,
                 marginBottom: '8px',
-                color: '#065f46',
+                color: '#6b7280',
                 fontWeight: '500',
               },
             }}
@@ -1610,133 +1482,62 @@ export function CategoryReportTab({
           <>
             {/* PÁGINA A: TÍTULO, DESCRIPCIÓN Y GRÁFICO */}
             <Paper key={`${categoryIndex}-graph`} sx={pageStyle}>
-              {/* Encabezado Corporativo para Categoría */}
+              {/* Encabezado simplificado */}
               <Box
                 sx={{
-                  backgroundColor: '#1e3a8a',
-                  color: 'white',
+                  backgroundColor: '#f8fafc',
+                  borderLeft: '6px solid #2563eb',
                   padding: '15px 25px',
-                  marginBottom: '25px',
-                  position: 'relative',
-                  overflow: 'hidden',
+                  marginBottom: '20px',
                   borderRadius: '8px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                 }}
               >
-                {/* Elementos decorativos geométricos */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: '-20px',
-                    right: '-20px',
-                    width: '80px',
-                    height: '80px',
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    borderRadius: '50%',
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    bottom: '-15px',
-                    left: '60%',
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: 'rgba(255,255,255,0.08)',
-                    transform: 'rotate(45deg)',
-                  }}
-                />
-
                 <Typography
                   variant="h4"
                   sx={{
                     margin: 0,
-                    fontSize: '20px',
-                    fontWeight: '700',
-                    letterSpacing: '0.5px',
-                    position: 'relative',
-                    zIndex: 1,
+                    fontSize: '24px',
+                    fontWeight: '600',
+                    color: '#1e293b',
                     textAlign: 'center',
                   }}
                 >
-                  {category.category.name.toUpperCase()}
+                  {category.category.name}
                 </Typography>
-                <Box
-                  sx={{
-                    width: '60px',
-                    height: '3px',
-                    backgroundColor: '#60a5fa',
-                    marginTop: '8px',
-                    position: 'relative',
-                    zIndex: 1,
-                    mx: 'auto',
-                  }}
-                />
               </Box>
 
-              {/* Descripción de la categoría con estilo corporativo */}
+              {/* Descripción de la práctica simplificada */}
               {practiceInfo && practiceInfo.description && (
                 <Box
                   sx={{
-                    // background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-                    borderRadius: '12px',
-                    border: '2px solid #3b82f6',
-                    padding: '25px',
+                    backgroundColor: '#f9fafb',
+                    borderRadius: '8px',
+                    border: '1px solid #e5e7eb',
+                    padding: '20px',
                     mb: 4,
-                    position: 'relative',
-                    overflow: 'hidden',
+                    borderLeft: '4px solid #3b82f6',
                   }}
                 >
-                  {/* Icono decorativo */}
-                  {/* <Box
+                  <Typography
+                    variant="h6"
                     sx={{
-                      position: 'absolute',
-                      top: '15px',
-                      right: '20px',
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: '20px',
-                        height: '20px',
-                        backgroundColor: '#3b82f6',
-                        borderRadius: '50%',
-                      }}
-                    />
-                  </Box> */}
-
-                  {/* <Box
-                    sx={{
-                      backgroundColor: '#3b82f6',
-                      color: 'white',
-                      padding: '8px 16px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
+                      fontSize: '16px',
                       fontWeight: '600',
-                      marginBottom: '15px',
-                      display: 'inline-block',
-                      letterSpacing: '0.5px',
+                      color: '#374151',
+                      mb: 2,
                     }}
                   >
-                    DESCRIPCIÓN DE LA PRÁCTICA
-                  </Box> */}
+                    Descripción de la Práctica
+                  </Typography>
 
                   <Typography
                     variant="body1"
                     sx={{
-                      fontSize: '0.95rem',
+                      fontSize: '0.9rem',
                       lineHeight: 1.6,
+                      color: '#6b7280',
                       whiteSpace: 'break-spaces',
-                      color: '#1e40af',
-                      fontWeight: '500',
-                      position: 'relative',
-                      zIndex: 1,
                     }}
                   >
                     {practiceInfo.description}
@@ -1744,155 +1545,107 @@ export function CategoryReportTab({
                 </Box>
               )}
 
-              {/* Gráfico comparativo con estilo corporativo */}
-              <Box
-                sx={{
-                  background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-                  borderRadius: '12px',
-                  border: '2px solid #0369a1',
-                  padding: '20px',
-                  mb: 4,
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-              >
-                {/* Línea decorativa superior */}
-                <Box
+              {/* Gráfico comparativo simplificado */}
+              <Box sx={{ mb: 4 }}>
+                <Typography
+                  variant="h6"
                   sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '4px',
-                    background: 'linear-gradient(90deg, #1e3a8a 0%, #0369a1 100%)',
-                  }}
-                />
-
-                <Box
-                  sx={{
-                    backgroundColor: '#0369a1',
-                    color: 'white',
-                    padding: '10px 20px',
-                    borderRadius: '20px',
-                    fontSize: '14px',
                     fontWeight: '600',
-                    marginBottom: '20px',
-                    display: 'inline-block',
-                    letterSpacing: '0.5px',
+                    fontSize: '18px',
+                    color: '#374151',
+                    mb: 2,
+                    textAlign: 'center',
                   }}
                 >
-                  ANÁLISIS COMPARATIVO POR PREGUNTA
-                </Box>
+                  Análisis Comparativo por Pregunta
+                </Typography>
 
-                <Box
-                  sx={{ height: '300px', position: 'relative', zIndex: 1 }}
-                  ref={el => {
-                    barChartRefs.current[categoryIndex] = el as HTMLDivElement | null;
-                  }}
-                >
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart
-                      data={category.questions.map(q => ({
-                        pregunta: q.question_text.length > 60 ? q.question_text.substring(0, 57) + '...' : q.question_text,
-                        AUTO: q.leader_avg,
-                        OBSERVADORES: q.collaborator_avg,
-                      }))}
-                      layout="vertical"
-                      margin={{ top: 20, right: 40, left: 10, bottom: 20 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-                      <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#475569' }} tickCount={6} />
-                      <YAxis type="category" dataKey="pregunta" tick={{ fontSize: 8, width: 160, fill: '#475569' }} width={160} />
-                      <Tooltip
-                        formatter={(value, name) => [value, name]}
-                        contentStyle={{
-                          backgroundColor: '#fff',
-                          border: '2px solid #1e3a8a',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                        }}
-                      />
-                      <Legend
-                        wrapperStyle={{
-                          fontSize: '12px',
-                          fontWeight: '600',
-                        }}
-                      />
-                      <Bar dataKey="AUTO" fill="#1976d2" name="AUTOPERCEPCIÓN" barSize={20} />
-                      <Bar dataKey="OBSERVADORES" fill="#d32f2f" name="OBSERVADORES" barSize={20} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Box>
-              </Box>
-
-              {/* Interpretación del gráfico con estilo corporativo */}
-              <Box
-                sx={{
-                  // background: 'linear-gradient(135deg, #fef3c7 0%, #fcd34d 100%)',
-                  borderRadius: '12px',
-                  border: '2px solid #d97706',
-                  padding: '25px',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-              >
-                {/* Icono decorativo */}
                 <Box
                   sx={{
-                    position: 'absolute',
-                    top: '15px',
-                    right: '20px',
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: 'rgba(217, 119, 6, 0.2)',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '8px',
+                    border: '1px solid #e5e7eb',
+                    padding: '20px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                   }}
                 >
                   <Box
-                    sx={{
-                      width: '20px',
-                      height: '20px',
-                      backgroundColor: '#d97706',
-                      borderRadius: '50%',
+                    sx={{ height: '300px' }}
+                    ref={el => {
+                      barChartRefs.current[categoryIndex] = el as HTMLDivElement | null;
                     }}
-                  />
+                  >
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart
+                        data={category.questions.map(q => ({
+                          pregunta: q.question_text.length > 60 ? q.question_text.substring(0, 57) + '...' : q.question_text,
+                          AUTO: q.leader_avg,
+                          OBSERVADORES: q.collaborator_avg,
+                        }))}
+                        layout="vertical"
+                        margin={{ top: 20, right: 40, left: 10, bottom: 20 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                        <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#475569' }} tickCount={6} />
+                        <YAxis type="category" dataKey="pregunta" tick={{ fontSize: 8, width: 160, fill: '#475569' }} width={160} />
+                        <Tooltip
+                          formatter={(value, name) => [value, name]}
+                          contentStyle={{
+                            backgroundColor: '#fff',
+                            border: '2px solid #1e3a8a',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                          }}
+                        />
+                        <Legend
+                          wrapperStyle={{
+                            fontSize: '12px',
+                            fontWeight: '600',
+                          }}
+                        />
+                        <Bar dataKey="AUTO" fill="#1976d2" name="AUTOPERCEPCIÓN" barSize={20} />
+                        <Bar dataKey="OBSERVADORES" fill="#d32f2f" name="OBSERVADORES" barSize={20} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </Box>
                 </Box>
+              </Box>
 
-                <Box
+              {/* Interpretación del gráfico simplificada */}
+              <Box
+                sx={{
+                  backgroundColor: '#f9fafb',
+                  borderRadius: '8px',
+                  border: '1px solid #e5e7eb',
+                  padding: '20px',
+                  borderLeft: '4px solid #3b82f6',
+                }}
+              >
+                <Typography
+                  variant="h6"
                   sx={{
-                    backgroundColor: '#d97706',
-                    color: 'white',
-                    padding: '8px 16px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
+                    fontSize: '16px',
                     fontWeight: '600',
-                    marginBottom: '15px',
-                    display: 'inline-block',
-                    letterSpacing: '0.5px',
+                    color: '#374151',
+                    mb: 2,
                   }}
                 >
-                  INTERPRETACIÓN DEL GRÁFICO
-                </Box>
+                  Interpretación del Análisis
+                </Typography>
 
                 <Typography
                   variant="body2"
                   sx={{
                     fontSize: '0.9rem',
                     lineHeight: 1.6,
-                    color: '#92400e',
-                    fontWeight: '500',
-                    position: 'relative',
-                    zIndex: 1,
+                    color: '#6b7280',
                   }}
                 >
                   Este gráfico muestra la comparación entre la <strong>autopercepción del líder</strong> y la{' '}
                   <strong>percepción de los colaboradores</strong> para cada pregunta específica de la práctica{' '}
-                  <span style={{ color: '#d97706', fontWeight: '700' }}>{category.category.name}</span>. Las barras permiten identificar
+                  <span style={{ color: '#059669', fontWeight: '600' }}>{category.category.name}</span>. Las barras permiten identificar
                   preguntas con mayor o menor alineación perceptual.
                 </Typography>
               </Box>
@@ -2080,54 +1833,24 @@ export function CategoryReportTab({
               <Box
                 sx={{
                   mt: 4,
-                  // background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-                  borderRadius: '12px',
-                  border: '2px solid #059669',
-                  padding: '25px',
-                  position: 'relative',
-                  overflow: 'hidden',
+                  backgroundColor: '#f9fafb',
+                  borderRadius: '8px',
+                  border: '1px solid #e5e7eb',
+                  padding: '20px',
+                  borderLeft: '4px solid #3b82f6',
                 }}
               >
-                {/* Elementos decorativos */}
-                <Box
+                <Typography
+                  variant="h6"
                   sx={{
-                    position: 'absolute',
-                    top: '15px',
-                    right: '20px',
-                    width: '50px',
-                    height: '50px',
-                    backgroundColor: 'rgba(5, 150, 105, 0.1)',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: '25px',
-                      height: '25px',
-                      backgroundColor: '#059669',
-                      borderRadius: '50%',
-                    }}
-                  />
-                </Box>
-
-                <Box
-                  sx={{
-                    backgroundColor: '#059669',
-                    color: 'white',
-                    padding: '8px 16px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
+                    fontSize: '16px',
                     fontWeight: '600',
-                    marginBottom: '15px',
-                    display: 'inline-block',
-                    letterSpacing: '0.5px',
+                    color: '#374151',
+                    mb: 2,
                   }}
                 >
-                  RESUMEN DE LA PRÁCTICA
-                </Box>
+                  Resumen de la Práctica
+                </Typography>
 
                 <Grid container spacing={3}>
                   <Grid size={{ xs: 4 }}>

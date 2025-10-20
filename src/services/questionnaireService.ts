@@ -18,6 +18,7 @@ interface CategoryData {
     name: string;
     description?: string;
     color?: string;
+    order_index?: number;
 }
 
 export const questionnaireService = {
@@ -50,7 +51,8 @@ export const questionnaireService = {
                         id: category.id,
                         name: category.name,
                         description: category.description || '',
-                        color: '#1976d2' // Color por defecto
+                        color: '#1976d2', // Color por defecto
+                        order_index: category.order_index
                     };
                 });
             }
@@ -320,7 +322,8 @@ export const questionnaireService = {
                         id: category.id,
                         name: category.name,
                         description: category.description || '',
-                        color: category.color || '#1976d2'
+                        color: category.color || '#1976d2',
+                        order_index: category.order_index || 0
                     };
                 });
             }
@@ -469,7 +472,8 @@ export const questionnaireService = {
                         id: category.id,
                         name: category.name,
                         description: category.description || '',
-                        color: category.color || '#1976d2'
+                        color: category.color || '#1976d2',
+                        order_index: category.order_index || 0
                     };
                 });
             }

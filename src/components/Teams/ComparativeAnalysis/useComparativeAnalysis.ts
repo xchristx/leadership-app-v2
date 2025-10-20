@@ -67,7 +67,6 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
                 };
             };
             const questions = evalWithRelations?.teams?.projects?.question_templates?.questions || [];
-            console.log({ questions })
 
             const comparative: ComparativeData[] = [];
             const categoryMap = new Map<string, CategoryData>();
@@ -180,7 +179,7 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
             setComparativeData(comparative);
 
             // Procesar datos de categorías
-            const processedCategoryData = Array.from(categoryMap.values());
+            const processedCategoryData = Array.from(categoryMap.values()).sort((a, b) => a.category.order_index - b.category.order_index);
             setCategoryData(processedCategoryData);
 
             // Crear resumen de categorías
