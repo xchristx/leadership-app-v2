@@ -272,6 +272,7 @@ export function EvaluationPage() {
         }
       } else {
         setState(prev => ({ ...prev, step: 'evaluation', existingEvaluation: null }));
+        window.scrollTo(0, 0);
       }
     } catch (error) {
       console.error('Error al verificar email:', error);

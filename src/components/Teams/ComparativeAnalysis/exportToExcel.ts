@@ -34,7 +34,7 @@ export async function exportToExcelEnhanced(
 
         // Agregar datos y calcular métricas
         categorySummary.forEach(cat => {
-            const catData = categoryData.find(c => c.category === cat.category);
+            const catData = categoryData.find(c => c.category.name === cat.category);
             const numQuestions = catData?.questions.length || 1;
             const autoAvg = Number((cat.auto_total / numQuestions).toFixed(2));
             const otrosAvg = Number((cat.otros_total / numQuestions).toFixed(2));
@@ -82,7 +82,7 @@ export async function exportToExcelEnhanced(
 
         // Agregar tabla con estilo - VERSIÓN CORREGIDA
         const summaryTableData = categorySummary.map(cat => {
-            const catData = categoryData.find(c => c.category === cat.category);
+            const catData = categoryData.find(c => c.category.name === cat.category);
             const numQuestions = catData?.questions.length || 1;
             const autoAvg = Number((cat.auto_total / numQuestions).toFixed(2));
             const otrosAvg = Number((cat.otros_total / numQuestions).toFixed(2));
@@ -115,9 +115,9 @@ export async function exportToExcelEnhanced(
         // 2. HOJAS POR CATEGORÍA CON FORMATO MEJORADO
         // ============================================================================
         categoryData.forEach((category) => {
-            const sheetName = category.category.length > 31
-                ? category.category.substring(0, 28) + '...'
-                : category.category;
+            const sheetName = category.category.name.length > 31
+                ? category.category.name.substring(0, 28) + '...'
+                : category.category.name;
 
             const categorySheet = workbook.addWorksheet(sheetName);
 
@@ -251,7 +251,7 @@ export async function exportToExcelEnhanced(
             // Título para datos de gráfico
             categorySheet.mergeCells(`A${chartDataStartRow}:C${chartDataStartRow}`);
             const chartTitleCell = categorySheet.getCell(`A${chartDataStartRow}`);
-            chartTitleCell.value = 'DATOS PARA GRÁFICOS - ' + category.category.toUpperCase();
+            chartTitleCell.value = 'DATOS PARA GRÁFICOS - ' + category.category.name.toUpperCase();
             chartTitleCell.font = { bold: true, size: 12, color: { argb: '4472C4' } };
             chartTitleCell.fill = {
                 type: 'pattern',
@@ -513,7 +513,7 @@ export async function exportToExcelSimple(
 
         // Datos
         categorySummary.forEach(cat => {
-            const catData = categoryData.find(c => c.category === cat.category);
+            const catData = categoryData.find(c => c.category.name === cat.category);
             const numQuestions = catData?.questions.length || 1;
             const autoAvg = Number((cat.auto_total / numQuestions).toFixed(2));
             const otrosAvg = Number((cat.otros_total / numQuestions).toFixed(2));
@@ -531,9 +531,9 @@ export async function exportToExcelSimple(
 
         // 2. Hojas por categoría
         categoryData.forEach(category => {
-            const sheetName = category.category.length > 31
-                ? category.category.substring(0, 28) + '...'
-                : category.category;
+            const sheetName = category.category.name.length > 31
+                ? category.category.name.substring(0, 28) + '...'
+                : category.category.name;
 
             const categorySheet = workbook.addWorksheet(sheetName);
 

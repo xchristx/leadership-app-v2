@@ -72,7 +72,7 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                 {categorySummary.length > 0 && (
                   <CustomBarChart
                     data={categorySummary.map((cat, index) => {
-                      const catData = categoryData.find(c => c.category === cat.category);
+                      const catData = categoryData.find(c => c.category.name === cat.category);
                       const numQuestions = catData?.questions.length || 1;
                       return {
                         categoria: `Cat ${index + 1}`,
@@ -96,7 +96,7 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
               <Card variant="outlined" sx={{ mb: 2 }}>
                 <CardContent>
                   <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
-                    📁 {category.category}
+                    📁 {category.category.name}
                   </Typography>
 
                   <Box sx={{ overflow: 'auto', mb: 2 }}>

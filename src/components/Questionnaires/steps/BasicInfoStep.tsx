@@ -55,6 +55,8 @@ export function BasicInfoStep({ values, setFieldValue }: BasicInfoStepProps) {
               value={values.title_leader}
               onChange={e => setFieldValue('title_leader', e.target.value)}
               placeholder="Ej: Evaluación de Liderazgo - Vista Líder"
+              rows={3}
+              multiline
             />
           </Grid>
         )}
@@ -67,6 +69,8 @@ export function BasicInfoStep({ values, setFieldValue }: BasicInfoStepProps) {
               value={values.title_collaborator}
               onChange={e => setFieldValue('title_collaborator', e.target.value)}
               placeholder="Ej: Evaluación de Liderazgo - Vista Colaborador"
+              rows={3}
+              multiline
             />
           </Grid>
         )}
@@ -83,7 +87,7 @@ export function BasicInfoStep({ values, setFieldValue }: BasicInfoStepProps) {
             <TextField
               fullWidth
               multiline
-              rows={4}
+              rows={5}
               label="Descripción para Líderes"
               value={values.description_leader}
               onChange={e => setFieldValue('description_leader', e.target.value)}
@@ -97,7 +101,7 @@ export function BasicInfoStep({ values, setFieldValue }: BasicInfoStepProps) {
             <TextField
               fullWidth
               multiline
-              rows={4}
+              rows={5}
               label="Descripción para Colaboradores"
               value={values.description_collaborator}
               onChange={e => setFieldValue('description_collaborator', e.target.value)}

@@ -11,7 +11,8 @@ import type {
     ComparativeData,
     CategoryData,
     CategorySummary,
-    AnalysisMetrics
+    AnalysisMetrics,
+    CategoryQuestionDB
 } from './types';
 
 export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
@@ -66,6 +67,7 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
                 };
             };
             const questions = evalWithRelations?.teams?.projects?.question_templates?.questions || [];
+            console.log({ questions })
 
             const comparative: ComparativeData[] = [];
             const categoryMap = new Map<string, CategoryData>();
@@ -131,7 +133,7 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
 
                     // Procesar por categorías
                     if (question.category) {
-                        let categoryName = 'Sin categoría';
+                        let categoryName = { name: 'Sin Categoría', id: 'no-category', color: "#fff", description: '' } as CategoryQuestionDB;
 
                         // Parsear la categoría que viene como JSON
                         try {
@@ -139,16 +141,16 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
                                 ? JSON.parse(question.category)
                                 : question.category;
 
-                            if (categoryData && typeof categoryData === 'object' && 'name' in categoryData) {
-                                categoryName = (categoryData as { name: string }).name;
+                            if (categoryData && typeof categoryData === 'object') {
+                                categoryName = (categoryData as CategoryQuestionDB);
                             }
 
                         } catch (error) {
                             console.warn('Error parsing category data:', error);
                         }
 
-                        if (!categoryMap.has(categoryName)) {
-                            categoryMap.set(categoryName, {
+                        if (!categoryMap.has(categoryName.id)) {
+                            categoryMap.set(categoryName.id, {
                                 category: categoryName,
                                 leader_total: 0,
                                 collaborator_total: 0,
@@ -156,7 +158,7 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
                             });
                         }
 
-                        const cat = categoryMap.get(categoryName)!;
+                        const cat = categoryMap.get(categoryName.id)!;
                         cat.leader_total += leaderAvg;
                         cat.collaborator_total += collaboratorsAvg;
                         cat.questions.push({
@@ -183,7 +185,7 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
 
             // Crear resumen de categorías
             const summary = processedCategoryData.map(cat => ({
-                category: cat.category,
+                category: cat.category.name,
                 auto_total: cat.leader_total,
                 otros_total: cat.collaborator_total,
             }));

@@ -4,6 +4,7 @@
 // Interfaces compartidas para el análisis comparativo de evaluaciones
 // ============================================================================
 
+
 export interface DatabaseQuestion {
     id: string;
     question_type: string | null;
@@ -34,8 +35,15 @@ export interface CategoryQuestion {
     average_collaborator: number;
 }
 
+export interface CategoryQuestionDB {
+    name: string,
+    color: string,
+    id: string,
+    description: string
+}
+
 export interface CategoryData {
-    category: string;
+    category: CategoryQuestionDB;
     leader_total: number;
     collaborator_total: number;
     questions: CategoryQuestion[];
