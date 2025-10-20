@@ -36,7 +36,9 @@ import {
 } from 'docx';
 import { saveAs } from 'file-saver';
 import html2canvas from 'html2canvas';
-import { useRef } from 'react';
+import { pdf } from '@react-pdf/renderer';
+import { ReportPDFDocument } from './PDF/ReportPDFDocument';
+import { useRef, useState } from 'react';
 import type { CategoryData, CategorySummary, ComparativeData } from './types';
 
 interface CategoryReportTabProps {
@@ -84,6 +86,11 @@ export function CategoryReportTab({
   // Referencias para capturar gráficos
   const lineChartRef = useRef<HTMLDivElement>(null);
   const barChartRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Estado para el loading del PDF
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [currentPdfPage, setCurrentPdfPage] = useState(0);
+  const [totalPdfPages, setTotalPdfPages] = useState(0);
 
   const LEADERSHIP_PRACTICES = categoryData.map(cat => cat.category);
 
@@ -152,10 +159,82 @@ export function CategoryReportTab({
     return <Alert severity="info">No hay datos disponibles para generar el reporte por categorías.</Alert>;
   }
 
-  // Funciones de exportación (placeholder)
-  const handleExportToPDF = () => {
-    console.log('Exportar a PDF');
-    // TODO: Implementar exportación a PDF
+  // Funciones de exportación
+  const handleExportToPDF = async () => {
+    try {
+      setPdfLoading(true);
+      setCurrentPdfPage(1);
+      setTotalPdfPages(3 + categoryData.length * 2); // Carátula + Resumen + Gráfico + (2 páginas por categoría)
+
+      console.log('Iniciando exportación a PDF con React-PDF...');
+
+      // Capturar gráficos como imágenes
+      let lineChartImage: string | null = null;
+      const barChartImages: (string | null)[] = [];
+
+      // Capturar gráfico de líneas principal
+      if (lineChartRef.current) {
+        setCurrentPdfPage(2);
+        const canvas = await html2canvas(lineChartRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+        });
+        lineChartImage = canvas.toDataURL('image/png');
+      }
+
+      // Capturar gráficos de barras por categoría
+      for (let i = 0; i < barChartRefs.current.length; i++) {
+        setCurrentPdfPage(3 + i);
+        const chartRef = barChartRefs.current[i];
+        if (chartRef) {
+          const canvas = await html2canvas(chartRef, {
+            backgroundColor: '#ffffff',
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+          });
+          barChartImages.push(canvas.toDataURL('image/png'));
+        } else {
+          barChartImages.push(null);
+        }
+      }
+
+      setCurrentPdfPage(totalPdfPages);
+
+      // Generar PDF con @react-pdf/renderer
+      const blob = await pdf(
+        <ReportPDFDocument
+          teamName={teamName}
+          categoryData={categoryData}
+          categorySummary={categorySummary}
+          leadershipPractices={categoryData.map(cat => cat.category)}
+          chartImages={{
+            lineChart: lineChartImage,
+            barCharts: barChartImages,
+          }}
+          comparativeDataLength={comparativeData.length}
+        />
+      ).toBlob();
+
+      // Generar nombre del archivo
+      const fileName = `Reporte_Liderazgo_${teamName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+      // Guardar el PDF
+      saveAs(blob, fileName);
+
+      console.log(`PDF generado exitosamente: ${fileName}`);
+    } catch (error) {
+      console.error('Error al generar el PDF:', error);
+      alert('Error al generar el PDF. Por favor, inténtalo de nuevo.');
+    } finally {
+      setPdfLoading(false);
+      setCurrentPdfPage(0);
+      setTotalPdfPages(0);
+    }
   };
 
   const handleExportToWord = async () => {
@@ -678,8 +757,8 @@ export function CategoryReportTab({
           '@media print': { display: 'none' },
         }}
       >
-        <Button variant="outlined" startIcon={<PdfIcon />} onClick={handleExportToPDF} disabled>
-          Exportar PDF
+        <Button variant="outlined" startIcon={<PdfIcon />} onClick={handleExportToPDF} disabled={pdfLoading}>
+          {pdfLoading ? 'Generando...' : 'Exportar PDF'}
         </Button>
         <Button variant="outlined" startIcon={<WordIcon />} onClick={handleExportToWord}>
           Exportar Word
@@ -689,8 +768,68 @@ export function CategoryReportTab({
         </Button>
       </Box>
 
+      {/* Loading del PDF */}
+      {pdfLoading && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+        >
+          <Box
+            sx={{
+              backgroundColor: 'white',
+              borderRadius: 2,
+              p: 4,
+              minWidth: 300,
+              textAlign: 'center',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 2, color: '#1976d2', fontWeight: 600 }}>
+              Generando PDF
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
+              Procesando página {currentPdfPage} de {totalPdfPages}
+            </Typography>
+            <Box sx={{ width: '100%', mb: 2 }}>
+              <div
+                style={{
+                  width: '100%',
+                  height: 8,
+                  backgroundColor: '#e0e0e0',
+                  borderRadius: 4,
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    height: '100%',
+                    backgroundColor: '#1976d2',
+                    borderRadius: 4,
+                    transition: 'width 0.3s ease',
+                    width: totalPdfPages > 0 ? `${(currentPdfPage / totalPdfPages) * 100}%` : '0%',
+                  }}
+                />
+              </div>
+            </Box>
+            <Typography variant="caption" sx={{ color: '#999' }}>
+              Por favor espera mientras se genera tu documento...
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
       {/* ==================== CARÁTULA ==================== */}
-      <Paper sx={{ ...pageStyle, p: 0 }}>
+      <Paper sx={{ ...pageStyle, p: 0 }} data-testid="page">
         <Box
           sx={{
             height: '279mm',
@@ -985,7 +1124,7 @@ export function CategoryReportTab({
       </Paper>
 
       {/* ==================== PÁGINA 1: RESUMEN EJECUTIVO ==================== */}
-      <Paper sx={pageStyle}>
+      <Paper sx={pageStyle} data-testid="page">
         {/* Encabezado simplificado */}
         <Box
           sx={{
@@ -1295,7 +1434,7 @@ export function CategoryReportTab({
       </Paper>
 
       {/* ==================== PÁGINA 2: ANÁLISIS GRÁFICO ==================== */}
-      <Paper sx={pageStyle}>
+      <Paper sx={pageStyle} data-testid="page">
         {/* Encabezado simplificado */}
         <Box
           sx={{
@@ -1481,7 +1620,7 @@ export function CategoryReportTab({
         return (
           <>
             {/* PÁGINA A: TÍTULO, DESCRIPCIÓN Y GRÁFICO */}
-            <Paper key={`${categoryIndex}-graph`} sx={pageStyle}>
+            <Paper key={`${categoryIndex}-graph`} sx={pageStyle} data-testid="page">
               {/* Encabezado simplificado */}
               <Box
                 sx={{
@@ -1652,7 +1791,7 @@ export function CategoryReportTab({
             </Paper>
 
             {/* PÁGINA B: CUADRO DETALLADO */}
-            <Paper key={`${categoryIndex}-table`} sx={pageStyle}>
+            <Paper key={`${categoryIndex}-table`} sx={pageStyle} data-testid="page">
               {/* Encabezado compacto */}
               <Typography
                 variant="h5"

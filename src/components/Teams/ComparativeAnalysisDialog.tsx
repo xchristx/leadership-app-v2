@@ -35,7 +35,7 @@ import { DetailedAnalysisTab } from './ComparativeAnalysis/DetailedAnalysisTab';
 import { CategoryReportTab } from './ComparativeAnalysis';
 import { TabPanel } from './ComparativeAnalysis/TabPanel';
 import { useComparativeAnalysis } from './ComparativeAnalysis/useComparativeAnalysis';
-import { exportToExcelSimple } from './ComparativeAnalysis/exportToExcel';
+import { exportToExcelEnhanced, exportToExcelSimple } from './ComparativeAnalysis/exportToExcel';
 import type { ComparativeAnalysisDialogProps } from './ComparativeAnalysis/types';
 
 export function ComparativeAnalysisDialog({ open, onClose, teamId, teamName }: ComparativeAnalysisDialogProps) {
@@ -54,7 +54,7 @@ export function ComparativeAnalysisDialog({ open, onClose, teamId, teamName }: C
   const handleExportToExcel = async () => {
     // Usar la nueva exportación mejorada con XLSX
     try {
-      const success = await exportToExcelSimple(comparativeData, categoryData, categorySummary);
+      const success = await exportToExcelEnhanced(comparativeData, categoryData, categorySummary);
       if (!success) {
         console.error('Error al exportar Excel mejorado, intentando método estándar...');
         // Fallback a exportación estándar

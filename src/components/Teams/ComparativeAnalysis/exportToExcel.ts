@@ -246,41 +246,41 @@ export async function exportToExcelEnhanced(
             // ============================================================================
             // AGREGAR DATOS PREPARADOS PARA GRÁFICOS MANUALES
             // ============================================================================
-            const chartDataStartRow = category.questions.length + 4;
+            // const chartDataStartRow = category.questions.length + 4;
 
-            // Título para datos de gráfico
-            categorySheet.mergeCells(`A${chartDataStartRow}:C${chartDataStartRow}`);
-            const chartTitleCell = categorySheet.getCell(`A${chartDataStartRow}`);
-            chartTitleCell.value = 'DATOS PARA GRÁFICOS - ' + category.category.name.toUpperCase();
-            chartTitleCell.font = { bold: true, size: 12, color: { argb: '4472C4' } };
-            chartTitleCell.fill = {
-                type: 'pattern',
-                pattern: 'solid',
-                fgColor: { argb: 'D9E1F2' }
-            };
+            // // Título para datos de gráfico
+            // categorySheet.mergeCells(`A${chartDataStartRow}:C${chartDataStartRow}`);
+            // const chartTitleCell = categorySheet.getCell(`A${chartDataStartRow}`);
+            // chartTitleCell.value = 'DATOS PARA GRÁFICOS - ' + category.category.name.toUpperCase();
+            // chartTitleCell.font = { bold: true, size: 12, color: { argb: '4472C4' } };
+            // chartTitleCell.fill = {
+            //     type: 'pattern',
+            //     pattern: 'solid',
+            //     fgColor: { argb: 'D9E1F2' }
+            // };
 
-            // Encabezados para datos de gráfico
-            categorySheet.addRow(['Pregunta', 'AUTO', 'OBSERVADORES', 'Diferencia']);
+            // // Encabezados para datos de gráfico
+            // categorySheet.addRow(['Pregunta', 'AUTO', 'OBSERVADORES', 'Diferencia']);
 
-            // Datos para gráficos
-            category.questions.forEach((question) => {
-                const difference = Math.abs(question.leader_avg - question.collaborator_avg);
-                categorySheet.addRow([
-                    `P${question.question_number}`,
-                    Number(question.leader_avg.toFixed(2)),
-                    Number(question.collaborator_avg.toFixed(2)),
-                    Number(difference.toFixed(2))
-                ]);
-            });
+            // // Datos para gráficos
+            // category.questions.forEach((question) => {
+            //     const difference = Math.abs(question.leader_avg - question.collaborator_avg);
+            //     categorySheet.addRow([
+            //         `P${question.question_number}`,
+            //         Number(question.leader_avg.toFixed(2)),
+            //         Number(question.collaborator_avg.toFixed(2)),
+            //         Number(difference.toFixed(2))
+            //     ]);
+            // });
 
-            // Formatear datos de gráfico
-            const chartHeaderRow = categorySheet.getRow(chartDataStartRow + 1);
-            chartHeaderRow.font = { bold: true, color: { argb: 'FFFFFF' } };
-            chartHeaderRow.fill = {
-                type: 'pattern',
-                pattern: 'solid',
-                fgColor: { argb: '7030A0' }
-            };
+            // // Formatear datos de gráfico
+            // const chartHeaderRow = categorySheet.getRow(chartDataStartRow + 1);
+            // chartHeaderRow.font = { bold: true, color: { argb: 'FFFFFF' } };
+            // chartHeaderRow.fill = {
+            //     type: 'pattern',
+            //     pattern: 'solid',
+            //     fgColor: { argb: '7030A0' }
+            // };
         });
 
         // ============================================================================
@@ -301,7 +301,7 @@ export async function exportToExcelEnhanced(
             const estado = Math.abs(difference) > 1.5 ? 'Crítico' : Math.abs(difference) > 0.8 ? 'Atención' : 'OK';
             const categoria = categoryData.find(cat =>
                 cat.questions.some(q => q.question_id === item.question_id)
-            )?.category || 'Sin categoría';
+            )?.category.name || 'Sin categoría';
 
             analysisSheet.addRow([
                 item.order_index || 0,
@@ -375,7 +375,7 @@ export async function exportToExcelEnhanced(
             const estado = Math.abs(difference) > 1.5 ? 'Crítico' : Math.abs(difference) > 0.8 ? 'Atención' : 'OK';
             const categoria = categoryData.find(cat =>
                 cat.questions.some(q => q.question_id === item.question_id)
-            )?.category || 'Sin categoría';
+            )?.category.name || 'Sin categoría';
 
             return [
                 item.order_index || 0,
@@ -405,64 +405,64 @@ export async function exportToExcelEnhanced(
         // ============================================================================
         // 4. HOJA DE INSTRUCCIONES PARA GRÁFICOS
         // ============================================================================
-        const instructionsSheet = workbook.addWorksheet('Instrucciones Gráficos');
+        // const instructionsSheet = workbook.addWorksheet('Instrucciones Gráficos');
 
-        instructionsSheet.mergeCells('A1:D1');
-        const titleCell = instructionsSheet.getCell('A1');
-        titleCell.value = 'INSTRUCCIONES PARA CREAR GRÁFICOS EN EXCEL';
-        titleCell.font = { bold: true, size: 16, color: { argb: 'FFFFFF' } };
-        titleCell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: '4472C4' }
-        };
-        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        // instructionsSheet.mergeCells('A1:D1');
+        // const titleCell = instructionsSheet.getCell('A1');
+        // titleCell.value = 'INSTRUCCIONES PARA CREAR GRÁFICOS EN EXCEL';
+        // titleCell.font = { bold: true, size: 16, color: { argb: 'FFFFFF' } };
+        // titleCell.fill = {
+        //     type: 'pattern',
+        //     pattern: 'solid',
+        //     fgColor: { argb: '4472C4' }
+        // };
+        // titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
-        const instructions = [
-            '',
-            '📊 CÓMO CREAR GRÁFICOS AUTOMÁTICAMENTE:',
-            '',
-            '1. 📈 GRÁFICO DE COMPARACIÓN POR CATEGORÍA:',
-            '   • Ve a la hoja "Resumen Comparativo"',
-            '   • Selecciona las columnas A, B y C (Categoría, AUTO, OTROS)',
-            '   • Insertar > Gráficos > Columna Agrupada',
-            '',
-            '2. 🔍 GRÁFICOS POR CATEGORÍA INDIVIDUAL:',
-            '   • En cada hoja de categoría, busca "DATOS PARA GRÁFICOS"',
-            '   • Selecciona los datos de las columnas (Pregunta, AUTO, OBSERVADORES)',
-            '   • Insertar > Gráficos > Líneas o Barras',
-            '',
-            '3. 📋 GRÁFICO DE ANÁLISIS COMPLETO:',
-            '   • Ve a la hoja "Análisis Completo"',
-            '   • Usa los filtros para seleccionar categorías específicas',
-            '   • Insertar > Gráficos > Dispersión o Radar',
-            '',
-            '🎨 RECOMENDACIONES DE GRÁFICOS:',
-            '   • Comparación AUTO vs OTROS: Gráfico de columnas agrupadas',
-            '   • Tendencias por pregunta: Gráfico de líneas',
-            '   • Diferencias: Gráfico de barras horizontales',
-            '   • Estado general: Gráfico de radar o dona',
-            '',
-            '💡 CONSEJOS:',
-            '   • Los datos ya están preparados y formateados',
-            '   • Usa los filtros de tabla para analizar subconjuntos',
-            '   • Los colores indican: Verde=Alineado, Amarillo=Atención, Rojo=Crítico'
-        ];
+        // const instructions = [
+        //     '',
+        //     '📊 CÓMO CREAR GRÁFICOS AUTOMÁTICAMENTE:',
+        //     '',
+        //     '1. 📈 GRÁFICO DE COMPARACIÓN POR CATEGORÍA:',
+        //     '   • Ve a la hoja "Resumen Comparativo"',
+        //     '   • Selecciona las columnas A, B y C (Categoría, AUTO, OTROS)',
+        //     '   • Insertar > Gráficos > Columna Agrupada',
+        //     '',
+        //     '2. 🔍 GRÁFICOS POR CATEGORÍA INDIVIDUAL:',
+        //     '   • En cada hoja de categoría, busca "DATOS PARA GRÁFICOS"',
+        //     '   • Selecciona los datos de las columnas (Pregunta, AUTO, OBSERVADORES)',
+        //     '   • Insertar > Gráficos > Líneas o Barras',
+        //     '',
+        //     '3. 📋 GRÁFICO DE ANÁLISIS COMPLETO:',
+        //     '   • Ve a la hoja "Análisis Completo"',
+        //     '   • Usa los filtros para seleccionar categorías específicas',
+        //     '   • Insertar > Gráficos > Dispersión o Radar',
+        //     '',
+        //     '🎨 RECOMENDACIONES DE GRÁFICOS:',
+        //     '   • Comparación AUTO vs OTROS: Gráfico de columnas agrupadas',
+        //     '   • Tendencias por pregunta: Gráfico de líneas',
+        //     '   • Diferencias: Gráfico de barras horizontales',
+        //     '   • Estado general: Gráfico de radar o dona',
+        //     '',
+        //     '💡 CONSEJOS:',
+        //     '   • Los datos ya están preparados y formateados',
+        //     '   • Usa los filtros de tabla para analizar subconjuntos',
+        //     '   • Los colores indican: Verde=Alineado, Amarillo=Atención, Rojo=Crítico'
+        // ];
 
-        instructions.forEach((instruction, index) => {
-            const row = instructionsSheet.getRow(index + 3);
-            row.getCell(1).value = instruction;
+        // instructions.forEach((instruction, index) => {
+        //     const row = instructionsSheet.getRow(index + 3);
+        //     row.getCell(1).value = instruction;
 
-            if (instruction.includes('📊') || instruction.includes('🎨') || instruction.includes('💡')) {
-                row.font = { bold: true, color: { argb: '4472C4' } };
-            } else if (instruction.includes('1.') || instruction.includes('2.') || instruction.includes('3.')) {
-                row.font = { bold: true };
-            }
-        });
+        //     if (instruction.includes('📊') || instruction.includes('🎨') || instruction.includes('💡')) {
+        //         row.font = { bold: true, color: { argb: '4472C4' } };
+        //     } else if (instruction.includes('1.') || instruction.includes('2.') || instruction.includes('3.')) {
+        //         row.font = { bold: true };
+        //     }
+        // });
 
-        instructionsSheet.columns = [
-            { width: 80 }
-        ];
+        // instructionsSheet.columns = [
+        //     { width: 80 }
+        // ];
 
         // ============================================================================
         // GENERAR Y DESCARGAR ARCHIVO
