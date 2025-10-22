@@ -143,7 +143,6 @@ export const supabaseApi = createApi({
                                 )
                             )
                         `)
-
                     if (projectId) query = query.eq('project_id', projectId)
                     if (teamId) query = query.eq('team_id', teamId)
 
@@ -166,7 +165,6 @@ export const supabaseApi = createApi({
                             template_title: teams?.projects?.question_templates?.title || 'Template sin título'
                         };
                     });
-
                     return { data: evaluationsWithRelations as Evaluation[] }
                 } catch (error) {
                     return { error: { status: 'FETCH_ERROR', error: String(error) } }

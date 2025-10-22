@@ -13,6 +13,26 @@ import type { Evaluation } from '../types';
 
 export function Evaluations() {
   const { evaluations, isLoading } = useEvaluations();
+
+  console.log({ evaluations });
+
+  // Enriquecer evaluaciones con nombre de equipo y proyecto si no existen
+  const evaluationsWithNames = (evaluations || []).map(ev => {
+    // Si existe la relación team y/o project, extraerlos
+    let teamName = ev.team_name;
+    let projectName = ev.teams?.projects.name;
+    if (!teamName && ev.team && typeof ev.team === 'object') {
+      teamName = ev.team.name;
+      if (!projectName && ev.teams?.projects.name && typeof ev.teams?.projects.name === 'object') {
+        projectName = ev.teams.projects.name;
+      }
+    }
+    return {
+      ...ev,
+      team_name: teamName || '',
+      project_name: projectName || '',
+    };
+  });
   const [selectedEvaluationId, setSelectedEvaluationId] = useState<string | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
 
@@ -48,16 +68,21 @@ export function Evaluations() {
       render: (_, row) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <AssessmentIcon color="primary" />
-          <Box>
-            <Typography variant="body2" fontWeight={500}>
-              {row.template_title || 'Template sin título'}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Equipo: {row.team_name || 'Equipo sin nombre'}
-            </Typography>
-          </Box>
+          <Typography variant="body2" fontWeight={500}>
+            {row.template_title || 'Template sin título'}
+          </Typography>
         </Box>
       ),
+    },
+    {
+      id: 'team_name',
+      label: 'Equipo',
+      render: value => <Typography variant="body2">{String(value || 'Equipo sin nombre')}</Typography>,
+    },
+    {
+      id: 'project_name' as 'team_name',
+      label: 'Proyecto',
+      render: value => <Typography variant="body2">{String(value || '-')}</Typography>,
     },
     {
       id: 'evaluator_name',
@@ -135,9 +160,27 @@ export function Evaluations() {
   ];
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box
+      sx={{
+        px: { xs: 1, sm: 2, md: 3 },
+        py: { xs: 1, sm: 2, md: 3 },
+        width: '100%',
+        maxWidth: '100vw',
+        boxSizing: 'border-box',
+        overflowX: 'hidden',
+      }}
+    >
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          mb: 3,
+          gap: { xs: 2, sm: 0 },
+        }}
+      >
         <Box>
           <Typography variant="h4" component="h1" gutterBottom>
             Evaluaciones
@@ -146,22 +189,28 @@ export function Evaluations() {
             Gestiona las evaluaciones de liderazgo
           </Typography>
         </Box>
-
-        <Button sx={{ display: 'none' }} variant="contained" startIcon={<AddIcon />} onClick={handleCreateEvaluation}>
+        <Button
+          sx={{ display: 'none', mt: { xs: 1, sm: 0 }, width: { xs: '100%', sm: 'auto' } }}
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleCreateEvaluation}
+        >
           Nueva Evaluación
         </Button>
       </Box>
 
       {/* Tabla de evaluaciones */}
-      <CustomTable
-        data={evaluations}
-        columns={columns}
-        loading={isLoading}
-        searchable
-        pagination
-        onRowClick={handleViewEvaluation}
-        emptyMessage="No hay evaluaciones disponibles"
-      />
+      <Box sx={{ width: '100%', overflowX: 'auto' }}>
+        <CustomTable
+          data={evaluationsWithNames}
+          columns={columns}
+          loading={isLoading}
+          searchable
+          pagination
+          onRowClick={handleViewEvaluation}
+          emptyMessage="No hay evaluaciones disponibles"
+        />
+      </Box>
 
       {/* Modal de visualización de evaluaciones */}
       <EvaluationViewer open={viewerOpen} evaluationId={selectedEvaluationId} onClose={closeViewer} />

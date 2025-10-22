@@ -4,7 +4,21 @@
 // Dashboard principal con métricas, resumen de proyectos y actividad reciente
 // ============================================================================
 
-import { Box, Grid, Typography, List, ListItem, ListItemText, ListItemAvatar, Avatar, Divider, Button, Chip } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Avatar,
+  Divider,
+  Button,
+  Chip,
+  Card,
+  CardContent,
+} from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
   Work as ProjectsIcon,
@@ -12,49 +26,77 @@ import {
   Assessment as EvaluationsIcon,
   Add as AddIcon,
   ArrowForward as ArrowForwardIcon,
+  CheckCircle as CheckCircleIcon,
+  PendingActions as PendingIcon,
 } from '@mui/icons-material';
-import { StatsCard, CustomCard, DashboardMetrics } from '../components';
+import { StatsCard, CustomCard } from '../components';
 import { useAuth, useProjects, useTeams, useEvaluations } from '../hooks';
+import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
 
 export function Dashboard() {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const { projects, stats: projectStats, isLoading: projectsLoading } = useProjects();
-  const { stats: teamStats, isLoading: teamsLoading } = useTeams();
+  const { teams, stats: teamStats, isLoading: teamsLoading } = useTeams();
   const { evaluations, stats: evalStats, isLoading: evaluationsLoading } = useEvaluations();
 
-  // Proyectos recientes (últimos 5)
-  const recentProjects = projects.slice(0, 5);
+  // Proyectos recientes (últimos 5, ordenados por fecha de creación)
+  const recentProjects = useMemo(() => {
+    return [...projects].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+  }, [projects]);
 
-  // Evaluaciones pendientes
-  const pendingEvaluations = evaluations.filter(e => !e.is_complete).slice(0, 3);
+  // Evaluaciones pendientes (últimas 5)
+  const pendingEvaluations = useMemo(() => {
+    return evaluations
+      .filter(e => !e.is_complete)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5);
+  }, [evaluations]);
+
+  // Calcular tasa de finalización promedio
+  const completionRate = useMemo(() => {
+    if (evaluations.length === 0) return 0;
+    const completed = evaluations.filter(e => e.is_complete).length;
+    return Math.round((completed / evaluations.length) * 100);
+  }, [evaluations]);
 
   const handleCreateProject = () => {
-    // TODO: Implementar navegación a crear proyecto
-    console.log('Navigate to create project');
+    navigate('/projects/new');
   };
 
   const handleViewAllProjects = () => {
-    // TODO: Implementar navegación a lista de proyectos
-    console.log('Navigate to projects list');
+    navigate('/projects');
+  };
+
+  const handleViewAllTeams = () => {
+    navigate('/teams');
+  };
+
+  const handleViewAllEvaluations = () => {
+    navigate('/evaluations');
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2,
+          mb: 4,
+        }}
+      >
         <Box>
-          <Typography variant="h4" component="h1" gutterBottom>
+          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
             Dashboard
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Bienvenido, {profile?.first_name} {profile?.last_name}
           </Typography>
-        </Box>
-
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreateProject}>
-            Nuevo Proyecto
-          </Button>
         </Box>
       </Box>
 
@@ -62,9 +104,9 @@ export function Dashboard() {
         {/* Métricas principales */}
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
-            title="Proyectos Activos"
-            value={projectStats.active}
-            change={{ value: 12, label: 'vs mes anterior' }}
+            title="Proyectos Totales"
+            value={projectStats.total}
+            change={{ value: projectStats.active, label: 'activos' }}
             icon={<ProjectsIcon />}
             loading={projectsLoading}
           />
@@ -74,7 +116,7 @@ export function Dashboard() {
           <StatsCard
             title="Equipos"
             value={teamStats.total}
-            change={{ value: 8, label: 'nuevos este mes' }}
+            change={{ value: teamStats.active, label: 'activos' }}
             icon={<TeamsIcon />}
             loading={teamsLoading}
           />
@@ -83,8 +125,8 @@ export function Dashboard() {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
             title="Evaluaciones"
-            value={evalStats.active}
-            change={{ value: -5, label: 'pendientes' }}
+            value={evalStats.total}
+            change={{ value: evalStats.active, label: 'pendientes' }}
             icon={<EvaluationsIcon />}
             loading={evaluationsLoading}
           />
@@ -92,16 +134,16 @@ export function Dashboard() {
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
-            title="Rendimiento"
-            value="87%"
-            change={{ value: 15, label: 'mejora promedio' }}
+            title="Tasa de Finalización"
+            value={`${completionRate}%`}
+            change={{ value: evalStats.completed, label: 'completadas' }}
             icon={<TrendingUpIcon />}
-            loading={false}
+            loading={evaluationsLoading}
           />
         </Grid>
 
         {/* Proyectos recientes */}
-        <Grid size={{ xs: 12, md: 8 }}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <CustomCard
             title="Proyectos Recientes"
             headerActions={
@@ -112,19 +154,34 @@ export function Dashboard() {
             loading={projectsLoading}
           >
             {recentProjects.length > 0 ? (
-              <List>
+              <List sx={{ py: 0 }}>
                 {recentProjects.map((project, index) => (
                   <Box key={project.id}>
-                    <ListItem sx={{ px: 0 }}>
+                    <ListItem
+                      sx={{
+                        px: 0,
+                        py: 2,
+                        cursor: 'pointer',
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                          borderRadius: 1,
+                        },
+                      }}
+                      onClick={() => navigate(`/projects/${project.id}`)}
+                    >
                       <ListItemAvatar>
-                        <Avatar>
+                        <Avatar sx={{ bgcolor: project.status === 'active' ? 'success.main' : 'grey.400' }}>
                           <ProjectsIcon />
                         </Avatar>
                       </ListItemAvatar>
                       <ListItemText
-                        primary={project.name}
+                        primary={
+                          <Typography variant="body1" fontWeight={600}>
+                            {project.name}
+                          </Typography>
+                        }
                         secondary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
                             <Chip
                               label={
                                 project.status === 'active'
@@ -137,9 +194,14 @@ export function Dashboard() {
                               }
                               size="small"
                               color={project.status === 'active' ? 'success' : project.status === 'completed' ? 'primary' : 'default'}
+                              sx={{ fontWeight: 600 }}
                             />
                             <Typography variant="caption" color="text.secondary">
-                              {new Date(project.created_at).toLocaleDateString()}
+                              {new Date(project.created_at).toLocaleDateString('es-ES', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                              })}
                             </Typography>
                           </Box>
                         }
@@ -150,37 +212,61 @@ export function Dashboard() {
                 ))}
               </List>
             ) : (
-              <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-                <ProjectsIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
-                <Typography variant="body2">No hay proyectos recientes</Typography>
+              <Box sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
+                <ProjectsIcon sx={{ fontSize: 56, mb: 2, opacity: 0.3 }} />
+                <Typography variant="body1" fontWeight={500}>
+                  No hay proyectos
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 0.5 }}>
+                  Crea tu primer proyecto para empezar
+                </Typography>
+                <Button variant="outlined" startIcon={<AddIcon />} onClick={handleCreateProject} sx={{ mt: 2 }}>
+                  Crear Proyecto
+                </Button>
               </Box>
             )}
           </CustomCard>
         </Grid>
 
         {/* Evaluaciones pendientes */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <CustomCard title="Evaluaciones Pendientes" loading={evaluationsLoading}>
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <CustomCard
+            title="Evaluaciones Pendientes"
+            loading={evaluationsLoading}
+            headerActions={
+              pendingEvaluations.length > 0 && (
+                <Button size="small" endIcon={<ArrowForwardIcon />} onClick={handleViewAllEvaluations}>
+                  Ver todas
+                </Button>
+              )
+            }
+          >
             {pendingEvaluations.length > 0 ? (
-              <List>
+              <List sx={{ py: 0 }}>
                 {pendingEvaluations.map((evaluation, index) => (
                   <Box key={evaluation.id}>
-                    <ListItem sx={{ px: 0 }}>
+                    <ListItem sx={{ px: 0, py: 2 }}>
                       <ListItemAvatar>
                         <Avatar sx={{ bgcolor: 'warning.main' }}>
-                          <EvaluationsIcon />
+                          <PendingIcon />
                         </Avatar>
                       </ListItemAvatar>
                       <ListItemText
                         primary={
-                          <Typography variant="body2" noWrap>
-                            {evaluation.team?.name || 'Proyecto'} {/* TODO: Mostrar nombre del proyecto */}
+                          <Typography variant="body2" fontWeight={600} noWrap>
+                            Equipo: {evaluation.team_id || 'Sin asignar'}
                           </Typography>
                         }
                         secondary={
-                          <Typography variant="caption" color="text.secondary">
-                            Creado: {evaluation.created_at ? new Date(evaluation.created_at).toLocaleDateString() : 'Sin fecha'}
-                          </Typography>
+                          <Box sx={{ mt: 0.5 }}>
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              Creado:{' '}
+                              {new Date(evaluation.created_at).toLocaleDateString('es-ES', {
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                            </Typography>
+                          </Box>
                         }
                       />
                     </ListItem>
@@ -189,18 +275,148 @@ export function Dashboard() {
                 ))}
               </List>
             ) : (
-              <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-                <EvaluationsIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
-                <Typography variant="body2">No hay evaluaciones pendientes</Typography>
+              <Box sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
+                <CheckCircleIcon sx={{ fontSize: 56, mb: 2, opacity: 0.3, color: 'success.main' }} />
+                <Typography variant="body1" fontWeight={500}>
+                  ¡Todo al día!
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 0.5 }}>
+                  No hay evaluaciones pendientes
+                </Typography>
               </Box>
             )}
           </CustomCard>
         </Grid>
 
-        {/* Gráficos y métricas avanzadas */}
-        <Grid size={{ xs: 12 }}>
-          <DashboardMetrics />
+        {/* Resumen de equipos */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" fontWeight={700}>
+                  Resumen de Equipos
+                </Typography>
+                <Button size="small" endIcon={<ArrowForwardIcon />} onClick={handleViewAllTeams}>
+                  Ver todos
+                </Button>
+              </Box>
+
+              {teamsLoading ? (
+                <Typography variant="body2" color="text.secondary">
+                  Cargando...
+                </Typography>
+              ) : teams.length > 0 ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
+                        <TeamsIcon sx={{ fontSize: 18 }} />
+                      </Avatar>
+                      <Typography variant="body2" fontWeight={600}>
+                        Total de Equipos
+                      </Typography>
+                    </Box>
+                    <Typography variant="h5" fontWeight={700}>
+                      {teamStats.total}
+                    </Typography>
+                  </Box>
+
+                  <Divider />
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Equipos Activos
+                    </Typography>
+                    <Chip label={teamStats.active} color="success" size="small" sx={{ fontWeight: 600 }} />
+                  </Box>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Equipos Inactivos
+                    </Typography>
+                    <Chip label={teamStats.inactive} color="default" size="small" sx={{ fontWeight: 600 }} />
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                  <TeamsIcon sx={{ fontSize: 48, mb: 1, opacity: 0.3 }} />
+                  <Typography variant="body2">No hay equipos creados</Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
         </Grid>
+
+        {/* Estado de proyectos */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" fontWeight={700}>
+                  Estado de Proyectos
+                </Typography>
+              </Box>
+
+              {projectsLoading ? (
+                <Typography variant="body2" color="text.secondary">
+                  Cargando...
+                </Typography>
+              ) : projects.length > 0 ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main' }} />
+                      <Typography variant="body2">Activos</Typography>
+                    </Box>
+                    <Typography variant="h6" fontWeight={700}>
+                      {projectStats.active}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main' }} />
+                      <Typography variant="body2">Completados</Typography>
+                    </Box>
+                    <Typography variant="h6" fontWeight={700}>
+                      {projectStats.completed}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
+                      <Typography variant="body2">Borradores</Typography>
+                    </Box>
+                    <Typography variant="h6" fontWeight={700}>
+                      {projectStats.draft}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'grey.400' }} />
+                      <Typography variant="body2">Archivados</Typography>
+                    </Box>
+                    <Typography variant="h6" fontWeight={700}>
+                      {projectStats.archived}
+                    </Typography>
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                  <ProjectsIcon sx={{ fontSize: 48, mb: 1, opacity: 0.3 }} />
+                  <Typography variant="body2">No hay proyectos</Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Gráficos y métricas avanzadas */}
+        {/* <Grid size={{ xs: 12 }}>
+          <DashboardMetrics />
+        </Grid> */}
       </Grid>
     </Box>
   );
