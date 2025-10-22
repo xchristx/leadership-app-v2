@@ -10,7 +10,8 @@ import type {
     Organization,
     Project,
     Team,
-    Evaluation
+    Evaluation,
+    EvaluationWithTeams
 } from '../../types'
 
 // Configuración base de RTK Query
@@ -123,7 +124,7 @@ export const supabaseApi = createApi({
         // EVALUACIONES
         // ========================================================================
 
-        getEvaluations: builder.query<Evaluation[], { projectId?: string; teamId?: string }>({
+        getEvaluations: builder.query<EvaluationWithTeams[], { projectId?: string; teamId?: string }>({
             queryFn: async ({ projectId = '', teamId = '' }) => {
                 try {
                     let query = supabase

@@ -202,7 +202,7 @@ export interface Evaluation {
     // Relaciones
     responses?: EvaluationResponse[]
     team?: Team
-    teams?: TeamWithProjectName
+
 
     // Campos calculados para la UI
     team_name?: string
@@ -214,6 +214,10 @@ export interface Evaluation {
         answered_questions: number
         percentage: number
     }
+}
+
+export interface EvaluationWithTeams extends Evaluation {
+    teams?: TeamWithProjectName
 }
 
 export interface TeamWithProjectName extends Team {
