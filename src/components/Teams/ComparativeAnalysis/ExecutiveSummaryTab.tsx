@@ -27,7 +27,7 @@ interface ExecutiveSummaryTabProps {
 
 export function ExecutiveSummaryTab({ metrics }: ExecutiveSummaryTabProps) {
   return (
-    <Grid container spacing={3}>
+    <Grid sx={{ px: { xs: 1, md: 10, lg: 30, xl: 40 } }} container spacing={3}>
       {/* Métricas principales */}
       <Grid size={{ xs: 12 }}>
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
@@ -128,7 +128,7 @@ export function ExecutiveSummaryTab({ metrics }: ExecutiveSummaryTabProps) {
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <Paper sx={{ p: 2, bgcolor: 'primary.50' }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                  <Typography color="black" variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                     👑 Tendencia del Líder
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -148,7 +148,7 @@ export function ExecutiveSummaryTab({ metrics }: ExecutiveSummaryTabProps) {
 
               <Grid size={{ xs: 12, md: 6 }}>
                 <Paper sx={{ p: 2, bgcolor: 'secondary.50' }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                  <Typography color="black" variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                     👥 Tendencia de Colaboradores
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

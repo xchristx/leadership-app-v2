@@ -40,6 +40,7 @@ import {
   PlayArrow as PlayArrowIcon,
   Close as CloseIcon,
   Timeline as TimelineIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
 
@@ -130,6 +131,9 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
     setSelectedEvaluationId(null);
   };
 
+  // Determinar si es equipo de liderazgo de proyecto
+  const isLeadershipTeam = team?.team_type === 'project_leadership';
+
   if (isLoading) {
     return (
       <Box sx={{ p: 3 }}>
@@ -156,6 +160,37 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
 
   return (
     <Box sx={{ p: 3 }}>
+      {/* Distintivo de equipo de liderazgo de proyecto */}
+      {isLeadershipTeam && (
+        <Card
+          sx={{
+            mb: 3,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+          }}
+        >
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Avatar sx={{ bgcolor: 'white', color: 'primary.main', width: 56, height: 56 }}>
+                <StarIcon fontSize="large" />
+              </Avatar>
+
+              <Box sx={{ flexGrow: 1 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                  📊 Evaluación de Liderazgo del Proyecto
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                  Líder del proyecto + Líderes de equipo como evaluadores
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                  Creado: {new Date(team.created_at).toLocaleDateString('es-ES')}
+                </Typography>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header del dashboard */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
         <Box>
@@ -164,6 +199,14 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
             <Chip label={team.is_active ? 'Activo' : 'Inactivo'} color={team.is_active ? 'success' : 'default'} />
+            {isLeadershipTeam && (
+              <Chip
+                label="Liderazgo de Proyecto"
+                color="warning"
+                icon={<StarIcon sx={{ color: '#ffd700' }} />}
+                sx={{ fontWeight: 700, bgcolor: '#fffbe6', color: '#7c4700' }}
+              />
+            )}
           </Box>
         </Box>
 

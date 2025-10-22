@@ -37,11 +37,13 @@ import {
   Person as PersonIcon,
   CalendarToday as CalendarIcon,
   Delete as DeleteIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 import { useState } from 'react';
 import { useProjects } from '../hooks/useProjects';
 import { useTeams } from '../hooks/useTeams';
 import { TeamForm } from '../components/Forms';
+import { CreateProjectLeadershipDialog } from '../components/Teams/CreateProjectLeadershipDialog';
 import type { TeamFormData } from '../components/Forms/TeamForm';
 import type { CreateTeamData } from '../services/teamService';
 
@@ -51,6 +53,7 @@ function ProjectDetailPage() {
 
   // Estados locales
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showLeadershipDialog, setShowLeadershipDialog] = useState(false);
 
   // Hooks para datos
   const { projects, isLoading: projectsLoading, error: projectsError } = useProjects();
@@ -62,7 +65,10 @@ function ProjectDetailPage() {
 
   // Filtrar equipos del proyecto actual
   const projectTeams = teams?.filter(team => team.project_id === projectId) || [];
-  console.log({ teams });
+
+  // Separar equipo de liderazgo y equipos regulares
+  const leadershipTeam = projectTeams.find(t => t.team_type === 'project_leadership');
+  const regularTeams = projectTeams.filter(t => t.team_type !== 'project_leadership');
   // Handlers
   const handleCreateTeam = async (teamData: TeamFormData) => {
     try {
@@ -191,19 +197,75 @@ function ProjectDetailPage() {
           </Box>
         </Box>
 
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setShowCreateDialog(true)} size="large">
-          Agregar Equipo
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          {/* Botón para crear evaluación de liderazgo si no existe */}
+          {!leadershipTeam && (
+            <Button
+              variant="outlined"
+              startIcon={<StarIcon />}
+              onClick={() => setShowLeadershipDialog(true)}
+              size="large"
+              color="secondary"
+            >
+              Configurar Liderazgo
+            </Button>
+          )}
+
+          {/* Botón para agregar equipo regular */}
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setShowCreateDialog(true)} size="large">
+            Agregar Equipo
+          </Button>
+        </Box>
       </Box>
+
+      {/* Tarjeta especial para equipo de liderazgo (si existe) */}
+      {leadershipTeam && (
+        <Card
+          sx={{
+            mb: 3,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+          }}
+        >
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Avatar sx={{ bgcolor: 'white', color: 'primary.main', width: 56, height: 56 }}>
+                <StarIcon fontSize="large" />
+              </Avatar>
+
+              <Box sx={{ flexGrow: 1 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                  📊 Evaluación de Liderazgo del Proyecto
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                  Líder del proyecto + Líderes de equipo como evaluadores
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                  Creado: {new Date(leadershipTeam.created_at).toLocaleDateString('es-ES')}
+                </Typography>
+              </Box>
+
+              <Button
+                variant="contained"
+                sx={{ bgcolor: 'white', color: 'primary.main', '&:hover': { bgcolor: 'grey.100' } }}
+                startIcon={<VisibilityIcon />}
+                onClick={() => navigate(`/projects/${projectId}/teams/${leadershipTeam.id}`)}
+              >
+                Ver Dashboard
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Lista de equipos */}
       <Box>
         <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <GroupIcon />
-          Equipos del Proyecto ({projectTeams.length})
+          Equipos del Proyecto ({regularTeams.length})
         </Typography>
 
-        {projectTeams.length === 0 ? (
+        {regularTeams.length === 0 ? (
           <Card sx={{ textAlign: 'center', py: 6 }}>
             <CardContent>
               <GroupIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -220,7 +282,7 @@ function ProjectDetailPage() {
           </Card>
         ) : (
           <Grid container spacing={3}>
-            {projectTeams.map(team => (
+            {regularTeams.map(team => (
               <Grid size={{ xs: 12, md: 6, lg: 4 }} key={team.id}>
                 <Card
                   sx={{
@@ -361,6 +423,18 @@ function ProjectDetailPage() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Diálogo para crear equipo de liderazgo */}
+      <CreateProjectLeadershipDialog
+        open={showLeadershipDialog}
+        onClose={() => setShowLeadershipDialog(false)}
+        projectName={currentProject?.name || ''}
+        projectId={projectId!}
+        onSuccess={() => {
+          refetch();
+          setShowLeadershipDialog(false);
+        }}
+      />
     </Container>
   );
 }

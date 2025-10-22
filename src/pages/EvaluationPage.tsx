@@ -189,6 +189,9 @@ export function EvaluationPage() {
         }
       }
 
+      // Determinar si se debe pedir info personal
+      const isLeader = invitation.role_type === 'leader';
+      const mustAskPersonalInfo = isLeader || configuration?.require_evaluator_info;
       setState({
         invitation: invitation as TeamInvitation,
         team: team as Team,
@@ -204,7 +207,7 @@ export function EvaluationPage() {
         questions: (questions || []) as Question[],
         isLoading: false,
         error: null,
-        step: configuration?.require_evaluator_info ? 'info' : 'evaluation',
+        step: mustAskPersonalInfo ? 'info' : 'evaluation',
         existingEvaluation: null,
       });
     } catch (error) {
@@ -215,6 +218,7 @@ export function EvaluationPage() {
       }));
     }
   }, [token]);
+  console.log({ state });
 
   useEffect(() => {
     if (token) {
@@ -223,11 +227,18 @@ export function EvaluationPage() {
   }, [token, loadInvitationData]);
 
   const handleEvaluatorInfoSubmit = async () => {
-    if (!state.configuration?.require_evaluator_info) {
+    // Determinar si es líder o colaborador
+    const isLeader = state.invitation?.role_type === 'leader';
+    const mustAskPersonalInfo = isLeader || state.configuration?.require_evaluator_info;
+    console.log({ mustAskPersonalInfo });
+    if (!mustAskPersonalInfo) {
+      // Colaborador anónimo: saltar a evaluación
+      setEvaluatorInfo({ name: 'Anónimo', email: `anonimo${Date.now()}@dominio.com`, additionalInfo: '' });
       setState(prev => ({ ...prev, step: 'evaluation', existingEvaluation: null }));
       return;
     }
 
+    // Si es líder o se requiere info, validar campos
     if (!evaluatorInfo.name.trim() || !evaluatorInfo.email.trim()) {
       alert('Por favor completa tu nombre y email');
       return;
@@ -291,16 +302,19 @@ export function EvaluationPage() {
     try {
       setIsSubmitting(true);
 
-      // Validación de email mejorada
-      if (!isValidEmail(evaluatorInfo.email)) {
-        alert('Por favor ingresa un email válido antes de enviar la evaluación');
-        return;
-      }
-
-      const emailValidation = validateEmail(evaluatorInfo.email);
-      if (!emailValidation.isValid) {
-        alert(emailValidation.message);
-        return;
+      // Validación de email solo si corresponde
+      const isLeaderSubmit = state.invitation?.role_type === 'leader';
+      const mustAskPersonalInfoSubmit = isLeaderSubmit || state.configuration?.require_evaluator_info;
+      if (mustAskPersonalInfoSubmit) {
+        if (!isValidEmail(evaluatorInfo.email)) {
+          alert('Por favor ingresa un email válido antes de enviar la evaluación');
+          return;
+        }
+        const emailValidation = validateEmail(evaluatorInfo.email);
+        if (!emailValidation.isValid) {
+          alert(emailValidation.message);
+          return;
+        }
       }
 
       // Validación completa: todas las preguntas deben tener respuesta
@@ -339,14 +353,23 @@ export function EvaluationPage() {
 
       const isNewEvaluation = !state.existingEvaluation?.evaluation;
 
+      // Determinar datos a guardar según el rol y configuración
+      const isLeaderSave = state.invitation?.role_type === 'leader';
+      const nameToSave = isLeaderSave ? evaluatorInfo.name : state.configuration?.require_evaluator_info ? evaluatorInfo.name : 'Anónimo';
+      const emailToSave = isLeaderSave
+        ? evaluatorInfo.email
+        : state.configuration?.require_evaluator_info
+        ? evaluatorInfo.email
+        : `anonimo${Date.now()}@dominio.com`;
+
       if (state.existingEvaluation?.evaluation) {
         const existingEval = state.existingEvaluation.evaluation as Record<string, unknown>;
         await updateEvaluationWithJson(
           existingEval.id as string,
           responses,
           {
-            name: evaluatorInfo.name,
-            email: evaluatorInfo.email,
+            name: nameToSave,
+            email: emailToSave,
             additionalInfo: evaluatorInfo.additionalInfo,
           },
           evaluationStartTime,
@@ -357,8 +380,8 @@ export function EvaluationPage() {
           {
             team_id: state.team!.id,
             invitation_id: state.invitation!.id,
-            evaluator_name: evaluatorInfo.name,
-            evaluator_email: evaluatorInfo.email,
+            evaluator_name: nameToSave,
+            evaluator_email: emailToSave,
             evaluator_role: state.invitation!.role_type,
             evaluator_metadata: {
               additional_info: evaluatorInfo.additionalInfo,
@@ -458,7 +481,7 @@ export function EvaluationPage() {
   const activeStep = state.step === 'info' ? 0 : state.step === 'evaluation' || state.step === 'existing-evaluation' ? 1 : 2;
 
   return (
-    <Container maxWidth="md" sx={{ py: 4, px: { xs: 1, md: 4 } }}>
+    <Container maxWidth="md" sx={{ py: 4, px: { xs: 1, md: 4 }, overflow: 'auto' }}>
       {/* Header Premium */}
       <Paper elevation={3} sx={{ mb: 4, overflow: 'hidden' }}>
         <Box
@@ -479,6 +502,42 @@ export function EvaluationPage() {
             {state.template?.title || 'Evaluación de Liderazgo'}
           </Typography>
 
+          {/* Mostrar nombre del equipo */}
+
+          {state.team?.name && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                background: theme.palette.primary.light,
+                borderRadius: 2,
+                p: { xs: 0.5, md: 1 },
+                mb: 2,
+                boxShadow: 2,
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ marginRight: 12 }}>
+                <circle cx="12" cy="12" r="12" fill="#fff" fillOpacity="0.18" />
+                <path
+                  d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                  fill="#fff"
+                  fillOpacity="0.7"
+                />
+              </svg>
+              <Typography
+                sx={{
+                  fontWeight: 'bold',
+                  color: 'white',
+                  letterSpacing: 0.5,
+                  textShadow: '0 2px 8px rgba(0,0,0,0.10)',
+                }}
+              >
+                {state.team.name}
+              </Typography>
+            </Box>
+          )}
+
           {state.template?.description && state.step === 'evaluation' && (
             <Typography
               sx={{
@@ -490,70 +549,6 @@ export function EvaluationPage() {
             >
               {state.template.description}
             </Typography>
-          )}
-
-          {/* <Box
-            sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: { xs: 1, md: 2 },
-              mb: 2,
-            }}
-          >
-            <Chip
-              label={`Proyecto: ${state.project?.name}`}
-              sx={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                fontWeight: 'medium',
-                fontSize: { xs: '0.75rem', md: '0.875rem' },
-              }}
-            />
-            <Chip
-              label={`Equipo: ${state.team?.name}`}
-              sx={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                fontWeight: 'medium',
-                fontSize: { xs: '0.75rem', md: '0.875rem' },
-              }}
-            />
-            <Chip
-              label={state.invitation?.role_type === 'leader' ? 'Líder' : 'Colaborador'}
-              sx={{
-                backgroundColor: state.invitation?.role_type === 'leader' ? 'warning.main' : 'info.main',
-                color: 'white',
-                fontWeight: 'medium',
-                fontSize: { xs: '0.75rem', md: '0.875rem' },
-              }}
-            />
-          </Box> */}
-
-          {/* Progress indicator mejorado */}
-          {state.step !== 'loading' && (
-            <Box sx={{ mt: 3 }}>
-              {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                  Progreso general
-                </Typography>
-                <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                  {state.step === 'info' ? '25' : state.step === 'existing-evaluation' ? '50' : state.step === 'evaluation' ? '75' : '100'}%
-                </Typography>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={state.step === 'info' ? 25 : state.step === 'existing-evaluation' ? 50 : state.step === 'evaluation' ? 75 : 100}
-                sx={{
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: 'rgba(255,255,255,0.3)',
-                  '& .MuiLinearProgress-bar': {
-                    borderRadius: 4,
-                    backgroundColor: 'white',
-                  },
-                }}
-              /> */}
-            </Box>
           )}
 
           {/* Stepper mejorado */}
@@ -609,68 +604,78 @@ export function EvaluationPage() {
                 </Typography>
               </Card>
 
-              <Grid container spacing={3} sx={{ maxWidth: 600, mx: 'auto' }}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    label="Nombre completo"
-                    value={evaluatorInfo.name}
-                    onChange={e => setEvaluatorInfo(prev => ({ ...prev, name: e.target.value }))}
-                    required
-                    variant="outlined"
-                  />
-                </Grid>
+              {/* Mostrar campos solo si corresponde */}
+              {state.invitation?.role_type === 'leader' || state.configuration?.require_evaluator_info ? (
+                <Grid container spacing={3} sx={{ maxWidth: 600, mx: 'auto' }}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Nombre completo"
+                      value={evaluatorInfo.name}
+                      onChange={e => setEvaluatorInfo(prev => ({ ...prev, name: e.target.value }))}
+                      required
+                      variant="outlined"
+                    />
+                  </Grid>
 
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    type="email"
-                    label="Email *"
-                    value={evaluatorInfo.email}
-                    onChange={e => setEvaluatorInfo(prev => ({ ...prev, email: e.target.value }))}
-                    required
-                    variant="outlined"
-                    error={evaluatorInfo.email.trim() !== '' && !isValidEmail(evaluatorInfo.email)}
-                    helperText={
-                      evaluatorInfo.email.trim() !== '' && !isValidEmail(evaluatorInfo.email)
-                        ? 'Ingresa un email válido (ejemplo: usuario@dominio.com)'
-                        : ''
-                    }
-                  />
-                </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      fullWidth
+                      type="email"
+                      label="Email *"
+                      value={evaluatorInfo.email}
+                      onChange={e => setEvaluatorInfo(prev => ({ ...prev, email: e.target.value }))}
+                      required
+                      variant="outlined"
+                      error={evaluatorInfo.email.trim() !== '' && !isValidEmail(evaluatorInfo.email)}
+                      helperText={
+                        evaluatorInfo.email.trim() !== '' && !isValidEmail(evaluatorInfo.email)
+                          ? 'Ingresa un email válido (ejemplo: usuario@dominio.com)'
+                          : ''
+                      }
+                    />
+                  </Grid>
 
-                {/* <Grid size={{ xs: 12 }}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={4}
-                    label="Información adicional (opcional)"
-                    value={evaluatorInfo.additionalInfo}
-                    onChange={e => setEvaluatorInfo(prev => ({ ...prev, additionalInfo: e.target.value }))}
-                    helperText="Puedes agregar cualquier contexto adicional relevante para la evaluación"
-                    variant="outlined"
-                  />
-                </Grid> */}
-
-                <Grid size={{ xs: 12 }} sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    onClick={handleEvaluatorInfoSubmit}
-                    disabled={!evaluatorInfo.name.trim() || !evaluatorInfo.email.trim() || !isValidEmail(evaluatorInfo.email)}
-                    sx={{
-                      px: { xs: 4, md: 6 },
-                      py: 1.5,
-                      fontSize: { xs: '1rem', md: '1.1rem' },
-                      fontWeight: 'bold',
-                      borderRadius: 3,
-                      minWidth: { xs: '200px', md: '250px' },
-                    }}
-                  >
-                    Comenzar Evaluación
-                  </Button>
+                  <Grid size={{ xs: 12 }} sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      onClick={handleEvaluatorInfoSubmit}
+                      disabled={!evaluatorInfo.name.trim() || !evaluatorInfo.email.trim() || !isValidEmail(evaluatorInfo.email)}
+                      sx={{
+                        px: { xs: 4, md: 6 },
+                        py: 1.5,
+                        fontSize: { xs: '1rem', md: '1.1rem' },
+                        fontWeight: 'bold',
+                        borderRadius: 3,
+                        minWidth: { xs: '200px', md: '250px' },
+                      }}
+                    >
+                      Comenzar Evaluación
+                    </Button>
+                  </Grid>
                 </Grid>
-              </Grid>
+              ) : (
+                <Grid container spacing={3} sx={{ maxWidth: 600, mx: 'auto' }}>
+                  <Grid size={{ xs: 12 }} sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      onClick={handleEvaluatorInfoSubmit}
+                      sx={{
+                        px: { xs: 4, md: 6 },
+                        py: 1.5,
+                        fontSize: { xs: '1rem', md: '1.1rem' },
+                        fontWeight: 'bold',
+                        borderRadius: 3,
+                        minWidth: { xs: '200px', md: '250px' },
+                      }}
+                    >
+                      Comenzar Evaluación Anónima
+                    </Button>
+                  </Grid>
+                </Grid>
+              )}
             </Box>
           )}
 

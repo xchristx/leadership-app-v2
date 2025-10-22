@@ -155,6 +155,8 @@ export function ProjectForm({ initialData, onSubmit, onCancel, isLoading = false
     reminder_days: initialData?.configuration?.reminder_days || [7, 3, 1],
     email_notifications: initialData?.configuration?.email_notifications ?? true,
   };
+
+  console.log({ initialData });
   const handleSubmit = async (
     values: ProjectFormData,
     {
@@ -442,7 +444,7 @@ export function ProjectForm({ initialData, onSubmit, onCancel, isLoading = false
                 </Grid>
 
                 {/* Información del evaluador */}
-                <Grid sx={{ display: 'none' }}>
+                <Grid>
                   <FormControl component="fieldset">
                     <FormControlLabel
                       control={

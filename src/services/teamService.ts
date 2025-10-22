@@ -64,6 +64,7 @@ export const getTeams = async (organizationId?: string, includeInactive: boolean
         updated_at,
         leader_name,
         leader_email,
+        team_type,
         projects!inner(
           id,
           name,
@@ -156,6 +157,7 @@ export const getTeam = async (id: string): Promise<Team | null> => {
         updated_at,
         leader_name,
         leader_email,
+        team_type,
         projects(
           id,
           name,

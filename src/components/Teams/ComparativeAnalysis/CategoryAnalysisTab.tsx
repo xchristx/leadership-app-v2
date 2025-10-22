@@ -17,7 +17,7 @@ interface CategoryAnalysisTabProps {
 
 export function CategoryAnalysisTab({ categoryData, categorySummary = [], handleExportToExcel }: CategoryAnalysisTabProps) {
   return (
-    <>
+    <Box sx={{ px: { xs: 1, md: 10, lg: 30, xl: 40 } }}>
       <Button onClick={handleExportToExcel} variant="contained">
         Exportar a Excel
       </Button>
@@ -28,7 +28,7 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
       {categorySummary.length > 0 ? (
         <Grid container spacing={3}>
           {/* Tabla de resumen de categorías */}
-          <Grid size={{ xs: 12, md: 8 }}>
+          <Grid size={{ xs: 12 }}>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -63,7 +63,7 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
           </Grid>
 
           {/* Gráfico de líneas para el resumen */}
-          <Grid size={{ xs: 12, md: 4 }}>
+          <Grid size={{ xs: 12 }}>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -102,7 +102,7 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                   <Box sx={{ overflow: 'auto', mb: 2 }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
-                        <tr style={{ borderBottom: '2px solid #e0e0e0', backgroundColor: '#f5f5f5' }}>
+                        <tr style={{ borderBottom: '2px solid #e0e0e0' }}>
                           <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>No.</th>
                           <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, minWidth: '300px' }}>PREGUNTA</th>
                           <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>AUTO</th>
@@ -171,6 +171,6 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
       ) : (
         <Alert severity="info">No hay datos de categorías disponibles.</Alert>
       )}
-    </>
+    </Box>
   );
 }

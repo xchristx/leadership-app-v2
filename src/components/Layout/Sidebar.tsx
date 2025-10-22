@@ -25,7 +25,6 @@ import {
   Groups as TeamsIcon,
   Assessment as EvaluationsIcon,
   Quiz as QuestionnairesIcon,
-  BarChart as ReportsIcon,
   Settings as SettingsIcon,
   ExpandLess,
   ExpandMore,
@@ -76,12 +75,6 @@ const navigationItems: NavigationItem[] = [
     title: 'Cuestionarios',
     icon: <QuestionnairesIcon />,
     path: '/questionnaires',
-  },
-  {
-    id: 'reports',
-    title: 'Reportes',
-    icon: <ReportsIcon />,
-    path: '/reports',
   },
 ];
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
+import logo from './ho_logo.jpg';
 
 // Registrar fuentes personalizadas si es necesario
 Font.register({
@@ -71,8 +72,8 @@ const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#ffffff',
-    py: '25mm', // Márgenes estándar de documento (aproximadamente 2cm)
-    px: '30mm',
+    paddingVertical: '25mm', // Márgenes estándar de documento (aproximadamente 2cm)
+    paddingHorizontal: '30mm',
     fontFamily: 'Roboto',
     fontSize: 10,
     lineHeight: 1.4,
@@ -139,23 +140,44 @@ const styles = StyleSheet.create({
     color: '#1976d2',
   },
 
-  // Contenedores y cajas
+  // Contenedores y cajas mejorados
   infoBox: {
     backgroundColor: '#f8fafc',
     border: '2px solid #e2e8f0',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 20,
+    borderRadius: 12,
+    borderTop: '4px solid #1976d2',
+    padding: 18,
+    marginBottom: 24,
   },
 
   interpretationBox: {
     backgroundColor: '#f9fafb',
-    border: '1px solid #e5e7eb',
-    borderLeft: '4px solid #3b82f6',
-    borderRadius: 6,
-    padding: 15,
-    marginTop: 20,
-    marginBottom: 10,
+    border: '2px solid #e5e7eb',
+    borderLeft: '6px solid #3b82f6',
+    borderRadius: 10,
+    padding: 18,
+    marginTop: 24,
+    marginBottom: 16,
+  },
+
+  // Caja de alerta/destacado
+  highlightBox: {
+    backgroundColor: '#fff3cd',
+    border: '2px solid #ffc107',
+    borderLeft: '6px solid #ff8f00',
+    borderRadius: 10,
+    padding: 16,
+    marginVertical: 12,
+  },
+
+  // Caja de éxito
+  successBox: {
+    backgroundColor: '#d4edda',
+    border: '2px solid #28a745',
+    borderLeft: '6px solid #155724',
+    borderRadius: 10,
+    padding: 16,
+    marginVertical: 12,
   },
 
   // Estilos de tabla
@@ -295,11 +317,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa',
   },
 
-  // Header corporativo
+  // Header corporativo con diseño mejorado
   coverHeader: {
-    height: 80,
+    height: 100,
     backgroundColor: '#1976d2',
     position: 'relative',
+    borderBottom: '4px solid #0d47a1', // Borde inferior para profundidad
   },
 
   // Contenido principal de carátula
@@ -311,74 +334,83 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
 
-  // Caja del título principal
+  // Caja del título principal - versión PDF compatible
   coverTitleBox: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    padding: 25,
-    marginBottom: 30,
-    width: '80%',
-    maxWidth: 400,
-    alignItems: 'center',
-    border: '1px solid #e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    marginBottom: 48,
+    padding: 32,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 24,
+    border: '2px solid #e0e0e0',
+    borderLeft: '8px solid #1976d2', // Simula gradiente con borde izquierdo
+    borderTop: '3px solid #42a5f5', // Borde superior para más profundidad
+    maxWidth: '500px',
   },
 
-  // Caja de información del equipo
+  // Caja de información del equipo - versión PDF compatible
   coverTeamBox: {
     backgroundColor: '#f8f9fa',
     borderRadius: 12,
-    padding: 25,
-    marginBottom: 20,
-    width: '75%',
-    maxWidth: 380,
-    alignItems: 'center',
+    padding: 20,
+    marginBottom: 24,
+    maxWidth: '480px',
+    width: '100%',
     border: '2px solid #e3f2fd',
+    borderLeft: '6px solid #1976d2', // Borde decorativo
+    borderBottom: '3px solid #42a5f5', // Borde inferior para profundidad
   },
 
-  // Footer corporativo
+  // Footer corporativo mejorado
   coverFooter: {
-    backgroundColor: '#ffffff',
-    borderTopWidth: 3,
+    backgroundColor: '#fafafa',
+    borderTopWidth: 6,
     borderTopColor: '#1976d2',
     borderTopStyle: 'solid',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 30,
+    position: 'relative',
   },
 
   coverFooterContent: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 6,
-    padding: 15,
-    border: '1px solid #e0e0e0',
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    border: '2px solid #e3f2fd',
+    borderLeft: '6px solid #1976d2',
+    borderBottom: '3px solid #42a5f5',
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
+  // Barra decorativa superior del footer
+  footerTopBar: {
+    height: 4,
+    backgroundColor: '#42a5f5',
+    position: 'absolute',
+    top: 0,
+    left: '20%',
+    right: '20%',
+  },
+
   coverTitle: {
-    fontSize: 16,
     fontWeight: 700,
-    textAlign: 'center',
     color: '#1976d2',
-    marginBottom: 5,
+    mb: 1,
+    fontSize: '2.5rem',
+    letterSpacing: '1px',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
     lineHeight: 1.1,
+    textAlign: 'center',
   },
 
   coverTitleSecond: {
-    fontSize: 16,
     fontWeight: 700,
-    textAlign: 'center',
     color: '#0d47a1',
-    marginBottom: 0,
+    fontSize: '2.5rem',
+    letterSpacing: '1px',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
     lineHeight: 1.1,
+    textAlign: 'center',
   },
 
   coverTeamName: {
@@ -404,28 +436,46 @@ const styles = StyleSheet.create({
     fontWeight: 600,
   },
 
-  // Elementos decorativos
+  // Elementos decorativos mejorados
   decorativeElements: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 30,
+    marginTop: 20,
   },
 
   decorativeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: '#e3f2fd',
-    marginHorizontal: 4,
+    marginHorizontal: 6,
+    border: '1px solid #bbdefb',
   },
 
   decorativeDotActive: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: '#1976d2',
-    marginHorizontal: 4,
+    marginHorizontal: 6,
+    border: '2px solid #0d47a1',
+  },
+
+  // Líneas decorativas
+  decorativeLine: {
+    height: 2,
+    backgroundColor: '#e3f2fd',
+    marginHorizontal: 20,
+    flex: 1,
+  },
+
+  decorativeLineActive: {
+    height: 3,
+    backgroundColor: '#1976d2',
+    marginHorizontal: 10,
+    flex: 0.5,
   },
 
   coverFooterLabel: {
@@ -459,12 +509,36 @@ export const ReportPDFDocument: React.FC<ReportPDFProps> = ({
       {/* ==================== CARÁTULA ==================== */}
       <Page size="LETTER" style={styles.coverPage}>
         <View style={styles.coverContainer}>
-          {/* Header corporativo */}
-          <View style={styles.coverHeader}></View>
+          {/* Header corporativo mejorado */}
+          <View style={styles.coverHeader}>
+            {/* Barra decorativa superior */}
+            <View style={styles.footerTopBar}></View>
+
+            <View style={{ position: 'absolute', top: 20, left: 4, right: 4, zIndex: 2 }}>
+              <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 8 }}>
+                <View
+                  style={{
+                    width: 140,
+                    height: 70,
+                    backgroundColor: 'white',
+                    borderRadius: 16,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '3px solid #e3f2fd',
+                    borderBottom: '5px solid #1976d2',
+                    borderRight: '2px solid #42a5f5',
+                  }}
+                >
+                  <Image src={logo} style={{ width: 110, height: 'auto', maxHeight: 55 }} />
+                </View>
+              </View>
+            </View>
+          </View>
 
           {/* Contenido principal */}
           <View style={styles.coverMainContent}>
-            {/* Caja del título principal */}
+            {/* Caja del título principal mejorada */}
             <View style={styles.coverTitleBox}>
               <Text style={styles.coverTitle}>INVENTARIO DE</Text>
               <Text style={styles.coverTitleSecond}>PRÁCTICAS DE LIDERAZGO</Text>
@@ -476,18 +550,21 @@ export const ReportPDFDocument: React.FC<ReportPDFProps> = ({
               <Text style={styles.coverSubtitle}>Análisis Comparativo de las Cinco Prácticas de Liderazgo</Text>
             </View>
 
-            {/* Elementos decorativos */}
+            {/* Elementos decorativos mejorados */}
             <View style={styles.decorativeElements}>
-              <View style={styles.decorativeDot}></View>
+              <View style={styles.decorativeLine}></View>
               <View style={styles.decorativeDot}></View>
               <View style={styles.decorativeDotActive}></View>
               <View style={styles.decorativeDot}></View>
-              <View style={styles.decorativeDot}></View>
+              <View style={styles.decorativeLine}></View>
             </View>
           </View>
 
-          {/* Footer corporativo */}
+          {/* Footer corporativo mejorado */}
           <View style={styles.coverFooter}>
+            {/* Barra decorativa superior del footer */}
+            <View style={styles.footerTopBar}></View>
+
             <View style={styles.coverFooterContent}>
               <View>
                 <Text style={styles.coverFooterLabel}>Fecha de Elaboración</Text>

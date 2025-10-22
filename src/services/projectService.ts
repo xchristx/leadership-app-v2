@@ -70,6 +70,11 @@ export const getProjects = async (organizationId: string): Promise<Project[]> =>
                     id,
                     title,
                     description
+                ),
+                configuration:project_configurations(
+                    id,
+                    allow_re_evaluation,
+                    require_evaluator_info
                 )
             `)
             .eq('organization_id', organizationId)
@@ -308,6 +313,7 @@ export const createProjectFromForm = async (formData: {
  */
 export const updateProject = async (projectId: string, updates: UpdateProjectData): Promise<Project> => {
     try {
+        // Actualizar datos básicos del proyecto
         const { data, error } = await supabase
             .from('projects')
             .update({
@@ -340,7 +346,49 @@ export const updateProject = async (projectId: string, updates: UpdateProjectDat
             throw new Error(`Error al actualizar proyecto: ${error.message}`);
         }
 
-        return data as Project;
+        // Actualizar configuración si se pasan campos de configuración
+        const configFields = [
+            'allow_re_evaluation',
+            'require_evaluator_info',
+            'evaluation_deadline',
+            'reminder_days',
+            'email_notifications'
+        ];
+        const configUpdates: Record<string, unknown> = {};
+        for (const field of configFields) {
+            if (field in updates) {
+                configUpdates[field] = (updates as Record<string, unknown>)[field];
+            }
+        }
+        if (Object.keys(configUpdates).length > 0) {
+            configUpdates.updated_at = new Date().toISOString();
+            // Verificar si existe configuración
+            const { data: existingConfig } = await supabase
+                .from('project_configurations')
+                .select('id')
+                .eq('project_id', projectId)
+                .single();
+            if (existingConfig) {
+                const { error: updateError } = await supabase
+                    .from('project_configurations')
+                    .update(configUpdates)
+                    .eq('project_id', projectId);
+                if (updateError) {
+                    throw new Error(`Error al actualizar configuración: ${updateError.message}`);
+                }
+            } else {
+                const { error: insertError } = await supabase
+                    .from('project_configurations')
+                    .insert([{ ...configUpdates, project_id: projectId }]);
+                if (insertError) {
+                    throw new Error(`Error al crear configuración: ${insertError.message}`);
+                }
+            }
+        }
+
+        // Retornar el proyecto actualizado con configuración
+        const completeProject = await getProject(projectId);
+        return completeProject || (data as Project);
     } catch (error) {
         console.error('Error in updateProject:', error);
         throw error;

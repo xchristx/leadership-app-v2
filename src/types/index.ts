@@ -131,6 +131,7 @@ export interface Team {
     id: string
     project_id: string
     name: string
+    team_type?: 'regular' | 'project_leadership'  // Tipo de equipo
     leader_name?: string
     leader_email?: string
     team_size?: number
@@ -511,6 +512,7 @@ export interface UpdateProjectData {
 export interface CreateTeamData {
     project_id: string
     name: string
+    team_type?: 'regular' | 'project_leadership' // Tipo de equipo
     leader_name?: string
     leader_email?: string
     team_size?: number
@@ -519,6 +521,7 @@ export interface CreateTeamData {
 
 export interface UpdateTeamData {
     name?: string
+    team_type?: 'regular' | 'project_leadership' // Tipo de equipo
     team_size?: number
     leader_name?: string
     leader_email?: string

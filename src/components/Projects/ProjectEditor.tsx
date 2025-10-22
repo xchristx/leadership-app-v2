@@ -94,17 +94,8 @@ export function ProjectEditor({ open, project, onClose, onSave, loading = false 
 
   // Convertir el proyecto a los datos del formulario
   const getFormData = (project: Project): Partial<Project> => {
-    return {
-      name: project.name,
-      description: project.description,
-      status: project.status,
-      start_date: project.start_date,
-      end_date: project.end_date,
-      template_id: project.template_id,
-      hierarchy_levels: project.hierarchy_levels,
-    };
+    return project;
   };
-
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle

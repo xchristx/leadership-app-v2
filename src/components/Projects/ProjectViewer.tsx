@@ -287,13 +287,13 @@ export function ProjectViewer({
                 <Button variant="outlined" startIcon={<GroupIcon />} onClick={() => onManageTeams?.(project)} fullWidth>
                   Gestionar Equipos ({totalTeams})
                 </Button>
-                <Button variant="outlined" startIcon={<TrendingUpIcon />} onClick={() => onViewReports?.(project)} fullWidth>
+                <Button disabled variant="outlined" startIcon={<TrendingUpIcon />} onClick={() => onViewReports?.(project)} fullWidth>
                   Ver Reportes
                 </Button>
-                <Button variant="outlined" startIcon={<DownloadIcon />} onClick={() => onExportData?.(project)} fullWidth>
+                <Button disabled variant="outlined" startIcon={<DownloadIcon />} onClick={() => onExportData?.(project)} fullWidth>
                   Exportar Datos
                 </Button>
-                <Button variant="outlined" startIcon={<SettingsIcon />} onClick={() => onManageConfiguration?.(project)} fullWidth>
+                <Button disabled variant="outlined" startIcon={<SettingsIcon />} onClick={() => onManageConfiguration?.(project)} fullWidth>
                   Configuración Avanzada
                 </Button>
               </Box>

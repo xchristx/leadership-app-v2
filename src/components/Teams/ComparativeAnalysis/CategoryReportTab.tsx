@@ -38,6 +38,8 @@ import { saveAs } from 'file-saver';
 import html2canvas from 'html2canvas';
 import { pdf } from '@react-pdf/renderer';
 import { ReportPDFDocument } from './PDF/ReportPDFDocument';
+import SimplePDFExporter from '../../PDF/SimplePDFExporter';
+import PuppeteerPDFExport from '../../PDF/PuppeteerPDFExport';
 import { useRef, useState } from 'react';
 import type { CategoryData, CategorySummary, ComparativeData } from './types';
 
@@ -48,33 +50,6 @@ interface CategoryReportTabProps {
   loading: boolean;
   teamName?: string;
 }
-// Configuración de las 5 prácticas de liderazgo
-// const LEADERSHIP_PRACTICES = {
-//   'Modelar el Camino': {
-//     description:
-//       'Las palabras y los planes no son suficientes. El Líder tiene que demostrar sus creencias. Hay que practicar lo que se predica.',
-//     color: '#1976d2',
-//   },
-//   'Inspirar una Visión Compartida': {
-//     description: 'Los líderes tienen puesta la mira en el futuro, visiones ideales de cómo quieren que sean las cosas.',
-//     color: '#388e3c',
-//   },
-//   'Desafiar el Proceso': {
-//     description:
-//       'Los líderes buscan y aceptan las oportunidades de probar sus habilidades. Los líderes experimentan, toman riesgos y aprenden de la experiencia.',
-//     color: '#f57c00',
-//   },
-//   'Capacitar a Otros para la Acción': {
-//     description:
-//       'Los líderes forman equipos cohesionados, que se sienten como en familia. Los líderes promueven la autoconfianza y el desarrollo de las capacidades.',
-//     color: '#7b1fa2',
-//   },
-//   'Estimular Emotivamente': {
-//     description:
-//       'Un líder reconoce las contribuciones demostrando aprecio por la excelencia individual. Celebra las victorias y el valor de los miembros del equipo creando espíritu de comunidad.',
-//     color: '#c2185b',
-//   },
-// } as const;
 
 export function CategoryReportTab({
   categoryData,
@@ -748,6 +723,7 @@ export function CategoryReportTab({
     >
       {/* Botones de exportación */}
       <Box
+        data-testid="export-buttons"
         sx={{
           display: 'flex',
           gap: 2,
@@ -758,12 +734,20 @@ export function CategoryReportTab({
         }}
       >
         <Button variant="outlined" startIcon={<PdfIcon />} onClick={handleExportToPDF} disabled={pdfLoading}>
-          {pdfLoading ? 'Generando...' : 'Exportar PDF'}
+          {pdfLoading ? 'Generando...' : 'PDF V1'}
         </Button>
+
+        <Box sx={{ display: 'none' }}>
+          <PuppeteerPDFExport teamName={teamName} disabled={pdfLoading} />
+        </Box>
+
+        {/* Solo permitir exportar en formato carta */}
+        <SimplePDFExporter />
+
         <Button variant="outlined" startIcon={<WordIcon />} onClick={handleExportToWord}>
           Exportar Word
         </Button>
-        <Button variant="outlined" startIcon={<PrintIcon />} onClick={handlePrint}>
+        <Button sx={{ display: 'none' }} variant="outlined" startIcon={<PrintIcon />} onClick={handlePrint}>
           Imprimir
         </Button>
       </Box>
@@ -827,328 +811,329 @@ export function CategoryReportTab({
           </Box>
         </Box>
       )}
-
-      {/* ==================== CARÁTULA ==================== */}
-      <Paper sx={{ ...pageStyle, p: 0 }} data-testid="page">
-        <Box
-          sx={{
-            height: '279mm',
-            width: '216mm',
-            display: 'flex',
-            flexDirection: 'column',
-            position: 'relative',
-            overflow: 'hidden',
-            backgroundColor: '#fafafa',
-          }}
-        >
-          {/* Header corporativo con líneas geométricas */}
+      <div id="pdf-pages-only" style={{ background: 'white', width: '100%' }}>
+        {/* ==================== CARÁTULA ==================== */}
+        <Paper sx={{ ...pageStyle, p: 0 }} className="caratula" data-testid="page">
           <Box
             sx={{
-              height: '80px',
-              background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 50%, #0d47a1 100%)',
-              position: 'relative',
-              '&::after': {
-                content: '""',
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: '20px',
-                background:
-                  'linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.1) 41%, rgba(255,255,255,0.1) 59%, transparent 60%)',
-              },
-            }}
-          />
-
-          {/* Logo y marca superior */}
-          <Box sx={{ position: 'absolute', top: 3, left: 4, right: 4, zIndex: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', pt: 2 }}>
-              <Box
-                sx={{
-                  width: 120,
-                  height: 60,
-                  backgroundColor: 'white',
-                  borderRadius: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  border: '2px solid #e3f2fd',
-                }}
-              >
-                <CardMedia component="img" image="/ho_logo.jpg" sx={{ width: 100, height: 'auto', maxHeight: 50 }} />
-              </Box>
-            </Box>
-          </Box>
-
-          {/* Contenido principal centralizado */}
-          <Box
-            sx={{
-              flex: 1,
+              height: '279mm',
+              width: '216mm',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              px: 6,
-              py: 8,
-              textAlign: 'center',
-              mt: 4,
+              position: 'relative',
+              overflow: 'hidden',
+              backgroundColor: '#fafafa',
             }}
           >
-            {/* Título principal con diseño corporativo */}
+            {/* Header corporativo con líneas geométricas */}
             <Box
               sx={{
-                mb: 6,
-                p: 4,
-                backgroundColor: 'white',
-                borderRadius: 3,
-                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                border: '1px solid #e0e0e0',
-                maxWidth: '500px',
+                height: '80px',
+                background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 50%, #0d47a1 100%)',
                 position: 'relative',
-                '&::before': {
+                '&::after': {
                   content: '""',
                   position: 'absolute',
-                  top: 0,
+                  bottom: 0,
                   left: 0,
                   right: 0,
-                  height: '4px',
-                  background: 'linear-gradient(90deg, #1976d2, #42a5f5, #1976d2)',
-                  borderRadius: '3px 3px 0 0',
+                  height: '20px',
+                  background:
+                    'linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.1) 41%, rgba(255,255,255,0.1) 59%, transparent 60%)',
                 },
               }}
-            >
-              <Typography
-                variant="h3"
-                sx={{
-                  fontWeight: 700,
-                  color: '#1976d2',
-                  mb: 1,
-                  fontSize: { xs: '2rem', md: '2.5rem' },
-                  letterSpacing: '1px',
-                  textTransform: 'uppercase',
-                  lineHeight: 1.1,
-                }}
-              >
-                INVENTARIO DE
-              </Typography>
-              <Typography
-                variant="h3"
-                sx={{
-                  fontWeight: 700,
-                  color: '#0d47a1',
-                  fontSize: { xs: '2rem', md: '2.5rem' },
-                  letterSpacing: '1px',
-                  textTransform: 'uppercase',
-                  lineHeight: 1.1,
-                }}
-              >
-                PRÁCTICAS DE LIDERAZGO
-              </Typography>
-            </Box>
+            />
 
-            {/* Información del equipo con diseño elegante */}
-            <Box
-              sx={{
-                backgroundColor: '#f8f9fa',
-                borderRadius: 4,
-                p: 4,
-                mb: 4,
-                maxWidth: '480px',
-                width: '100%',
-                border: '2px solid #e3f2fd',
-                position: 'relative',
-                overflow: 'hidden',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '6px',
-                  height: '100%',
-                  background: 'linear-gradient(180deg, #1976d2, #42a5f5)',
-                },
-              }}
-            >
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 600,
-                  color: '#1976d2',
-                  mb: 2,
-                  fontSize: '1.8rem',
-                }}
-              >
-                {teamName}
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{
-                  color: '#546e7a',
-                  fontWeight: 400,
-                  lineHeight: 1.4,
-                  fontSize: '1.1rem',
-                }}
-              >
-                Análisis Comparativo de las Cinco Prácticas de Liderazgo
-              </Typography>
-            </Box>
-
-            {/* Elementos decorativos geométricos */}
-            <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
-              {[0, 1, 2, 3, 4].map(index => (
+            {/* Logo y marca superior */}
+            <Box sx={{ position: 'absolute', top: 3, left: 4, right: 4, zIndex: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', pt: 2 }}>
                 <Box
-                  key={index}
                   sx={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: '50%',
-                    backgroundColor: index === 2 ? '#1976d2' : '#e3f2fd',
-                    transform: index === 2 ? 'scale(1.5)' : 'scale(1)',
-                    transition: 'all 0.3s ease',
-                  }}
-                />
-              ))}
-            </Box>
-          </Box>
-
-          {/* Footer corporativo */}
-          <Box
-            sx={{
-              backgroundColor: 'white',
-              borderTop: '3px solid #1976d2',
-              py: 3,
-              px: 4,
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 3,
-                backgroundColor: '#f8f9fa',
-                borderRadius: 2,
-                p: 2,
-                border: '1px solid #e0e0e0',
-              }}
-            >
-              {/* Icono de calendario elegante */}
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 2,
-                  backgroundColor: '#1976d2',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.89-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"
-                    fill="white"
-                  />
-                </svg>
-              </Box>
-              <Box sx={{ textAlign: 'left' }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: '#546e7a',
-                    fontSize: '0.85rem',
-                    fontWeight: 500,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
+                    width: 120,
+                    height: 60,
+                    backgroundColor: 'white',
+                    borderRadius: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    border: '2px solid #e3f2fd',
                   }}
                 >
-                  Fecha de Elaboración
+                  <CardMedia component="img" image="/ho_logo.jpg" sx={{ width: 100, height: 'auto', maxHeight: 50 }} />
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Contenido principal centralizado */}
+            <Box
+              sx={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                px: 6,
+                py: 8,
+                textAlign: 'center',
+                mt: 4,
+              }}
+            >
+              {/* Título principal con diseño corporativo */}
+              <Box
+                sx={{
+                  mb: 6,
+                  p: 4,
+                  backgroundColor: 'white',
+                  borderRadius: 3,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                  border: '1px solid #e0e0e0',
+                  maxWidth: '500px',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '6px',
+                    background: 'linear-gradient(90deg, #1976d2, #42a5f5, #1976d2)',
+                    borderRadius: '3px 3px 0 0',
+                  },
+                }}
+              >
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontWeight: 700,
+                    color: '#1976d2',
+                    mb: 1,
+                    fontSize: { xs: '2rem', md: '2.5rem' },
+                    letterSpacing: '1px',
+                    textTransform: 'uppercase',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  INVENTARIO DE
+                </Typography>
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontWeight: 700,
+                    color: '#0d47a1',
+                    fontSize: { xs: '2rem', md: '2.5rem' },
+                    letterSpacing: '1px',
+                    textTransform: 'uppercase',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  PRÁCTICAS DE LIDERAZGO
+                </Typography>
+              </Box>
+
+              {/* Información del equipo con diseño elegante */}
+              <Box
+                sx={{
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: 4,
+                  p: 4,
+                  mb: 4,
+                  maxWidth: '480px',
+                  width: '100%',
+                  border: '2px solid #e3f2fd',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '6px',
+                    height: '100%',
+                    background: 'linear-gradient(180deg, #1976d2, #42a5f5)',
+                  },
+                }}
+              >
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 600,
+                    color: '#1976d2',
+                    mb: 2,
+                    fontSize: '1.8rem',
+                  }}
+                >
+                  {teamName}
                 </Typography>
                 <Typography
                   variant="h6"
                   sx={{
-                    color: '#1976d2',
-                    fontWeight: 600,
+                    color: '#546e7a',
+                    fontWeight: 400,
+                    lineHeight: 1.4,
                     fontSize: '1.1rem',
                   }}
                 >
-                  {new Date().toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
+                  Análisis Comparativo de las Cinco Prácticas de Liderazgo
                 </Typography>
               </Box>
+
+              {/* Elementos decorativos geométricos */}
+              <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
+                {[0, 1, 2, 3, 4].map(index => (
+                  <Box
+                    key={index}
+                    sx={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: '50%',
+                      backgroundColor: index === 2 ? '#1976d2' : '#e3f2fd',
+                      transform: index === 2 ? 'scale(1.5)' : 'scale(1)',
+                      transition: 'all 0.3s ease',
+                    }}
+                  />
+                ))}
+              </Box>
             </Box>
+
+            {/* Footer corporativo */}
+            <Box
+              sx={{
+                backgroundColor: 'white',
+                borderTop: '3px solid #1976d2',
+                py: 3,
+                px: 4,
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 3,
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: 2,
+                  p: 2,
+                  border: '1px solid #e0e0e0',
+                }}
+              >
+                {/* Icono de calendario elegante */}
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 2,
+                    backgroundColor: '#1976d2',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.89-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"
+                      fill="white"
+                    />
+                  </svg>
+                </Box>
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#546e7a',
+                      fontSize: '0.85rem',
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                    }}
+                  >
+                    Fecha de Elaboración
+                  </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: '#1976d2',
+                      fontWeight: 600,
+                      fontSize: '1.1rem',
+                    }}
+                  >
+                    {new Date().toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Elementos decorativos de fondo */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: '20%',
+                right: -50,
+                width: 150,
+                height: 150,
+                borderRadius: '50%',
+                border: '2px solid #e3f2fd',
+                opacity: 0.3,
+              }}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: '25%',
+                left: -30,
+                width: 100,
+                height: 100,
+                borderRadius: '50%',
+                border: '2px solid #e3f2fd',
+                opacity: 0.2,
+              }}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '70%',
+                width: 80,
+                height: 80,
+                transform: 'rotate(45deg)',
+                border: '2px solid #e3f2fd',
+                opacity: 0.15,
+              }}
+            />
           </Box>
+        </Paper>
 
-          {/* Elementos decorativos de fondo */}
+        {/* ==================== PÁGINA 1: RESUMEN EJECUTIVO ==================== */}
+        <Paper sx={pageStyle} className="pagina-comun" data-testid="page">
+          {/* Encabezado simplificado */}
           <Box
             sx={{
-              position: 'absolute',
-              top: '20%',
-              right: -50,
-              width: 150,
-              height: 150,
-              borderRadius: '50%',
-              border: '2px solid #e3f2fd',
-              opacity: 0.3,
-            }}
-          />
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: '25%',
-              left: -30,
-              width: 100,
-              height: 100,
-              borderRadius: '50%',
-              border: '2px solid #e3f2fd',
-              opacity: 0.2,
-            }}
-          />
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '70%',
-              width: 80,
-              height: 80,
-              transform: 'rotate(45deg)',
-              border: '2px solid #e3f2fd',
-              opacity: 0.15,
-            }}
-          />
-        </Box>
-      </Paper>
-
-      {/* ==================== PÁGINA 1: RESUMEN EJECUTIVO ==================== */}
-      <Paper sx={pageStyle} data-testid="page">
-        {/* Encabezado simplificado */}
-        <Box
-          sx={{
-            backgroundColor: '#f8fafc',
-            borderLeft: '6px solid #2563eb',
-            padding: '15px 25px',
-            marginBottom: '20px',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-          }}
-        >
-          <Typography
-            variant="h4"
-            sx={{
-              margin: 0,
-              fontSize: '24px',
-              fontWeight: '600',
-              color: '#1e293b',
-              textAlign: 'center',
+              backgroundColor: '#f8fafc',
+              borderLeft: '6px solid #2563eb',
+              padding: '15px 25px',
+              marginBottom: '20px',
+              borderRadius: '8px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
             }}
           >
-            Resumen Ejecutivo
-          </Typography>
-          {/* <Typography
+            <Typography
+              variant="h4"
+              sx={{
+                margin: 0,
+                fontSize: '24px',
+                fontWeight: '600',
+                color: '#1e293b',
+                textAlign: 'center',
+              }}
+            >
+              Resumen Ejecutivo
+            </Typography>
+            {/* <Typography
             variant="body1"
             sx={{
               color: '#64748b',
@@ -1159,502 +1144,607 @@ export function CategoryReportTab({
           >
             Análisis comparativo de prácticas de liderazgo
           </Typography> */}
-        </Box>
+          </Box>
 
-        <Typography
-          variant="h6"
-          sx={{
-            mb: 3,
-            color: 'text.secondary',
-            textAlign: 'center',
-            fontWeight: '600',
-            fontSize: '16px',
-          }}
-        >
-          Cinco Prácticas de Liderazgo - Análisis Comparativo
-        </Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              mb: 3,
+              color: 'text.secondary',
+              textAlign: 'center',
+              fontWeight: '600',
+              fontSize: '16px',
+            }}
+          >
+            Cinco Prácticas de Liderazgo - Análisis Comparativo
+          </Typography>
 
-        {/* Información del equipo en tarjeta corporativa */}
-        <Box
-          sx={{
-            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-            borderRadius: '12px',
-            border: '1px solid #cbd5e1',
-            padding: '20px',
-            mb: 4,
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          {/* Línea decorativa */}
+          {/* Información del equipo en tarjeta corporativa */}
           <Box
             sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '4px',
-              background: 'linear-gradient(90deg, #1e3a8a 0%, #0369a1 100%)',
+              background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+              borderRadius: '12px',
+              border: '1px solid #cbd5e1',
+              padding: '20px',
+              mb: 4,
+              position: 'relative',
+              overflow: 'hidden',
             }}
-          />
+          >
+            {/* Línea decorativa */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: 'linear-gradient(90deg, #1e3a8a 0%, #0369a1 100%)',
+              }}
+            />
 
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 6 }}>
-              <Typography variant="body2" sx={{ fontSize: '0.9rem', mb: 1 }}>
-                <strong style={{ color: '#1e3a8a' }}>Equipo:</strong> {teamName}
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
-                <strong style={{ color: '#1e3a8a' }}>Período:</strong>{' '}
-                {new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-              </Typography>
-            </Grid>
-            <Grid size={{ xs: 6 }}>
-              <Typography variant="body2" sx={{ fontSize: '0.9rem', mb: 1 }}>
-                <strong style={{ color: '#1e3a8a' }}>Total preguntas:</strong> {comparativeData.length}
-              </Typography>
-              {/* <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+            <Grid container spacing={3}>
+              <Grid size={{ xs: 6 }}>
+                <Typography variant="body2" sx={{ fontSize: '0.9rem', mb: 1 }}>
+                  <strong style={{ color: '#1e3a8a' }}>Equipo:</strong> {teamName}
+                </Typography>
+                <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                  <strong style={{ color: '#1e3a8a' }}>Período:</strong>{' '}
+                  {new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <Typography variant="body2" sx={{ fontSize: '0.9rem', mb: 1 }}>
+                  <strong style={{ color: '#1e3a8a' }}>Total preguntas:</strong> {comparativeData.length}
+                </Typography>
+                {/* <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
                 <strong style={{ color: '#1e3a8a' }}>Evaluadores:</strong> Autopercepción + Observadores
               </Typography> */}
+              </Grid>
             </Grid>
-          </Grid>
-        </Box>
+          </Box>
 
-        {/* Tabla comparativa principal simplificada */}
-        <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: '600',
-              fontSize: '18px',
-              color: '#374151',
-              mb: 2,
-              textAlign: 'center',
-            }}
-          >
-            Cuadro Comparativo - Autopercepción vs Percepción de Colaboradores
-          </Typography>
+          {/* Tabla comparativa principal simplificada */}
+          <Box sx={{ mb: 4 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: '600',
+                fontSize: '18px',
+                color: '#374151',
+                mb: 2,
+                textAlign: 'center',
+              }}
+            >
+              Cuadro Comparativo - Autopercepción vs Percepción de Colaboradores
+            </Typography>
 
-          <TableContainer
-            component={Paper}
-            variant="outlined"
-            sx={{
-              border: '1px solid #d1d5db',
-              borderRadius: '8px',
-            }}
-          >
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ backgroundColor: '#f9fafb' }}>
-                  <TableCell
-                    sx={{
-                      color: '#374151',
-                      fontWeight: '600',
-                      fontSize: '0.85rem',
-                      borderBottom: '2px solid #e5e7eb',
-                      py: 1.5,
-                    }}
-                  >
-                    Práctica de Liderazgo
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      color: '#374151',
-                      fontWeight: '600',
-                      fontSize: '0.85rem',
-                      borderBottom: '2px solid #e5e7eb',
-                      py: 1.5,
-                      minWidth: '100px',
-                    }}
-                  >
-                    Autopercepción
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      color: '#374151',
-                      fontWeight: '600',
-                      fontSize: '0.85rem',
-                      borderBottom: '2px solid #e5e7eb',
-                      py: 1.5,
-                      minWidth: '100px',
-                    }}
-                  >
-                    Observadores
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      color: '#374151',
-                      fontWeight: '600',
-                      fontSize: '0.85rem',
-                      borderBottom: '2px solid #e5e7eb',
-                      py: 1.5,
-                      minWidth: '90px',
-                    }}
-                  >
-                    Diferencia
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {leadershipPractices.length > 0 ? (
-                  leadershipPractices.map((practice, index) => {
-                    const difference = practice.auto_total - practice.otros_total;
-                    return (
-                      <TableRow
-                        key={index}
-                        sx={{
-                          '&:nth-of-type(odd)': {
-                            backgroundColor: '#f8fafc',
-                          },
-                          '&:hover': {
-                            backgroundColor: '#e2e8f0',
-                          },
-                        }}
-                      >
-                        <TableCell
-                          sx={{
-                            fontWeight: '600',
-                            fontSize: '0.85rem',
-                            maxWidth: '200px',
-                            color: '#1e3a8a',
-                            borderRight: '1px solid #e2e8f0',
-                            padding: '12px 8px',
-                          }}
-                        >
-                          {practice.category}
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{
-                            color: '#1976d2',
-                            fontWeight: '700',
-                            fontSize: '1rem',
-                            borderRight: '1px solid #e2e8f0',
-                            backgroundColor: index % 2 === 0 ? 'rgba(25, 118, 210, 0.05)' : 'inherit',
-                            padding: '12px 8px',
-                          }}
-                        >
-                          {practice.auto_total.toFixed(1)}
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{
-                            color: '#d32f2f',
-                            fontWeight: '700',
-                            fontSize: '1rem',
-                            borderRight: '1px solid #e2e8f0',
-                            backgroundColor: index % 2 === 0 ? 'rgba(211, 47, 47, 0.05)' : 'inherit',
-                            padding: '12px 8px',
-                          }}
-                        >
-                          {practice.otros_total.toFixed(1)}
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{
-                            fontWeight: '700',
-                            fontSize: '1rem',
-                            color: difference > 0 ? '#2e7d32' : difference < 0 ? '#d32f2f' : '#1e3a8a',
-                            backgroundColor:
-                              difference > 0
-                                ? 'rgba(46, 125, 50, 0.1)'
-                                : difference < 0
-                                ? 'rgba(211, 47, 47, 0.1)'
-                                : 'rgba(30, 58, 138, 0.05)',
-                            padding: '12px 8px',
-                            borderRadius: difference !== 0 ? '4px' : 'inherit',
-                          }}
-                        >
-                          {difference > 0 ? '+' : ''}
-                          {difference.toFixed(1)}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                ) : (
-                  <TableRow>
+            <TableContainer
+              component={Paper}
+              variant="outlined"
+              sx={{
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+              }}
+            >
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: '#f9fafb' }}>
                     <TableCell
-                      colSpan={4}
-                      align="center"
                       sx={{
-                        fontSize: '0.9rem',
-                        color: '#64748b',
-                        fontStyle: 'italic',
-                        padding: '20px',
+                        color: '#374151',
+                        fontWeight: '600',
+                        fontSize: '0.85rem',
+                        borderBottom: '2px solid #e5e7eb',
+                        py: 1.5,
                       }}
                     >
-                      No se encontraron prácticas de liderazgo definidas
+                      Práctica de Liderazgo
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        color: '#374151',
+                        fontWeight: '600',
+                        fontSize: '0.85rem',
+                        borderBottom: '2px solid #e5e7eb',
+                        py: 1.5,
+                        minWidth: '100px',
+                      }}
+                    >
+                      Autopercepción
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        color: '#374151',
+                        fontWeight: '600',
+                        fontSize: '0.85rem',
+                        borderBottom: '2px solid #e5e7eb',
+                        py: 1.5,
+                        minWidth: '100px',
+                      }}
+                    >
+                      Observadores
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        color: '#374151',
+                        fontWeight: '600',
+                        fontSize: '0.85rem',
+                        borderBottom: '2px solid #e5e7eb',
+                        py: 1.5,
+                        minWidth: '90px',
+                      }}
+                    >
+                      Diferencia
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
+                </TableHead>
+                <TableBody>
+                  {leadershipPractices.length > 0 ? (
+                    leadershipPractices.map((practice, index) => {
+                      const difference = practice.auto_total - practice.otros_total;
+                      return (
+                        <TableRow
+                          key={index}
+                          sx={{
+                            '&:nth-of-type(odd)': {
+                              backgroundColor: '#f8fafc',
+                            },
+                            '&:hover': {
+                              backgroundColor: '#e2e8f0',
+                            },
+                          }}
+                        >
+                          <TableCell
+                            sx={{
+                              fontWeight: '600',
+                              fontSize: '0.85rem',
+                              maxWidth: '200px',
+                              color: '#1e3a8a',
+                              borderRight: '1px solid #e2e8f0',
+                              padding: '12px 8px',
+                            }}
+                          >
+                            {practice.category}
+                          </TableCell>
+                          <TableCell
+                            align="center"
+                            sx={{
+                              color: '#1976d2',
+                              fontWeight: '700',
+                              fontSize: '1rem',
+                              borderRight: '1px solid #e2e8f0',
+                              backgroundColor: index % 2 === 0 ? 'rgba(25, 118, 210, 0.05)' : 'inherit',
+                              padding: '12px 8px',
+                            }}
+                          >
+                            {practice.auto_total.toFixed(1)}
+                          </TableCell>
+                          <TableCell
+                            align="center"
+                            sx={{
+                              color: '#d32f2f',
+                              fontWeight: '700',
+                              fontSize: '1rem',
+                              borderRight: '1px solid #e2e8f0',
+                              backgroundColor: index % 2 === 0 ? 'rgba(211, 47, 47, 0.05)' : 'inherit',
+                              padding: '12px 8px',
+                            }}
+                          >
+                            {practice.otros_total.toFixed(1)}
+                          </TableCell>
+                          <TableCell
+                            align="center"
+                            sx={{
+                              fontWeight: '700',
+                              fontSize: '1rem',
+                              color: difference > 0 ? '#2e7d32' : difference < 0 ? '#d32f2f' : '#1e3a8a',
+                              backgroundColor:
+                                difference > 0
+                                  ? 'rgba(46, 125, 50, 0.1)'
+                                  : difference < 0
+                                  ? 'rgba(211, 47, 47, 0.1)'
+                                  : 'rgba(30, 58, 138, 0.05)',
+                              padding: '12px 8px',
+                              borderRadius: difference !== 0 ? '4px' : 'inherit',
+                            }}
+                          >
+                            {difference > 0 ? '+' : ''}
+                            {difference.toFixed(1)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={4}
+                        align="center"
+                        sx={{
+                          fontSize: '0.9rem',
+                          color: '#64748b',
+                          fontStyle: 'italic',
+                          padding: '20px',
+                        }}
+                      >
+                        No se encontraron prácticas de liderazgo definidas
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
 
-        {/* Interpretación inicial simplificada */}
-        <Box
-          sx={{
-            backgroundColor: '#f9fafb',
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb',
-            padding: '20px',
-            borderLeft: '4px solid #3b82f6',
-          }}
-        >
-          <Typography
-            variant="h6"
-            sx={{
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#374151',
-              mb: 2,
-            }}
-          >
-            Interpretación
-          </Typography>
-
-          <Typography
-            variant="body2"
-            sx={{
-              fontSize: '0.9rem',
-              lineHeight: 1.6,
-              color: '#6b7280',
-            }}
-          >
-            Este cuadro presenta la comparación entre la <strong>autopercepción del líder</strong> y la{' '}
-            <strong>percepción de sus colaboradores</strong> en las cinco prácticas fundamentales del liderazgo. Las{' '}
-            <span style={{ color: '#059669', fontWeight: '600' }}>diferencias positivas</span> indican que el líder se percibe con mayor
-            competencia, mientras que las <span style={{ color: '#dc2626', fontWeight: '600' }}>diferencias negativas</span> sugieren áreas
-            donde los colaboradores ven un desempeño superior al que el líder reconoce en sí mismo.
-          </Typography>
-        </Box>
-      </Paper>
-
-      {/* ==================== PÁGINA 2: ANÁLISIS GRÁFICO ==================== */}
-      <Paper sx={pageStyle} data-testid="page">
-        {/* Encabezado simplificado */}
-        <Box
-          sx={{
-            backgroundColor: '#f8fafc',
-            borderLeft: '6px solid #2563eb',
-            padding: '20px 25px',
-            marginBottom: '25px',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-          }}
-        >
-          <Typography
-            variant="h4"
-            sx={{
-              margin: 0,
-              fontSize: '24px',
-              fontWeight: '600',
-              color: '#1e293b',
-              textAlign: 'center',
-            }}
-          >
-            Análisis Gráfico Comparativo
-          </Typography>
-        </Box>
-
-        {leadershipPractices.length > 0 && (
+          {/* Interpretación inicial simplificada */}
           <Box
             sx={{
-              backgroundColor: '#ffffff',
+              backgroundColor: '#f9fafb',
               borderRadius: '8px',
               border: '1px solid #e5e7eb',
               padding: '20px',
-              mb: 3,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              borderLeft: '4px solid #3b82f6',
             }}
           >
-            <Box sx={{ height: '380px' }} ref={lineChartRef}>
-              <ResponsiveContainer width="100%" height={380}>
-                <LineChart
-                  data={leadershipPractices.map((practice, index) => ({
-                    practica: practice.category.length > 20 ? practice.category.substring(0, 17) + '...' : practice.category,
-                    AUTO: Number(practice.auto_total.toFixed(1)),
-                    OBSERVADORES: Number(practice.otros_total.toFixed(1)),
-                    index: index + 1,
-                  }))}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-                  <XAxis
-                    dataKey="practica"
-                    tick={{ fontSize: 9, textAnchor: 'end', fill: '#475569' }}
-                    angle={-30}
-                    textAnchor="end"
-                    height={80}
-                    interval={0}
-                  />
-                  <YAxis
-                    domain={[15, 30]}
-                    tick={{ fontSize: 10, fill: '#475569' }}
-                    tickCount={6}
-                    label={{
-                      value: 'Puntuación',
-                      angle: -90,
-                      position: 'insideLeft',
-                      style: { textAnchor: 'middle', fill: '#1e3a8a', fontWeight: '600' },
-                    }}
-                  />
-                  <Tooltip
-                    formatter={(value, name) => [value, name]}
-                    labelFormatter={label => label}
-                    contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '2px solid #1e3a8a',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                    }}
-                  />
-                  <Legend
-                    wrapperStyle={{
-                      fontSize: '12px',
-                      paddingTop: '20px',
-                      fontWeight: '600',
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="AUTO"
-                    stroke="#1976d2"
-                    strokeWidth={4}
-                    dot={{ fill: '#1976d2', strokeWidth: 3, r: 3 }}
-                    activeDot={{ r: 8, fill: '#1976d2', strokeWidth: 3, stroke: '#fff' }}
-                    label={{ position: 'top', fontSize: 10, fill: '#1976d2', fontWeight: '600' }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="OBSERVADORES"
-                    stroke="#d32f2f"
-                    strokeWidth={4}
-                    dot={{ fill: '#d32f2f', strokeWidth: 3, r: 3 }}
-                    activeDot={{ r: 8, fill: '#d32f2f', strokeWidth: 3, stroke: '#fff' }}
-                    label={{ position: 'bottom', fontSize: 10, fill: '#d32f2f', fontWeight: '600' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <Typography
+              variant="h6"
+              sx={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#374151',
+                mb: 2,
+              }}
+            >
+              Interpretación
+            </Typography>
+
+            <Typography
+              variant="body2"
+              sx={{
+                fontSize: '0.9rem',
+                lineHeight: 1.6,
+                color: '#6b7280',
+              }}
+            >
+              Este cuadro presenta la comparación entre la <strong>autopercepción del líder</strong> y la{' '}
+              <strong>percepción de sus colaboradores</strong> en las cinco prácticas fundamentales del liderazgo. Las{' '}
+              <span style={{ color: '#059669', fontWeight: '600' }}>diferencias positivas</span> indican que el líder se percibe con mayor
+              competencia, mientras que las <span style={{ color: '#dc2626', fontWeight: '600' }}>diferencias negativas</span> sugieren
+              áreas donde los colaboradores ven un desempeño superior al que el líder reconoce en sí mismo.
+            </Typography>
+          </Box>
+        </Paper>
+
+        {/* ==================== PÁGINA 2: ANÁLISIS GRÁFICO ==================== */}
+        <Paper sx={pageStyle} data-testid="page" className="pagina-comun">
+          {/* Encabezado simplificado */}
+          <Box
+            sx={{
+              backgroundColor: '#f8fafc',
+              borderLeft: '6px solid #2563eb',
+              padding: '20px 25px',
+              marginBottom: '25px',
+              borderRadius: '8px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+            }}
+          >
+            <Typography
+              variant="h4"
+              sx={{
+                margin: 0,
+                fontSize: '24px',
+                fontWeight: '600',
+                color: '#1e293b',
+                textAlign: 'center',
+              }}
+            >
+              Análisis Gráfico Comparativo
+            </Typography>
+          </Box>
+
+          {leadershipPractices.length > 0 && (
+            <Box
+              sx={{
+                backgroundColor: '#ffffff',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+                padding: '20px',
+                mb: 3,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              }}
+            >
+              <Box sx={{ height: '380px' }} ref={lineChartRef}>
+                <ResponsiveContainer width="100%" height={380}>
+                  <LineChart
+                    data={leadershipPractices.map((practice, index) => ({
+                      practica: practice.category.length > 20 ? practice.category.substring(0, 17) + '...' : practice.category,
+                      AUTO: Number(practice.auto_total.toFixed(1)),
+                      OBSERVADORES: Number(practice.otros_total.toFixed(1)),
+                      index: index + 1,
+                    }))}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                    <XAxis
+                      dataKey="practica"
+                      tick={{ fontSize: 9, textAnchor: 'end', fill: '#475569' }}
+                      angle={-30}
+                      textAnchor="end"
+                      height={80}
+                      interval={0}
+                    />
+                    <YAxis
+                      domain={[15, 30]}
+                      tick={{ fontSize: 10, fill: '#475569' }}
+                      tickCount={6}
+                      label={{
+                        value: 'Puntuación',
+                        angle: -90,
+                        position: 'insideLeft',
+                        style: { textAnchor: 'middle', fill: '#1e3a8a', fontWeight: '600' },
+                      }}
+                    />
+                    <Tooltip
+                      formatter={(value, name) => [value, name]}
+                      labelFormatter={label => label}
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '2px solid #1e3a8a',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                      }}
+                    />
+                    <Legend
+                      wrapperStyle={{
+                        fontSize: '12px',
+                        paddingTop: '20px',
+                        fontWeight: '600',
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="AUTO"
+                      stroke="#1976d2"
+                      strokeWidth={4}
+                      dot={{ fill: '#1976d2', strokeWidth: 3, r: 3 }}
+                      activeDot={{ r: 8, fill: '#1976d2', strokeWidth: 3, stroke: '#fff' }}
+                      label={{ position: 'top', fontSize: 10, fill: '#1976d2', fontWeight: '600' }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="OBSERVADORES"
+                      stroke="#d32f2f"
+                      strokeWidth={4}
+                      dot={{ fill: '#d32f2f', strokeWidth: 3, r: 3 }}
+                      activeDot={{ r: 8, fill: '#d32f2f', strokeWidth: 3, stroke: '#fff' }}
+                      label={{ position: 'bottom', fontSize: 10, fill: '#d32f2f', fontWeight: '600' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+            </Box>
+          )}
+
+          {/* Interpretación del análisis simplificada */}
+          <Box
+            sx={{
+              backgroundColor: '#f9fafb',
+              borderRadius: '8px',
+              border: '1px solid #e5e7eb',
+              padding: '20px',
+              borderLeft: '4px solid #3b82f6',
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#374151',
+                mb: 2,
+              }}
+            >
+              Interpretación del Análisis
+            </Typography>
+
+            <Typography
+              variant="body2"
+              sx={{
+                fontSize: '0.9rem',
+                lineHeight: 1.6,
+                mb: 2,
+                color: '#6b7280',
+              }}
+            >
+              <strong>El gráfico de líneas</strong> facilita la visualización de las diferencias entre autopercepción y percepción externa
+              en cada práctica.
+              <span style={{ color: '#1976d2', fontWeight: '600' }}> Las líneas azules (autopercepción)</span> y
+              <span style={{ color: '#d32f2f', fontWeight: '600' }}> rojas (observadores)</span> permiten identificar rápidamente:
+            </Typography>
+
+            <Box
+              component="ul"
+              sx={{
+                margin: 0,
+                paddingLeft: '20px',
+                '& li': {
+                  fontSize: '0.85rem',
+                  lineHeight: 1.5,
+                  marginBottom: '8px',
+                  color: '#6b7280',
+                  fontWeight: '500',
+                },
+              }}
+            >
+              <li>
+                <strong style={{ color: '#059669' }}>Convergencias:</strong> Donde ambas líneas se aproximan, indicando alineación
+                perceptual
+              </li>
+              <li>
+                <strong style={{ color: '#d97706' }}>Divergencias:</strong> Separaciones significativas que requieren atención y desarrollo
+              </li>
+              <li>
+                <strong style={{ color: '#7c3aed' }}>Patrones:</strong> Tendencias consistentes que revelan fortalezas o áreas de mejora
+              </li>
             </Box>
           </Box>
-        )}
+        </Paper>
 
-        {/* Interpretación del análisis simplificada */}
-        <Box
-          sx={{
-            backgroundColor: '#f9fafb',
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb',
-            padding: '20px',
-            borderLeft: '4px solid #3b82f6',
-          }}
-        >
-          <Typography
-            variant="h6"
-            sx={{
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#374151',
-              mb: 2,
-            }}
-          >
-            Interpretación del Análisis
-          </Typography>
+        {/* ==================== PÁGINAS SIGUIENTES: DETALLE POR CATEGORÍA ==================== */}
+        {categoryData.map((category, categoryIndex) => {
+          const practiceInfo = LEADERSHIP_PRACTICES.find(
+            practice =>
+              practice.name.toLowerCase().includes(category.category.name.toLowerCase()) ||
+              category.category.name.toLowerCase().includes(practice.name.toLowerCase())
+          );
 
-          <Typography
-            variant="body2"
-            sx={{
-              fontSize: '0.9rem',
-              lineHeight: 1.6,
-              mb: 2,
-              color: '#6b7280',
-            }}
-          >
-            <strong>El gráfico de líneas</strong> facilita la visualización de las diferencias entre autopercepción y percepción externa en
-            cada práctica.
-            <span style={{ color: '#1976d2', fontWeight: '600' }}> Las líneas azules (autopercepción)</span> y
-            <span style={{ color: '#d32f2f', fontWeight: '600' }}> rojas (observadores)</span> permiten identificar rápidamente:
-          </Typography>
-
-          <Box
-            component="ul"
-            sx={{
-              margin: 0,
-              paddingLeft: '20px',
-              '& li': {
-                fontSize: '0.85rem',
-                lineHeight: 1.5,
-                marginBottom: '8px',
-                color: '#6b7280',
-                fontWeight: '500',
-              },
-            }}
-          >
-            <li>
-              <strong style={{ color: '#059669' }}>Convergencias:</strong> Donde ambas líneas se aproximan, indicando alineación perceptual
-            </li>
-            <li>
-              <strong style={{ color: '#d97706' }}>Divergencias:</strong> Separaciones significativas que requieren atención y desarrollo
-            </li>
-            <li>
-              <strong style={{ color: '#7c3aed' }}>Patrones:</strong> Tendencias consistentes que revelan fortalezas o áreas de mejora
-            </li>
-          </Box>
-        </Box>
-      </Paper>
-
-      {/* ==================== PÁGINAS SIGUIENTES: DETALLE POR CATEGORÍA ==================== */}
-      {categoryData.map((category, categoryIndex) => {
-        const practiceInfo = LEADERSHIP_PRACTICES.find(
-          practice =>
-            practice.name.toLowerCase().includes(category.category.name.toLowerCase()) ||
-            category.category.name.toLowerCase().includes(practice.name.toLowerCase())
-        );
-
-        return (
-          <>
-            {/* PÁGINA A: TÍTULO, DESCRIPCIÓN Y GRÁFICO */}
-            <Paper key={`${categoryIndex}-graph`} sx={pageStyle} data-testid="page">
-              {/* Encabezado simplificado */}
-              <Box
-                sx={{
-                  backgroundColor: '#f8fafc',
-                  borderLeft: '6px solid #2563eb',
-                  padding: '15px 25px',
-                  marginBottom: '20px',
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                }}
-              >
-                <Typography
-                  variant="h4"
+          return (
+            <>
+              {/* PÁGINA A: TÍTULO, DESCRIPCIÓN Y GRÁFICO */}
+              <Paper key={`${categoryIndex}-graph`} sx={pageStyle} data-testid="page" className="pagina-comun">
+                {/* Encabezado simplificado */}
+                <Box
                   sx={{
-                    margin: 0,
-                    fontSize: '24px',
-                    fontWeight: '600',
-                    color: '#1e293b',
-                    textAlign: 'center',
+                    backgroundColor: '#f8fafc',
+                    borderLeft: '6px solid #2563eb',
+                    padding: '15px 25px',
+                    marginBottom: '20px',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                   }}
                 >
-                  {category.category.name}
-                </Typography>
-              </Box>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      margin: 0,
+                      fontSize: '24px',
+                      fontWeight: '600',
+                      color: '#1e293b',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {category.category.name}
+                  </Typography>
+                </Box>
 
-              {/* Descripción de la práctica simplificada */}
-              {practiceInfo && practiceInfo.description && (
+                {/* Descripción de la práctica simplificada */}
+                {practiceInfo && practiceInfo.description && (
+                  <Box
+                    sx={{
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      padding: '20px',
+                      mb: 4,
+                      borderLeft: '4px solid #3b82f6',
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        mb: 2,
+                      }}
+                    >
+                      Descripción de la Práctica
+                    </Typography>
+
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontSize: '0.9rem',
+                        lineHeight: 1.6,
+                        color: '#6b7280',
+                        whiteSpace: 'break-spaces',
+                      }}
+                    >
+                      {practiceInfo.description}
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Gráfico comparativo simplificado */}
+                <Box sx={{ mb: 4 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: '600',
+                      fontSize: '18px',
+                      color: '#374151',
+                      mb: 2,
+                      textAlign: 'center',
+                    }}
+                  >
+                    Análisis Comparativo por Pregunta
+                  </Typography>
+
+                  <Box
+                    sx={{
+                      backgroundColor: '#ffffff',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      padding: '20px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    <Box
+                      sx={{ height: '300px' }}
+                      ref={el => {
+                        barChartRefs.current[categoryIndex] = el as HTMLDivElement | null;
+                      }}
+                    >
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart
+                          data={category.questions.map(q => ({
+                            pregunta: q.question_text.length > 60 ? q.question_text.substring(0, 57) + '...' : q.question_text,
+                            AUTO: q.leader_avg,
+                            OBSERVADORES: q.collaborator_avg,
+                          }))}
+                          layout="vertical"
+                          margin={{ top: 20, right: 40, left: 10, bottom: 20 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                          <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#475569' }} tickCount={6} />
+                          <YAxis type="category" dataKey="pregunta" tick={{ fontSize: 8, width: 160, fill: '#475569' }} width={160} />
+                          <Tooltip
+                            formatter={(value, name) => [value, name]}
+                            contentStyle={{
+                              backgroundColor: '#fff',
+                              border: '2px solid #1e3a8a',
+                              borderRadius: '8px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                            }}
+                          />
+                          <Legend
+                            wrapperStyle={{
+                              fontSize: '12px',
+                              fontWeight: '600',
+                            }}
+                          />
+                          <Bar dataKey="AUTO" fill="#1976d2" name="AUTOPERCEPCIÓN" barSize={20} />
+                          <Bar dataKey="OBSERVADORES" fill="#d32f2f" name="OBSERVADORES" barSize={20} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </Box>
+                </Box>
+
+                {/* Interpretación del gráfico simplificada */}
                 <Box
                   sx={{
                     backgroundColor: '#f9fafb',
                     borderRadius: '8px',
                     border: '1px solid #e5e7eb',
                     padding: '20px',
-                    mb: 4,
                     borderLeft: '4px solid #3b82f6',
                   }}
                 >
@@ -1667,415 +1757,313 @@ export function CategoryReportTab({
                       mb: 2,
                     }}
                   >
-                    Descripción de la Práctica
+                    Interpretación del Análisis
                   </Typography>
 
                   <Typography
-                    variant="body1"
+                    variant="body2"
                     sx={{
                       fontSize: '0.9rem',
                       lineHeight: 1.6,
                       color: '#6b7280',
-                      whiteSpace: 'break-spaces',
                     }}
                   >
-                    {practiceInfo.description}
+                    Este gráfico muestra la comparación entre la <strong>autopercepción del líder</strong> y la{' '}
+                    <strong>percepción de los colaboradores</strong> para cada pregunta específica de la práctica{' '}
+                    <span style={{ color: '#059669', fontWeight: '600' }}>{category.category.name}</span>. Las barras permiten identificar
+                    preguntas con mayor o menor alineación perceptual.
                   </Typography>
                 </Box>
-              )}
+              </Paper>
 
-              {/* Gráfico comparativo simplificado */}
-              <Box sx={{ mb: 4 }}>
+              {/* PÁGINA B: CUADRO DETALLADO */}
+              <Paper key={`${categoryIndex}-table`} sx={pageStyle} data-testid="page">
+                {/* Encabezado compacto */}
                 <Typography
-                  variant="h6"
+                  variant="h5"
                   sx={{
+                    fontSize: '20px',
                     fontWeight: '600',
-                    fontSize: '18px',
                     color: '#374151',
-                    mb: 2,
                     textAlign: 'center',
+                    mb: 2,
+                    pb: 1,
+                    borderBottom: '2px solid #e5e7eb',
                   }}
                 >
-                  Análisis Comparativo por Pregunta
+                  Detalle por Pregunta - {category.category.name}
                 </Typography>
 
+                {/* Tabla detallada compacta */}
+                <TableContainer
+                  component={Paper}
+                  variant="outlined"
+                  sx={{
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    maxHeight: '550px',
+                    mb: 3,
+                  }}
+                >
+                  <Table>
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: '#0369a1' }}>
+                        <TableCell
+                          sx={{
+                            color: 'white',
+                            fontWeight: '700',
+                            fontSize: '0.9rem',
+                            width: '60px',
+                            borderRight: '1px solid rgba(255,255,255,0.2)',
+                            letterSpacing: '0.5px',
+                          }}
+                        >
+                          No.
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            color: 'white',
+                            fontWeight: '700',
+                            fontSize: '0.9rem',
+                            borderRight: '1px solid rgba(255,255,255,0.2)',
+                            letterSpacing: '0.5px',
+                          }}
+                        >
+                          PREGUNTA
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{
+                            color: 'white',
+                            fontWeight: '700',
+                            fontSize: '0.9rem',
+                            width: '100px',
+                            borderRight: '1px solid rgba(255,255,255,0.2)',
+                            letterSpacing: '0.5px',
+                          }}
+                        >
+                          AUTOPERCEPCIÓN
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{
+                            color: 'white',
+                            fontWeight: '700',
+                            fontSize: '0.9rem',
+                            width: '110px',
+                            borderRight: '1px solid rgba(255,255,255,0.2)',
+                            letterSpacing: '0.5px',
+                          }}
+                        >
+                          OBSERVADORES
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{
+                            color: 'white',
+                            fontWeight: '700',
+                            fontSize: '0.9rem',
+                            width: '90px',
+                            letterSpacing: '0.5px',
+                          }}
+                        >
+                          DIFERENCIA
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {category.questions.map((question, qIndex) => {
+                        const difference = question.leader_avg - question.collaborator_avg;
+                        return (
+                          <TableRow
+                            key={qIndex}
+                            sx={{
+                              '&:nth-of-type(odd)': {
+                                backgroundColor: '#f8fafc',
+                              },
+                              '&:hover': {
+                                backgroundColor: '#e2e8f0',
+                              },
+                            }}
+                          >
+                            <TableCell
+                              sx={{
+                                fontSize: '0.75rem',
+                                py: 0.5,
+                                px: 1,
+                                fontWeight: '600',
+                                color: '#374151',
+                                textAlign: 'center',
+                                minWidth: '35px',
+                              }}
+                            >
+                              {question.question_number}
+                            </TableCell>
+                            <TableCell
+                              sx={{
+                                fontSize: '0.75rem',
+                                py: 0.5,
+                                px: 1.5,
+                                lineHeight: 1.2,
+                                color: '#374151',
+                              }}
+                            >
+                              {question.question_text}
+                            </TableCell>
+                            <TableCell
+                              align="center"
+                              sx={{
+                                color: '#2563eb',
+                                fontWeight: '600',
+                                fontSize: '0.8rem',
+                                py: 0.5,
+                                px: 1,
+                              }}
+                            >
+                              {question.leader_avg.toFixed(1)}
+                            </TableCell>
+                            <TableCell
+                              align="center"
+                              sx={{
+                                color: '#dc2626',
+                                fontWeight: '600',
+                                fontSize: '0.8rem',
+                                py: 0.5,
+                                px: 1,
+                              }}
+                            >
+                              {question.collaborator_avg.toFixed(1)}
+                            </TableCell>
+                            <TableCell
+                              align="center"
+                              sx={{
+                                fontWeight: '600',
+                                fontSize: '0.8rem',
+                                py: 0.5,
+                                px: 1,
+                                color: difference > 0 ? '#059669' : difference < 0 ? '#dc2626' : '#6b7280',
+                              }}
+                            >
+                              {difference > 0 ? '+' : ''}
+                              {difference.toFixed(1)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+
+                {/* Resumen de la categoría simplificado */}
                 <Box
                   sx={{
-                    backgroundColor: '#ffffff',
+                    mt: 4,
+                    backgroundColor: '#f9fafb',
                     borderRadius: '8px',
                     border: '1px solid #e5e7eb',
                     padding: '20px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    borderLeft: '4px solid #3b82f6',
                   }}
                 >
-                  <Box
-                    sx={{ height: '300px' }}
-                    ref={el => {
-                      barChartRefs.current[categoryIndex] = el as HTMLDivElement | null;
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      mb: 2,
                     }}
                   >
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart
-                        data={category.questions.map(q => ({
-                          pregunta: q.question_text.length > 60 ? q.question_text.substring(0, 57) + '...' : q.question_text,
-                          AUTO: q.leader_avg,
-                          OBSERVADORES: q.collaborator_avg,
-                        }))}
-                        layout="vertical"
-                        margin={{ top: 20, right: 40, left: 10, bottom: 20 }}
+                    Resumen de la Práctica
+                  </Typography>
+
+                  <Grid container spacing={3}>
+                    <Grid size={{ xs: 4 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: '700',
+                          color: '#065f46',
+                          fontSize: '0.9rem',
+                          mb: 1,
+                        }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-                        <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#475569' }} tickCount={6} />
-                        <YAxis type="category" dataKey="pregunta" tick={{ fontSize: 8, width: 160, fill: '#475569' }} width={160} />
-                        <Tooltip
-                          formatter={(value, name) => [value, name]}
-                          contentStyle={{
-                            backgroundColor: '#fff',
-                            border: '2px solid #1e3a8a',
-                            borderRadius: '8px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                          }}
-                        />
-                        <Legend
-                          wrapperStyle={{
-                            fontSize: '12px',
-                            fontWeight: '600',
-                          }}
-                        />
-                        <Bar dataKey="AUTO" fill="#1976d2" name="AUTOPERCEPCIÓN" barSize={20} />
-                        <Bar dataKey="OBSERVADORES" fill="#d32f2f" name="OBSERVADORES" barSize={20} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </Box>
+                        Promedio Autopercepción:
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: '#1976d2',
+                          fontWeight: '700',
+                          fontSize: '1.2rem',
+                        }}
+                      >
+                        {(category.questions.reduce((sum, q) => sum + q.leader_avg, 0) / category.questions.length).toFixed(1)}
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 4 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: '700',
+                          color: '#065f46',
+                          fontSize: '0.9rem',
+                          mb: 1,
+                        }}
+                      >
+                        Promedio Observadores:
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: '#d32f2f',
+                          fontWeight: '700',
+                          fontSize: '1.2rem',
+                        }}
+                      >
+                        {(category.questions.reduce((sum, q) => sum + q.collaborator_avg, 0) / category.questions.length).toFixed(1)}
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 4 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: '700',
+                          color: '#065f46',
+                          fontSize: '0.9rem',
+                          mb: 1,
+                        }}
+                      >
+                        Diferencia Promedio:
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color:
+                            category.questions.reduce((sum, q) => sum + (q.leader_avg - q.collaborator_avg), 0) /
+                              category.questions.length >
+                            0
+                              ? '#2e7d32'
+                              : '#d32f2f',
+                          fontWeight: '700',
+                          fontSize: '1.2rem',
+                        }}
+                      >
+                        {category.questions.reduce((sum, q) => sum + (q.leader_avg - q.collaborator_avg), 0) / category.questions.length > 0
+                          ? '+'
+                          : ''}
+                        {(
+                          category.questions.reduce((sum, q) => sum + (q.leader_avg - q.collaborator_avg), 0) / category.questions.length
+                        ).toFixed(1)}
+                      </Typography>
+                    </Grid>
+                  </Grid>
                 </Box>
-              </Box>
-
-              {/* Interpretación del gráfico simplificada */}
-              <Box
-                sx={{
-                  backgroundColor: '#f9fafb',
-                  borderRadius: '8px',
-                  border: '1px solid #e5e7eb',
-                  padding: '20px',
-                  borderLeft: '4px solid #3b82f6',
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    mb: 2,
-                  }}
-                >
-                  Interpretación del Análisis
-                </Typography>
-
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontSize: '0.9rem',
-                    lineHeight: 1.6,
-                    color: '#6b7280',
-                  }}
-                >
-                  Este gráfico muestra la comparación entre la <strong>autopercepción del líder</strong> y la{' '}
-                  <strong>percepción de los colaboradores</strong> para cada pregunta específica de la práctica{' '}
-                  <span style={{ color: '#059669', fontWeight: '600' }}>{category.category.name}</span>. Las barras permiten identificar
-                  preguntas con mayor o menor alineación perceptual.
-                </Typography>
-              </Box>
-            </Paper>
-
-            {/* PÁGINA B: CUADRO DETALLADO */}
-            <Paper key={`${categoryIndex}-table`} sx={pageStyle} data-testid="page">
-              {/* Encabezado compacto */}
-              <Typography
-                variant="h5"
-                sx={{
-                  fontSize: '20px',
-                  fontWeight: '600',
-                  color: '#374151',
-                  textAlign: 'center',
-                  mb: 2,
-                  pb: 1,
-                  borderBottom: '2px solid #e5e7eb',
-                }}
-              >
-                Detalle por Pregunta - {category.category.name}
-              </Typography>
-
-              {/* Tabla detallada compacta */}
-              <TableContainer
-                component={Paper}
-                variant="outlined"
-                sx={{
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  maxHeight: '550px',
-                  mb: 3,
-                }}
-              >
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: '#0369a1' }}>
-                      <TableCell
-                        sx={{
-                          color: 'white',
-                          fontWeight: '700',
-                          fontSize: '0.9rem',
-                          width: '60px',
-                          borderRight: '1px solid rgba(255,255,255,0.2)',
-                          letterSpacing: '0.5px',
-                        }}
-                      >
-                        No.
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          color: 'white',
-                          fontWeight: '700',
-                          fontSize: '0.9rem',
-                          borderRight: '1px solid rgba(255,255,255,0.2)',
-                          letterSpacing: '0.5px',
-                        }}
-                      >
-                        PREGUNTA
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{
-                          color: 'white',
-                          fontWeight: '700',
-                          fontSize: '0.9rem',
-                          width: '100px',
-                          borderRight: '1px solid rgba(255,255,255,0.2)',
-                          letterSpacing: '0.5px',
-                        }}
-                      >
-                        AUTOPERCEPCIÓN
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{
-                          color: 'white',
-                          fontWeight: '700',
-                          fontSize: '0.9rem',
-                          width: '110px',
-                          borderRight: '1px solid rgba(255,255,255,0.2)',
-                          letterSpacing: '0.5px',
-                        }}
-                      >
-                        OBSERVADORES
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{
-                          color: 'white',
-                          fontWeight: '700',
-                          fontSize: '0.9rem',
-                          width: '90px',
-                          letterSpacing: '0.5px',
-                        }}
-                      >
-                        DIFERENCIA
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {category.questions.map((question, qIndex) => {
-                      const difference = question.leader_avg - question.collaborator_avg;
-                      return (
-                        <TableRow
-                          key={qIndex}
-                          sx={{
-                            '&:nth-of-type(odd)': {
-                              backgroundColor: '#f8fafc',
-                            },
-                            '&:hover': {
-                              backgroundColor: '#e2e8f0',
-                            },
-                          }}
-                        >
-                          <TableCell
-                            sx={{
-                              fontSize: '0.75rem',
-                              py: 0.5,
-                              px: 1,
-                              fontWeight: '600',
-                              color: '#374151',
-                              textAlign: 'center',
-                              minWidth: '35px',
-                            }}
-                          >
-                            {question.question_number}
-                          </TableCell>
-                          <TableCell
-                            sx={{
-                              fontSize: '0.75rem',
-                              py: 0.5,
-                              px: 1.5,
-                              lineHeight: 1.2,
-                              color: '#374151',
-                            }}
-                          >
-                            {question.question_text}
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            sx={{
-                              color: '#2563eb',
-                              fontWeight: '600',
-                              fontSize: '0.8rem',
-                              py: 0.5,
-                              px: 1,
-                            }}
-                          >
-                            {question.leader_avg.toFixed(1)}
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            sx={{
-                              color: '#dc2626',
-                              fontWeight: '600',
-                              fontSize: '0.8rem',
-                              py: 0.5,
-                              px: 1,
-                            }}
-                          >
-                            {question.collaborator_avg.toFixed(1)}
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            sx={{
-                              fontWeight: '600',
-                              fontSize: '0.8rem',
-                              py: 0.5,
-                              px: 1,
-                              color: difference > 0 ? '#059669' : difference < 0 ? '#dc2626' : '#6b7280',
-                            }}
-                          >
-                            {difference > 0 ? '+' : ''}
-                            {difference.toFixed(1)}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              {/* Resumen de la categoría simplificado */}
-              <Box
-                sx={{
-                  mt: 4,
-                  backgroundColor: '#f9fafb',
-                  borderRadius: '8px',
-                  border: '1px solid #e5e7eb',
-                  padding: '20px',
-                  borderLeft: '4px solid #3b82f6',
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    mb: 2,
-                  }}
-                >
-                  Resumen de la Práctica
-                </Typography>
-
-                <Grid container spacing={3}>
-                  <Grid size={{ xs: 4 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontWeight: '700',
-                        color: '#065f46',
-                        fontSize: '0.9rem',
-                        mb: 1,
-                      }}
-                    >
-                      Promedio Autopercepción:
-                    </Typography>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        color: '#1976d2',
-                        fontWeight: '700',
-                        fontSize: '1.2rem',
-                      }}
-                    >
-                      {(category.questions.reduce((sum, q) => sum + q.leader_avg, 0) / category.questions.length).toFixed(1)}
-                    </Typography>
-                  </Grid>
-                  <Grid size={{ xs: 4 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontWeight: '700',
-                        color: '#065f46',
-                        fontSize: '0.9rem',
-                        mb: 1,
-                      }}
-                    >
-                      Promedio Observadores:
-                    </Typography>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        color: '#d32f2f',
-                        fontWeight: '700',
-                        fontSize: '1.2rem',
-                      }}
-                    >
-                      {(category.questions.reduce((sum, q) => sum + q.collaborator_avg, 0) / category.questions.length).toFixed(1)}
-                    </Typography>
-                  </Grid>
-                  <Grid size={{ xs: 4 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontWeight: '700',
-                        color: '#065f46',
-                        fontSize: '0.9rem',
-                        mb: 1,
-                      }}
-                    >
-                      Diferencia Promedio:
-                    </Typography>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        color:
-                          category.questions.reduce((sum, q) => sum + (q.leader_avg - q.collaborator_avg), 0) / category.questions.length >
-                          0
-                            ? '#2e7d32'
-                            : '#d32f2f',
-                        fontWeight: '700',
-                        fontSize: '1.2rem',
-                      }}
-                    >
-                      {category.questions.reduce((sum, q) => sum + (q.leader_avg - q.collaborator_avg), 0) / category.questions.length > 0
-                        ? '+'
-                        : ''}
-                      {(
-                        category.questions.reduce((sum, q) => sum + (q.leader_avg - q.collaborator_avg), 0) / category.questions.length
-                      ).toFixed(1)}
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </Box>
-            </Paper>
-          </>
-        );
-      })}
+              </Paper>
+            </>
+          );
+        })}
+      </div>
     </Box>
   );
 }

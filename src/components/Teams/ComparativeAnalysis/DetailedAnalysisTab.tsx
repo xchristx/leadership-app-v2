@@ -14,7 +14,7 @@ interface DetailedAnalysisTabProps {
 
 export function DetailedAnalysisTab({ comparativeData }: DetailedAnalysisTabProps) {
   return (
-    <>
+    <Box sx={{ px: { xs: 1, md: 10, lg: 30, xl: 40 } }}>
       <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
         🔍 Análisis Pregunta por Pregunta
       </Typography>
@@ -111,6 +111,6 @@ export function DetailedAnalysisTab({ comparativeData }: DetailedAnalysisTabProp
       ) : (
         <Alert severity="info">No hay datos suficientes para el análisis comparativo.</Alert>
       )}
-    </>
+    </Box>
   );
 }

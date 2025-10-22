@@ -43,7 +43,6 @@ export function useProjects(organizationId?: string) {
     }, {
         skip: !currentOrgId
     })
-
     // Crear proyecto con configuración completa
     const createProject = useCallback(async (projectData: Omit<CreateProjectData, 'organization_id'> & {
         allow_re_evaluation?: boolean;

@@ -51,6 +51,8 @@ type ProjectFormData = {
   budget: number | null;
   max_teams: number | null;
   template_id: string;
+  require_evaluator_info?: boolean;
+  allow_re_evaluation?: boolean;
 };
 
 type ViewMode = 'cards' | 'table';
@@ -241,6 +243,8 @@ export function ProjectsModular() {
         end_date: data.end_date?.toISOString(),
         template_id: data.template_id,
         hierarchy_levels: 2 as const,
+        allow_re_evaluation: data.allow_re_evaluation || false,
+        require_evaluator_info: data.require_evaluator_info || false,
       };
 
       const result = await createProject(projectData);
@@ -270,6 +274,8 @@ export function ProjectsModular() {
         start_date: data.start_date?.toISOString(),
         end_date: data.end_date?.toISOString(),
         template_id: data.template_id,
+        allow_re_evaluation: data.allow_re_evaluation || false,
+        require_evaluator_info: data.require_evaluator_info || false,
       };
 
       const result = await updateProject(selectedProject.id, updates);

@@ -44,7 +44,6 @@ export interface TeamCardProps {
 export function TeamCard({ team, onEdit, onDelete, onView, onManageInvitations, showActions = true }: TeamCardProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
-
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);

@@ -23,6 +23,7 @@ const Reports = lazy(() => import('../pages').then(m => ({ default: m.Reports })
 const LoginPage = lazy(() => import('../pages').then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('../components').then(m => ({ default: m.RegisterPage })));
 const EvaluationPage = lazy(() => import('../pages/EvaluationPage').then(m => ({ default: m.EvaluationPage })));
+const PDFPreview = lazy(() => import('../components/Teams/ComparativeAnalysis/PDF/PDFPreview').then(m => ({ default: m.PDFPreview })));
 
 // Componente de loading
 function LoadingSpinner() {
@@ -214,6 +215,16 @@ export function AppRouter() {
                 </Suspense>
               </Layout>
             </ProtectedRoute>
+          }
+        />
+
+        {/* Ruta para la vista previa del PDF - acceso de desarrollo */}
+        <Route
+          path="/pdf-preview"
+          element={
+            <ProtectedLayout>
+              <PDFPreview />
+            </ProtectedLayout>
           }
         />
 
