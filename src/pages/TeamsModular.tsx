@@ -32,9 +32,7 @@ import { useTeams } from '../hooks/useTeams';
 import { useProjects } from '../hooks/useProjects';
 import { TeamCard, TeamEditor, TeamDashboard } from '../components/Teams/index';
 import { TeamForm } from '../components/Forms';
-import type { Team, Project } from '../types';
-import type { CreateTeamData } from '../services/teamService';
-import type { TeamFormData } from '../components/Forms/TeamForm';
+import type { Team, Project, TeamFormData } from '../types';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -70,8 +68,7 @@ export function TeamsModular() {
   // Filtros aplicados
   const filteredTeams = teams.filter((team: Team) => {
     const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesProject = !selectedProjectId || team.project_id === selectedProjectId;
-
+    const matchesProject = selectedProjectId && team.project_id === selectedProjectId;
     return matchesSearch && matchesProject;
   });
 
@@ -82,14 +79,8 @@ export function TeamsModular() {
   const handleCreateTeam = async (teamData: TeamFormData) => {
     try {
       // Convertir TeamFormData a CreateTeamData
-      const createData: CreateTeamData = {
-        name: teamData.name,
-        project_id: teamData.project_id,
-        team_size: teamData.team_size,
-        is_active: teamData.is_active,
-      };
 
-      const result = await createTeamWithInvitations(createData);
+      const result = await createTeamWithInvitations(teamData);
 
       if (result.success) {
         setShowCreateDialog(false);
@@ -106,17 +97,18 @@ export function TeamsModular() {
     }
   };
 
-  const handleEditTeam = async (teamData: Omit<Team, 'id' | 'created_at' | 'updated_at'>) => {
+  const handleEditTeam = async (teamData: TeamFormData) => {
     if (!selectedTeam) return { success: false, error: 'No hay equipo seleccionado' };
 
     try {
       // Convertir TeamFormData a UpdateTeamData
       const updateData = {
         name: teamData.name,
-        team_size: teamData.team_size,
-        leader_name: teamData.leader_name,
-        leader_email: teamData.leader_email,
-        is_active: teamData.is_active,
+        team_size: teamData.team_size ?? undefined,
+        leader_name: teamData.leader_name ?? undefined,
+        leader_email: teamData.leader_email ?? undefined,
+        is_active: teamData.is_active ?? undefined,
+        department: teamData.department ?? undefined,
       };
 
       const result = await updateTeam(selectedTeam.id, updateData);
@@ -161,11 +153,6 @@ export function TeamsModular() {
   const openDashboard = (team: Team) => {
     setSelectedTeamForDashboard(team);
     setTabValue(2); // Cambiar a la pestaña del dashboard
-  };
-
-  const handleManageInvitations = (team: Team) => {
-    // Implementar navegación a gestión de invitaciones
-    console.log('Manage invitations for team:', team.id);
   };
 
   return (
@@ -343,7 +330,9 @@ export function TeamsModular() {
           </Box>
 
           {/* Resultados */}
-          {isLoading ? (
+          {!selectedProjectId ? (
+            <Alert severity="info">Selecciona un proyecto para ver los equipos asociados.</Alert>
+          ) : isLoading ? (
             <Typography>Cargando equipos...</Typography>
           ) : isError ? (
             <Alert severity="error">Error al cargar equipos: {error ? String(error) : 'Error desconocido'}</Alert>
@@ -353,13 +342,7 @@ export function TeamsModular() {
             <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ width: '100%', margin: 0 }}>
               {filteredTeams.map((team: Team) => (
                 <Grid size={{ xs: 12, sm: 6, md: 4 }} key={team.id} sx={{ width: '100%' }}>
-                  <TeamCard
-                    team={team}
-                    onEdit={openEditDialog}
-                    onDelete={handleDeleteTeam}
-                    onView={openDashboard}
-                    onManageInvitations={handleManageInvitations}
-                  />
+                  <TeamCard team={team} onEdit={openEditDialog} onDelete={handleDeleteTeam} onView={openDashboard} />
                 </Grid>
               ))}
             </Grid>

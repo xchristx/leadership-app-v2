@@ -26,7 +26,7 @@ import {
 } from '@mui/material';
 
 import { useProjects } from '../../hooks/useProjects';
-import type { Team } from '../../types';
+import type { Team, TeamFormData } from '../../types';
 
 // Validaciones del formulario
 const validationSchema = Yup.object().shape({
@@ -42,15 +42,16 @@ const validationSchema = Yup.object().shape({
     .min(2, 'Un equipo debe tener al menos 2 miembros')
     .max(50, 'Un equipo no puede exceder 50 miembros')
     .integer('Debe ser un número entero'),
-});
 
-// Tipos del formulario
-export type TeamFormData = {
-  name: string;
-  project_id: string;
-  team_size: number;
-  is_active: boolean;
-};
+  leader_name: Yup.string()
+    .required('El nombre del líder es obligatorio')
+    .min(3, 'El nombre debe tener al menos 3 caracteres')
+    .max(100, 'El nombre no puede exceder 100 caracteres'),
+
+  leader_email: Yup.string().email('Ingrese un email válido').max(100, 'El email no puede exceder 100 caracteres'),
+
+  department: Yup.string().max(100, 'El departamento no puede exceder 100 caracteres'),
+});
 
 export interface TeamFormProps {
   initialData?: Partial<Team>;
@@ -70,6 +71,9 @@ export function TeamForm({ initialData, onSubmit, onCancel, isLoading = false, m
     project_id: initialData?.project_id || '',
     team_size: initialData?.team_size || 5,
     is_active: initialData?.is_active ?? true,
+    leader_name: initialData?.leader_name || '',
+    leader_email: initialData?.leader_email || '',
+    department: initialData?.department || '',
   };
 
   const handleSubmit = async (
@@ -123,7 +127,7 @@ export function TeamForm({ initialData, onSubmit, onCancel, isLoading = false, m
 
               <Grid container spacing={3}>
                 {/* Nombre del equipo */}
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid size={{ xs: 12 }}>
                   <TextField
                     fullWidth
                     name="name"
@@ -133,6 +137,44 @@ export function TeamForm({ initialData, onSubmit, onCancel, isLoading = false, m
                     error={touched.name && !!errors.name}
                     helperText={touched.name && errors.name}
                     required
+                  />
+                </Grid>
+                {/* Nombre del líder */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    name="leader_name"
+                    label="Nombre del Líder"
+                    value={values.leader_name}
+                    onChange={e => setFieldValue('leader_name', e.target.value)}
+                    error={touched.leader_name && !!errors.leader_name}
+                    helperText={touched.leader_name && errors.leader_name}
+                    required
+                  />
+                </Grid>
+                {/* Email del líder */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    name="leader_email"
+                    label="Email del Líder"
+                    value={values.leader_email}
+                    onChange={e => setFieldValue('leader_email', e.target.value)}
+                    error={touched.leader_email && !!errors.leader_email}
+                    helperText={touched.leader_email && errors.leader_email}
+                    type="email"
+                  />
+                </Grid>
+                {/* Departamento */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    name="department"
+                    label="Departamento"
+                    value={values.department}
+                    onChange={e => setFieldValue('department', e.target.value)}
+                    error={touched.department && !!errors.department}
+                    helperText={touched.department && errors.department}
                   />
                 </Grid>
 
@@ -184,7 +226,7 @@ export function TeamForm({ initialData, onSubmit, onCancel, isLoading = false, m
                 {/* Estado activo */}
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
-                    control={<Switch checked={values.is_active} onChange={e => setFieldValue('is_active', e.target.checked)} />}
+                    control={<Switch checked={values.is_active || false} onChange={e => setFieldValue('is_active', e.target.checked)} />}
                     label="Equipo Activo"
                     sx={{ ml: 0 }}
                   />

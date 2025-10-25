@@ -5,7 +5,7 @@
 // ============================================================================
 
 import { supabase } from '../lib/supabase';
-import type { Team, CreateTeamData, UpdateTeamData, TeamInvitation } from '../types';
+import type { Team, UpdateTeamData, TeamInvitation, TeamFormData } from '../types';
 
 // Re-exportar tipos para facilitar el uso
 export type { CreateTeamData, UpdateTeamData } from '../types';
@@ -65,6 +65,7 @@ export const getTeams = async (organizationId?: string, includeInactive: boolean
         leader_name,
         leader_email,
         team_type,
+        department,
         projects!inner(
           id,
           name,
@@ -186,14 +187,15 @@ export const getTeam = async (id: string): Promise<Team | null> => {
 /**
  * Crear un nuevo equipo
  */
-export const createTeam = async (teamData: CreateTeamData): Promise<Team> => {
+export const createTeam = async (teamData: TeamFormData): Promise<Team> => {
   try {
     // Solo incluir leader_name y leader_email si están definidos y no son cadenas vacías
     const insertData: Partial<Team> & { project_id: string; name: string; is_active: boolean } = {
       name: teamData.name,
-      team_size: teamData.team_size,
+      team_size: teamData.team_size ?? undefined,
       project_id: teamData.project_id,
-      is_active: true
+      is_active: true,
+      department: teamData.department ?? undefined
     };
 
     // Solo agregar campos del líder si tienen valores válidos
@@ -242,7 +244,7 @@ export const updateTeam = async (id: string, updates: UpdateTeamData): Promise<T
         name: updates.name,
         team_size: updates.team_size,
         leader_name: updates.leader_name,
-        leader_email: updates.leader_email,
+        leader_email: updates.leader_email || null,
         updated_at: new Date().toISOString(),
         is_active: updates.is_active
       })
@@ -846,15 +848,10 @@ export const updateExistingEvaluation = async (
 /**
  * Crear equipo con invitaciones automáticas
  */
-export const createTeamWithInvitations = async (teamData: CreateTeamData): Promise<Team> => {
+export const createTeamWithInvitations = async (teamData: TeamFormData): Promise<Team> => {
   try {
     // 1. Crear el equipo básico (sin datos del líder)
-    const newTeam = await createTeam({
-      name: teamData.name,
-      project_id: teamData.project_id,
-      team_size: teamData.team_size,
-      // No incluir leader_name ni leader_email - se completarán automáticamente
-    });
+    const newTeam = await createTeam(teamData);
 
     // 2. Crear invitaciones automáticamente
     const invitations = await createTeamInvitations(newTeam.id);

@@ -47,7 +47,7 @@ export interface CustomTableProps<T = Record<string, unknown>> {
   pagination?: boolean;
   onRowClick?: (row: T) => void;
   onSelectionChange?: (selectedIds: string[]) => void;
-  emptyMessage?: string;
+  emptyMessage?: string | React.ReactNode;
   rowsPerPageOptions?: number[];
   defaultRowsPerPage?: number;
 }

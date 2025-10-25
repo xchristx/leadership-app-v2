@@ -7,13 +7,13 @@
 import { Dialog, DialogTitle, DialogContent, IconButton } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { TeamForm } from '../Forms';
-import type { Team } from '../../types';
+import type { Team, TeamFormData } from '../../types';
 
 export interface TeamEditorProps {
   open: boolean;
   team: Team | null;
   onClose: () => void;
-  onSave: (teamData: Omit<Team, 'id' | 'created_at' | 'updated_at'>) => Promise<{ success: boolean; error?: string }>;
+  onSave: (teamData: TeamFormData) => Promise<{ success: boolean; error?: string }>;
   loading?: boolean;
 }
 
@@ -34,6 +34,7 @@ export function TeamEditor({ open, team, onClose, onSave, loading = false }: Tea
       leader_email: team.leader_email,
       team_size: team.team_size,
       is_active: team.is_active,
+      department: team.department,
     };
   };
 

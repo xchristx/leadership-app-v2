@@ -51,12 +51,12 @@ import {
 } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
 
-import { useTeam } from '../../hooks/useTeams';
+import { useTeam, useTeams } from '../../hooks/useTeams';
 import { TeamEditor } from './TeamEditor';
 import { TeamInvitations } from './TeamInvitations';
 import { ComparativeAnalysisDialog } from './ComparativeAnalysisDialog';
 import { EvaluationViewer } from '..';
-import type { Team } from '../../types';
+import type { Team, TeamFormData } from '../../types';
 
 export interface TeamDashboardProps {
   teamId: string;
@@ -94,6 +94,7 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const { team, stats, dashboard, isLoading, isError, error, loadStats, loadDashboard, refetch } = useTeam(teamId);
+  const { updateTeam } = useTeams(teamId);
 
   // Cargar datos al montar
   useEffect(() => {
@@ -116,12 +117,27 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
     loadDashboard();
   };
 
-  const handleEditTeam = async (teamData: Record<string, unknown>) => {
+  const handleEditTeam = async (teamData: TeamFormData) => {
     try {
-      console.log('Update team:', teamData);
-      setShowEditDialog(false);
-      handleRefresh();
-      return { success: true };
+      // Convertir TeamFormData a UpdateTeamData
+      const updateData = {
+        name: teamData.name,
+        team_size: teamData.team_size ?? undefined,
+        leader_name: teamData.leader_name ?? undefined,
+        leader_email: teamData.leader_email ?? undefined,
+        is_active: teamData.is_active ?? undefined,
+        department: teamData.department ?? undefined,
+      };
+
+      const result = await updateTeam(teamId, updateData);
+
+      if (result.success) {
+        setShowEditDialog(false);
+        refetch();
+        return { success: true };
+      } else {
+        return { success: false, error: result.error };
+      }
     } catch (error) {
       return {
         success: false,

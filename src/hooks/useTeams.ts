@@ -12,7 +12,7 @@ import {
 } from '../store/api/supabaseApi'
 import { useAuth } from './useAuth'
 import * as teamService from '../services/teamService'
-import type { Team, CreateTeamData, UpdateTeamData, TeamInvitation } from '../types'
+import type { Team, CreateTeamData, UpdateTeamData, TeamInvitation, TeamFormData } from '../types'
 import type { TeamStats, TeamDashboard } from '../services/teamService'
 
 // Resultado de mutación
@@ -67,7 +67,7 @@ export function useTeams(organizationId?: string) {
     }, [refetch])
 
     // Crear equipo con invitaciones automáticas
-    const createTeamWithInvitations = useCallback(async (teamData: CreateTeamData): Promise<MutationResult<Team>> => {
+    const createTeamWithInvitations = useCallback(async (teamData: TeamFormData): Promise<MutationResult<Team>> => {
         setIsCreating(true)
         try {
             const newTeam = await teamService.createTeamWithInvitations(teamData)

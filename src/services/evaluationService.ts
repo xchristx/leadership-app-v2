@@ -716,25 +716,25 @@ export const createEvaluationWithJson = async (
         }
 
         // Si es un líder completando su primera evaluación, actualizar la información del equipo
-        if (evaluationData.evaluator_role === 'leader') {
-            try {
-                // Importar dinámicamente para evitar dependencias circulares
-                const { updateTeamLeaderInfo } = await import('./teamService');
-                const updateResult = await updateTeamLeaderInfo(
-                    evaluationData.team_id,
-                    evaluationData.evaluator_name,
-                    evaluationData.evaluator_email
-                );
+        // if (evaluationData.evaluator_role === 'leader') {
+        //     try {
+        //         // Importar dinámicamente para evitar dependencias circulares
+        //         const { updateTeamLeaderInfo } = await import('./teamService');
+        //         const updateResult = await updateTeamLeaderInfo(
+        //             evaluationData.team_id,
+        //             evaluationData.evaluator_name,
+        //             evaluationData.evaluator_email
+        //         );
 
-                if (updateResult.success) {
-                    console.log('Información del líder actualizada automáticamente en el equipo');
-                } else {
-                    console.warn('No se pudo actualizar información del líder:', updateResult.error);
-                }
-            } catch (updateError) {
-                console.warn('Error al actualizar información del líder (no crítico):', updateError);
-            }
-        }
+        //         if (updateResult.success) {
+        //             console.log('Información del líder actualizada automáticamente en el equipo');
+        //         } else {
+        //             console.warn('No se pudo actualizar información del líder:', updateResult.error);
+        //         }
+        //     } catch (updateError) {
+        //         console.warn('Error al actualizar información del líder (no crítico):', updateError);
+        //     }
+        // }
 
         // Ya no creamos respuestas individuales - solo usamos sistema JSON
         console.log('Evaluación creada exitosamente con sistema JSON (solo JSON):', evaluation.id);

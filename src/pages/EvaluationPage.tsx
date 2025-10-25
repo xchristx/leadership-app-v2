@@ -230,7 +230,6 @@ export function EvaluationPage() {
     // Determinar si es líder o colaborador
     const isLeader = state.invitation?.role_type === 'leader';
     const mustAskPersonalInfo = isLeader || state.configuration?.require_evaluator_info;
-    console.log({ mustAskPersonalInfo });
     if (!mustAskPersonalInfo) {
       // Colaborador anónimo: saltar a evaluación
       setEvaluatorInfo({ name: 'Anónimo', email: `anonimo${Date.now()}@dominio.com`, additionalInfo: '' });

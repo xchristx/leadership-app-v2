@@ -5,6 +5,8 @@
 // Basados en el esquema de Supabase con extensiones para el frontend
 // ============================================================================
 
+import type { Database } from './database.types'
+
 // Re-export de tipos base de Supabase
 export type { Database, Tables, TablesInsert, TablesUpdate } from './database.types'
 
@@ -138,6 +140,7 @@ export interface Team {
     is_active: boolean
     created_at: string
     updated_at: string
+    department?: string
 
     // Relaciones
     evaluations?: Evaluation[]
@@ -332,13 +335,7 @@ export interface ProjectFormData {
 }
 
 // Formulario para crear/editar equipo
-export interface TeamFormData {
-    name: string
-    leader_name: string
-    leader_email: string
-    department?: string
-    team_size?: number
-}
+export type TeamFormData = Database['public']['Tables']['teams']['Insert']
 
 // Datos del evaluador para iniciar sesión
 export interface EvaluatorData {

@@ -12,7 +12,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardActions,
   Chip,
   Breadcrumbs,
   Link,
@@ -23,10 +22,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  Divider,
   Avatar,
   Fab,
-  Tooltip,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -34,20 +31,22 @@ import {
   NavigateNext as NavigateNextIcon,
   Add as AddIcon,
   Visibility as VisibilityIcon,
-  Person as PersonIcon,
-  CalendarToday as CalendarIcon,
-  Delete as DeleteIcon,
   Star as StarIcon,
 } from '@mui/icons-material';
 import { useState } from 'react';
 import { useProjects } from '../hooks/useProjects';
 import { useTeams } from '../hooks/useTeams';
+import { TeamCard } from '../components/Teams/TeamCard';
 import { TeamForm } from '../components/Forms';
 import { CreateProjectLeadershipDialog } from '../components/Teams/CreateProjectLeadershipDialog';
-import type { TeamFormData } from '../components/Forms/TeamForm';
 import type { CreateTeamData } from '../services/teamService';
+import type { Team, TeamFormData } from '../types';
+import { TeamEditor } from '../components/Teams';
 
 function ProjectDetailPage() {
+  // Estado para edición de equipo
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
 
@@ -58,7 +57,7 @@ function ProjectDetailPage() {
   // Hooks para datos
   const { projects, isLoading: projectsLoading, error: projectsError } = useProjects();
 
-  const { teams, isLoading: teamsLoading, error: teamsError, createTeamWithInvitations, deleteTeam, refetch } = useTeams();
+  const { teams, isLoading: teamsLoading, error: teamsError, createTeamWithInvitations, deleteTeam, refetch, updateTeam } = useTeams();
 
   // Encontrar el proyecto actual
   const currentProject = projects?.find(p => p.id === projectId);
@@ -76,8 +75,8 @@ function ProjectDetailPage() {
       const createData: CreateTeamData = {
         name: teamData.name,
         project_id: projectId!, // Usar el projectId actual
-        team_size: teamData.team_size,
-        is_active: teamData.is_active,
+        team_size: teamData.team_size ?? undefined,
+        is_active: teamData.is_active ?? undefined,
       };
 
       const result = await createTeamWithInvitations(createData);
@@ -93,6 +92,41 @@ function ProjectDetailPage() {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Error al crear equipo',
+      };
+    }
+  };
+
+  // Handler para abrir el diálogo de edición
+  const openEditDialog = (team: Team) => {
+    setSelectedTeam(team);
+    setShowEditDialog(true);
+  };
+
+  // Handler para guardar cambios de edición
+  const handleEditTeam = async (teamData: TeamFormData) => {
+    if (!selectedTeam) return { success: false, error: 'No hay equipo seleccionado' };
+    try {
+      const updateData = {
+        name: teamData.name,
+        team_size: teamData.team_size ?? undefined,
+        leader_name: teamData.leader_name ?? undefined,
+        leader_email: teamData.leader_email ?? undefined,
+        is_active: teamData.is_active ?? undefined,
+        department: teamData.department ?? undefined,
+      };
+      const result = await updateTeam(selectedTeam.id, updateData);
+      if (result.success) {
+        setShowEditDialog(false);
+        setSelectedTeam(null);
+        refetch();
+        return { success: true };
+      } else {
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error al actualizar equipo',
       };
     }
   };
@@ -258,7 +292,7 @@ function ProjectDetailPage() {
         </Card>
       )}
 
-      {/* Lista de equipos */}
+      {/* Lista de equipos usando TeamCard */}
       <Box>
         <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <GroupIcon />
@@ -281,110 +315,31 @@ function ProjectDetailPage() {
             </CardContent>
           </Card>
         ) : (
-          <Grid container spacing={3}>
-            {regularTeams.map(team => (
-              <Grid size={{ xs: 12, md: 6, lg: 4 }} key={team.id}>
-                <Card
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: theme =>
-                        theme.palette.mode === 'light' ? '0 12px 32px rgba(0, 0, 0, 0.15)' : '0 12px 32px rgba(0, 0, 0, 0.7)',
-                    },
-                    transition: 'all 0.3s ease-in-out',
-                  }}
-                >
-                  <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-                    {/* Header del equipo */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
-                          <GroupIcon sx={{ fontSize: 18 }} />
-                        </Avatar>
-                        <Typography variant="h6" component="h3" noWrap>
-                          {team.name}
-                        </Typography>
-                      </Box>
-
-                      <Chip label={team.is_active ? 'Activo' : 'Inactivo'} color={team.is_active ? 'success' : 'default'} size="small" />
-                    </Box>
-
-                    <Divider sx={{ mb: 2 }} />
-
-                    {/* Información del equipo */}
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                      {/* Líder */}
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <PersonIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Typography variant="body2" color="text.secondary">
-                          Líder:
-                        </Typography>
-                        <Typography variant="body2" fontWeight="medium">
-                          {team.leader_name || 'No asignado'}
-                        </Typography>
-                      </Box>
-
-                      {/* Tamaño del equipo */}
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <GroupIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Typography variant="body2" color="text.secondary">
-                          Miembros:
-                        </Typography>
-                        <Typography variant="body2" fontWeight="medium">
-                          {team.team_size || 'No especificado'}
-                        </Typography>
-                      </Box>
-
-                      {/* Fecha de creación */}
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <CalendarIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Typography variant="body2" color="text.secondary">
-                          Creado:
-                        </Typography>
-                        <Typography variant="body2">{new Date(team.created_at).toLocaleDateString('es-ES')}</Typography>
-                      </Box>
-                    </Box>
-                  </CardContent>
-
-                  <CardActions sx={{ px: 2, pb: 2, justifyContent: 'space-between' }}>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Tooltip title="Ver dashboard del equipo">
-                        <Button
-                          variant="contained"
-                          startIcon={<VisibilityIcon />}
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleTeamClick(team.id);
-                          }}
-                          size="small"
-                        >
-                          Dashboard
-                        </Button>
-                      </Tooltip>
-                    </Box>
-
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <Tooltip title="Eliminar equipo">
-                        <IconButton
-                          color="error"
-                          size="small"
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleDeleteTeam(team.id);
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+          <>
+            <Grid container spacing={3}>
+              {regularTeams.map(team => (
+                <Grid size={{ xs: 12, md: 6, lg: 4 }} key={team.id}>
+                  <TeamCard
+                    team={team}
+                    onView={() => handleTeamClick(team.id)}
+                    onDelete={() => handleDeleteTeam(team.id)}
+                    onEdit={openEditDialog}
+                    showActions={true}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+            {/* Diálogo para editar equipo */}
+            <TeamEditor
+              open={showEditDialog}
+              team={selectedTeam}
+              onClose={() => {
+                setShowEditDialog(false);
+                setSelectedTeam(null);
+              }}
+              onSave={handleEditTeam}
+            />
+          </>
         )}
       </Box>
 
