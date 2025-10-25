@@ -35,11 +35,10 @@ import { useNavigate } from 'react-router-dom';
 import { CustomTable, type Column } from '../components';
 import { ProjectForm, TeamForm } from '../components/Forms';
 import { useProjects, useTeams } from '../hooks';
-import type { Project, Team } from '../types';
+import type { Project, Team, TeamFormData } from '../types';
 import { ProjectCard, ProjectEditor, ProjectViewer } from '../components/Projects';
 import { TeamCard, TeamEditor } from '../components/Teams/index';
 import type { CreateTeamData } from '../services/teamService';
-import type { TeamFormData } from '../components/Forms/TeamForm';
 
 // Tipo para datos del formulario de creación de proyecto
 type ProjectFormData = {
@@ -148,8 +147,8 @@ export function ProjectsModular() {
       const createData: CreateTeamData = {
         name: teamData.name,
         project_id: teamData.project_id,
-        team_size: teamData.team_size,
-        is_active: teamData.is_active,
+        team_size: teamData.team_size ?? undefined,
+        is_active: teamData.is_active ?? undefined,
       };
 
       const result = await createTeamWithInvitations(createData);
@@ -169,17 +168,18 @@ export function ProjectsModular() {
     }
   };
 
-  const handleEditTeam = async (teamData: Omit<Team, 'id' | 'created_at' | 'updated_at'>) => {
+  const handleEditTeam = async (teamData: TeamFormData) => {
     if (!selectedTeamForEdit) return { success: false, error: 'No hay equipo seleccionado' };
 
     try {
       // Convertir a UpdateTeamData
       const updateData = {
         name: teamData.name,
-        team_size: teamData.team_size,
-        leader_name: teamData.leader_name,
-        leader_email: teamData.leader_email,
-        is_active: teamData.is_active,
+        team_size: teamData.team_size ?? undefined,
+        leader_name: teamData.leader_name || undefined,
+        leader_email: teamData.leader_email || undefined,
+        is_active: teamData.is_active ?? undefined,
+        department: teamData.department || undefined,
       };
 
       const result = await updateTeam(selectedTeamForEdit.id, updateData);
