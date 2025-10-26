@@ -293,6 +293,45 @@ const components = {
             },
         },
     },
+    MuiCssBaseline: {
+        styleOverrides: (theme: Theme) => `
+            /* Scrollbar global para toda la aplicación */
+            ::-webkit-scrollbar {
+                width: 12px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: ${theme.palette.mode === 'light' ? '#f5f5f5' : '#424242'};
+                border-radius: 6px;
+                border: 1px solid ${theme.palette.mode === 'light' ? '#e0e0e0' : '#616161'};
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: ${theme.palette.mode === 'light' ? '#bdbdbd' : '#757575'};
+                border-radius: 6px;
+                border: 2px solid ${theme.palette.mode === 'light' ? '#f5f5f5' : '#424242'};
+            }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: ${theme.palette.mode === 'light' ? '#9e9e9e' : '#616161'};
+            }
+
+            ::-webkit-scrollbar-thumb:active {
+                background: ${theme.palette.primary.main};
+            }
+
+            /* Para Firefox */
+            * {
+                scrollbar-width: thin;
+                scrollbar-color: ${theme.palette.mode === 'light' ? '#bdbdbd #f5f5f5' : '#757575 #424242'};
+            }
+
+            /* Para Internet Explorer */
+            body {
+                -ms-overflow-style: -ms-autohiding-scrollbar;
+            }
+        `,
+    },
 }
 
 // ============================================================================

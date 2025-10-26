@@ -276,7 +276,7 @@ export function Evaluations() {
                   <VisibilityIcon />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Descargar reporte">
+              <Tooltip sx={{ display: 'none' }} title="Descargar reporte">
                 <IconButton
                   size="small"
                   color="secondary"
@@ -285,6 +285,7 @@ export function Evaluations() {
                     width: 32,
                     height: 32,
                     '& .MuiSvgIcon-root': { fontSize: '1.1rem' },
+                    display: 'none',
                   }}
                 >
                   <DownloadIcon />
