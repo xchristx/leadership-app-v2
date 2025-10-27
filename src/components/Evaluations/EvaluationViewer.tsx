@@ -405,7 +405,12 @@ export function EvaluationViewer({ open, evaluationId, onClose }: EvaluationView
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <AssessmentIcon fontSize="small" color="action" />
                         <Typography variant="body2">
-                          <strong>Rol:</strong> {data.evaluation.evaluator_role === 'leader' ? 'Líder' : 'Colaborador'}
+                          <strong>Rol:</strong>{' '}
+                          {data.evaluation.evaluator_role === 'leader'
+                            ? 'Líder'
+                            : data.evaluation.evaluator_role === 'supervisor'
+                            ? 'Supervisor'
+                            : 'Colaborador'}
                         </Typography>
                       </Box>
                     </Box>

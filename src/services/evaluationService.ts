@@ -17,7 +17,7 @@ export interface EvaluationData {
     invitation_id: string;
     evaluator_name: string;
     evaluator_email: string;
-    evaluator_role: 'leader' | 'collaborator';
+    evaluator_role: 'leader' | 'collaborator' | 'supervisor';
     evaluator_metadata?: Record<string, unknown>;
     template_id: string
     project_id: string

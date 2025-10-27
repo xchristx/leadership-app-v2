@@ -16,8 +16,10 @@ interface ChartsTrendsTabProps {
     question_text: string;
     leader_avg: number;
     collaborators_avg: number;
+    supervisors_avg: number;
     leader_count: number;
     collaborators_count: number;
+    supervisors_count: number;
     order_index: number;
   }>;
   categoryData: Array<{
@@ -65,7 +67,9 @@ export function ChartsTrendsTab({ comparativeData }: ChartsTrendsTabProps) {
       question: d.question_text.substring(0, 20) + '...',
       leader: d.leader_avg,
       collaborator: d.collaborators_avg,
+      supervisor: d.supervisors_avg,
       difference: Math.abs(d.leader_avg - d.collaborators_avg),
+      sup_difference: Math.abs(d.leader_avg - d.supervisors_avg),
     })),
   };
   return (
@@ -92,8 +96,8 @@ export function ChartsTrendsTab({ comparativeData }: ChartsTrendsTabProps) {
                 data={chartData.trends}
                 height={300}
                 xKey="question"
-                yKeys={['leader', 'collaborator']}
-                colors={['#1976d2', '#9c27b0']}
+                yKeys={['leader', 'collaborator', 'supervisor']}
+                colors={['#1976d2', '#9c27b0', '#ff6b35']}
               />
             )}
           </CardContent>

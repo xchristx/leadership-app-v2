@@ -76,6 +76,7 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
 
                 const leaderResponses: number[] = [];
                 const collaboratorResponses: number[] = [];
+                const supervisorResponses: number[] = [];
 
                 evaluations.forEach(evaluation => {
                     const role = evaluation.evaluator_role;
@@ -105,18 +106,23 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
                     if (typeof responseValue === 'number') {
                         if (role === 'leader') {
                             leaderResponses.push(responseValue);
+                        } else if (role === 'supervisor') {
+                            supervisorResponses.push(responseValue);
                         } else {
                             collaboratorResponses.push(responseValue);
                         }
                     }
                 });
 
-                if (leaderResponses.length > 0 || collaboratorResponses.length > 0) {
+                if (leaderResponses.length > 0 || collaboratorResponses.length > 0 || supervisorResponses.length > 0) {
                     const leaderAvg = leaderResponses.length > 0
                         ? leaderResponses.reduce((sum, val) => sum + val, 0) / leaderResponses.length
                         : 0;
                     const collaboratorsAvg = collaboratorResponses.length > 0
                         ? collaboratorResponses.reduce((sum, val) => sum + val, 0) / collaboratorResponses.length
+                        : 0;
+                    const supervisorsAvg = supervisorResponses.length > 0
+                        ? supervisorResponses.reduce((sum, val) => sum + val, 0) / supervisorResponses.length
                         : 0;
 
                     // Agregar a datos comparativos generales
@@ -125,8 +131,10 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
                         question_text: question.text_leader || question.text_collaborator || 'Pregunta sin texto',
                         leader_avg: leaderAvg,
                         collaborators_avg: collaboratorsAvg,
+                        supervisors_avg: supervisorsAvg,
                         leader_count: leaderResponses.length,
                         collaborators_count: collaboratorResponses.length,
+                        supervisors_count: supervisorResponses.length,
                         order_index: question.order_index || 0,
                     });
 
@@ -153,6 +161,7 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
                                 category: categoryName,
                                 leader_total: 0,
                                 collaborator_total: 0,
+                                supervisor_total: 0,
                                 questions: [],
                             });
                         }
@@ -160,14 +169,17 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
                         const cat = categoryMap.get(categoryName.id)!;
                         cat.leader_total += leaderAvg;
                         cat.collaborator_total += collaboratorsAvg;
+                        cat.supervisor_total += supervisorsAvg;
                         cat.questions.push({
                             question_id: question.id,
                             question_text: question.text_leader || question.text_collaborator || 'Pregunta sin texto',
                             question_number: question.order_index + 1,
                             leader_avg: leaderAvg,
                             collaborator_avg: collaboratorsAvg,
+                            supervisor_avg: supervisorsAvg,
                             leader_responses: leaderResponses,
                             collaborator_responses: collaboratorResponses,
+                            supervisor_responses: supervisorResponses,
                             average_collaborator: collaboratorsAvg,
                         });
                     }
@@ -187,6 +199,7 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
                 category: cat.category.name,
                 auto_total: cat.leader_total,
                 otros_total: cat.collaborator_total,
+                supervisor_total: cat.supervisor_total,
             }));
             setCategorySummary(summary);
 
@@ -199,6 +212,7 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
 
                 const leaderAvgAll = comparative.reduce((sum, d) => sum + d.leader_avg, 0) / comparative.length;
                 const collaboratorAvgAll = comparative.reduce((sum, d) => sum + d.collaborators_avg, 0) / comparative.length;
+                const supervisorAvgAll = comparative.reduce((sum, d) => sum + d.supervisors_avg, 0) / comparative.length;
 
                 setMetrics({
                     total_questions: comparative.length,
@@ -208,7 +222,8 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
                     average_alignment: differences.reduce((sum, d) => sum + d, 0) / differences.length,
                     leader_trend: leaderAvgAll > 3.5 ? 'positive' : leaderAvgAll < 2.5 ? 'negative' : 'neutral',
                     collaborator_trend: collaboratorAvgAll > 3.5 ? 'positive' : collaboratorAvgAll < 2.5 ? 'negative' : 'neutral',
-                    overall_satisfaction: (leaderAvgAll + collaboratorAvgAll) / 2,
+                    supervisor_trend: supervisorAvgAll > 3.5 ? 'positive' : supervisorAvgAll < 2.5 ? 'negative' : 'neutral',
+                    overall_satisfaction: (leaderAvgAll + collaboratorAvgAll + supervisorAvgAll) / 3,
                 });
             }
         } catch (error) {

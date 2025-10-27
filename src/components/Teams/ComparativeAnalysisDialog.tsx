@@ -38,7 +38,7 @@ import { useComparativeAnalysis } from './ComparativeAnalysis/useComparativeAnal
 import { exportToExcelEnhanced, exportToExcelSimple } from './ComparativeAnalysis/exportToExcel';
 import type { ComparativeAnalysisDialogProps } from './ComparativeAnalysis/types';
 
-export function ComparativeAnalysisDialog({ open, onClose, teamId, teamName }: ComparativeAnalysisDialogProps) {
+export function ComparativeAnalysisDialog({ open, onClose, teamId, teamName, teamLeader }: ComparativeAnalysisDialogProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -153,6 +153,7 @@ export function ComparativeAnalysisDialog({ open, onClose, teamId, teamName }: C
               categorySummary={categorySummary}
               loading={loading}
               teamName={teamName}
+              teamLeader={teamLeader}
             />
           </TabPanel>
         </Box>

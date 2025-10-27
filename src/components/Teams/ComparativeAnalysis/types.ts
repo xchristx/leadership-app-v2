@@ -19,8 +19,10 @@ export interface ComparativeData {
     question_text: string;
     leader_avg: number;
     collaborators_avg: number;
+    supervisors_avg: number;
     leader_count: number;
     collaborators_count: number;
+    supervisors_count: number;
     order_index: number;
 }
 
@@ -30,8 +32,10 @@ export interface CategoryQuestion {
     question_number: number;
     leader_avg: number;
     collaborator_avg: number;
+    supervisor_avg: number;
     leader_responses: number[];
     collaborator_responses: number[];
+    supervisor_responses: number[];
     average_collaborator: number;
 }
 
@@ -47,6 +51,7 @@ export interface CategoryData {
     category: CategoryQuestionDB;
     leader_total: number;
     collaborator_total: number;
+    supervisor_total: number;
     questions: CategoryQuestion[];
 }
 
@@ -54,6 +59,7 @@ export interface CategorySummary {
     category: string;
     auto_total: number;
     otros_total: number;
+    supervisor_total: number;
 }
 
 export interface AnalysisMetrics {
@@ -64,6 +70,7 @@ export interface AnalysisMetrics {
     average_alignment: number;
     leader_trend: 'positive' | 'negative' | 'neutral';
     collaborator_trend: 'positive' | 'negative' | 'neutral';
+    supervisor_trend: 'positive' | 'negative' | 'neutral';
     overall_satisfaction: number;
 }
 
@@ -86,6 +93,7 @@ export interface ComparativeAnalysisDialogProps {
     onClose: () => void;
     teamId: string;
     teamName?: string;
+    teamLeader?: string;
 }
 
 export interface TabPanelProps {

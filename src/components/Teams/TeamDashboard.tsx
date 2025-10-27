@@ -95,7 +95,6 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
 
   const { team, stats, dashboard, isLoading, isError, error, loadStats, loadDashboard, refetch } = useTeam(teamId);
   const { updateTeam } = useTeams(teamId);
-
   // Cargar datos al montar
   useEffect(() => {
     if (teamId) {
@@ -586,53 +585,51 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
                           {totalMembers} miembro{totalMembers !== 1 ? 's' : ''} registrado{totalMembers !== 1 ? 's' : ''}
                         </Typography>
                         <List dense sx={{ maxHeight: { xs: 150, sm: 200 }, overflow: 'auto' }}>
-                          {Array.from(
-                            new Map(
-                              dashboard.recent_evaluations.map(evaluation => [evaluation.evaluator_name || evaluation.id, evaluation])
-                            ).values()
-                          )
-                            .slice(0, isMobile ? 3 : 5)
-                            .map(evaluation => (
-                              <ListItem key={evaluation.id} sx={{ py: 0.5, px: 0 }}>
-                                <ListItemAvatar>
-                                  <Avatar
-                                    sx={{
-                                      width: { xs: 28, sm: 32 },
-                                      height: { xs: 28, sm: 32 },
-                                      bgcolor: 'primary.main',
-                                      fontSize: { xs: '0.7rem', sm: '0.875rem' },
-                                    }}
-                                  >
-                                    {(evaluation.evaluator_name || 'A').charAt(0).toUpperCase()}
-                                  </Avatar>
-                                </ListItemAvatar>
-                                <ListItemText
-                                  primary={
-                                    <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }} noWrap>
-                                      {evaluation.evaluator_name || 'Evaluador anónimo'}
+                          {dashboard.recent_evaluations.map(evaluation => (
+                            <ListItem key={evaluation.id} sx={{ py: 0.5, px: 0 }}>
+                              <ListItemAvatar>
+                                <Avatar
+                                  sx={{
+                                    width: { xs: 28, sm: 32 },
+                                    height: { xs: 28, sm: 32 },
+                                    bgcolor: 'primary.main',
+                                    fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                                  }}
+                                >
+                                  {(evaluation.evaluator_name || 'A').charAt(0).toUpperCase()}
+                                </Avatar>
+                              </ListItemAvatar>
+                              <ListItemText
+                                primary={
+                                  <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }} noWrap>
+                                    {evaluation.evaluator_name || 'Evaluador anónimo'}
+                                  </Typography>
+                                }
+                                secondary={
+                                  <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 0, sm: 1 } }}>
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+                                    >
+                                      {evaluation.evaluator_role === 'leader'
+                                        ? 'Líder'
+                                        : evaluation.evaluator_role === 'supervisor'
+                                        ? 'Supervisor'
+                                        : 'Colaborador'}
                                     </Typography>
-                                  }
-                                  secondary={
-                                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 0, sm: 1 } }}>
-                                      <Typography
-                                        variant="caption"
-                                        color="text.secondary"
-                                        sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
-                                      >
-                                        {evaluation.evaluator_role === 'leader' ? 'Líder' : 'Colaborador'}
-                                      </Typography>
-                                      <Typography
-                                        variant="caption"
-                                        color="text.secondary"
-                                        sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
-                                      >
-                                        • Evaluación #{evaluation.id.slice(0, 6)}
-                                      </Typography>
-                                    </Box>
-                                  }
-                                />
-                              </ListItem>
-                            ))}
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+                                    >
+                                      • Evaluación #{evaluation.id.slice(0, 6)}
+                                    </Typography>
+                                  </Box>
+                                }
+                              />
+                            </ListItem>
+                          ))}
                         </List>
                       </Box>
                     ) : (
@@ -784,7 +781,12 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
                                   color="text.secondary"
                                   sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
                                 >
-                                  <strong>Rol:</strong> {evaluation.evaluator_role === 'leader' ? 'Líder' : 'Colaborador'}
+                                  <strong>Rol:</strong>{' '}
+                                  {evaluation.evaluator_role === 'leader'
+                                    ? 'Líder'
+                                    : evaluation.evaluator_role === 'supervisor'
+                                    ? 'Supervisor'
+                                    : 'Colaborador'}
                                 </Typography>
                               </Grid>
                               <Grid size={{ xs: 12, sm: 6 }}>
@@ -918,6 +920,7 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
         onClose={() => setShowComparativeDialog(false)}
         teamId={teamId}
         teamName={team?.name}
+        teamLeader={team?.leader_name}
       />
     </Box>
   );

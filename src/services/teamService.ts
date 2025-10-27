@@ -33,6 +33,7 @@ export interface TeamDashboard {
   invitation_links: {
     leader?: string;
     collaborator?: string;
+    supervisor?: string;
   };
   recent_evaluations: Array<{
     id: string;
@@ -90,7 +91,6 @@ export const getTeams = async (organizationId?: string, includeInactive: boolean
       throw new Error(`Error al obtener equipos: ${error.message}`);
     }
 
-    console.log(`Equipos obtenidos: ${data.length} ${includeInactive ? '(incluyendo inactivos)' : '(solo activos)'}`);
 
     return data as Team[];
   } catch (error) {
@@ -370,7 +370,7 @@ export const getTeamInvitations = async (teamId: string): Promise<TeamInvitation
       .from('team_invitations')
       .select('*')
       .eq('team_id', teamId)
-      .order('created_at', { ascending: false });
+      .order('role_type', { ascending: false });
 
     if (error) {
       throw new Error(`Error al obtener invitaciones: ${error.message}`);
@@ -388,7 +388,7 @@ export const getTeamInvitations = async (teamId: string): Promise<TeamInvitation
  */
 export const createTeamInvitation = async (
   teamId: string,
-  role: 'leader' | 'collaborator',
+  role: 'leader' | 'collaborator' | 'supervisor',
   options?: { maxUses?: number; expiresAt?: string }
 ): Promise<TeamInvitation> => {
   try {
@@ -550,9 +550,9 @@ export const useInvitation = async (token: string): Promise<TeamInvitation> => {
 /**
  * Generar enlaces de invitación con tokens únicos
  */
-export const generateInvitationLinks = (teamInvitations: TeamInvitation[]): { leader?: string; collaborator?: string } => {
+export const generateInvitationLinks = (teamInvitations: TeamInvitation[]): { leader?: string; collaborator?: string; supervisor?: string } => {
   const baseUrl = window.location.origin;
-  const links: { leader?: string; collaborator?: string } = {};
+  const links: { leader?: string; collaborator?: string; supervisor?: string } = {};
 
   teamInvitations.forEach(invitation => {
     if (invitation.is_active) {
@@ -561,6 +561,8 @@ export const generateInvitationLinks = (teamInvitations: TeamInvitation[]): { le
         links.leader = url;
       } else if (invitation.role_type === 'collaborator') {
         links.collaborator = url;
+      } else if (invitation.role_type === 'supervisor') {
+        links.supervisor = url;
       }
     }
   });
@@ -597,7 +599,7 @@ export const getTeamStats = async (teamId: string): Promise<TeamStats> => {
     const completionRate = totalEvaluations > 0 ? (completedEvaluations / totalEvaluations) * 100 : 0;
 
     // Contar miembros únicos (líder + colaboradores)
-    const uniqueMembers = new Set(evaluations.map(e => e.evaluator_role)).size;
+    const uniqueMembers = evaluations.length;
 
     return {
       total_invitations: totalInvitations,
@@ -634,7 +636,6 @@ export const getTeamDashboard = async (teamId: string): Promise<TeamDashboard> =
       .select('id, evaluator_name, evaluator_role, completion_percentage, created_at')
       .eq('team_id', teamId)
       .order('created_at', { ascending: false })
-      .limit(10);
 
     if (evalError) {
       throw new Error(`Error al obtener evaluaciones recientes: ${evalError.message}`);

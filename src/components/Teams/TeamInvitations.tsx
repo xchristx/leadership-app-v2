@@ -66,7 +66,7 @@ export function TeamInvitations({ teamId: propTeamId }: TeamInvitationsProps = {
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
   // Form states
-  const [newRole, setNewRole] = useState<'leader' | 'collaborator'>('collaborator');
+  const [newRole, setNewRole] = useState<'leader' | 'collaborator' | 'supervisor'>('collaborator');
   const [maxUses, setMaxUses] = useState<number | ''>('');
   const [expiresAt, setExpiresAt] = useState('');
 
@@ -237,8 +237,12 @@ export function TeamInvitations({ teamId: propTeamId }: TeamInvitationsProps = {
                 <TableRow key={invitation.id}>
                   <TableCell>
                     <Chip
-                      label={invitation.role_type === 'leader' ? 'Líder' : 'Colaborador'}
-                      color={invitation.role_type === 'leader' ? 'primary' : 'secondary'}
+                      label={
+                        invitation.role_type === 'leader' ? 'Líder' : invitation.role_type === 'supervisor' ? 'Supervisor' : 'Colaborador'
+                      }
+                      color={
+                        invitation.role_type === 'leader' ? 'primary' : invitation.role_type === 'supervisor' ? 'warning' : 'secondary'
+                      }
                       size="small"
                     />
                   </TableCell>
@@ -311,6 +315,7 @@ export function TeamInvitations({ teamId: propTeamId }: TeamInvitationsProps = {
               <Select value={newRole} onChange={e => setNewRole(e.target.value as 'leader' | 'collaborator')} label="Rol">
                 <MenuItem value="leader">Líder</MenuItem>
                 <MenuItem value="collaborator">Colaborador</MenuItem>
+                <MenuItem value="supervisor">Supervisor</MenuItem>
               </Select>
             </FormControl>
 
@@ -378,7 +383,12 @@ export function TeamInvitations({ teamId: propTeamId }: TeamInvitationsProps = {
         <DialogTitle sx={{ textAlign: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
             <QrCodeIcon />
-            Código QR - Invitación de {selectedInvitation?.role_type === 'leader' ? 'Líder' : 'Colaborador'}
+            Código QR - Invitación de{' '}
+            {selectedInvitation?.role_type === 'leader'
+              ? 'Líder'
+              : selectedInvitation?.role_type === 'supervisor'
+              ? 'Supervisor'
+              : 'Colaborador'}
           </Box>
         </DialogTitle>
         <DialogContent sx={{ textAlign: 'center', p: 3 }}>

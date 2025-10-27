@@ -317,7 +317,7 @@ export function useTeamInvitations(teamId: string) {
     }, [teamId])
 
     // Crear nueva invitación
-    const createInvitation = useCallback(async (role: 'leader' | 'collaborator', options?: {
+    const createInvitation = useCallback(async (role: 'leader' | 'collaborator' | 'supervisor', options?: {
         maxUses?: number
         expiresAt?: string
     }): Promise<MutationResult<TeamInvitation>> => {

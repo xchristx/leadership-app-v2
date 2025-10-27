@@ -13,6 +13,7 @@ interface DetailedAnalysisTabProps {
 }
 
 export function DetailedAnalysisTab({ comparativeData }: DetailedAnalysisTabProps) {
+  const hasSupervisorData = comparativeData.some(data => data.supervisors_count > 0);
   return (
     <Box sx={{ px: { xs: 1, md: 10, lg: 30, xl: 40 } }}>
       <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
@@ -23,13 +24,16 @@ export function DetailedAnalysisTab({ comparativeData }: DetailedAnalysisTabProp
         <Grid container spacing={2}>
           {comparativeData.map((data, index) => {
             const difference = Math.abs(data.leader_avg - data.collaborators_avg);
+            const supervisorDifference = Math.abs(data.leader_avg - data.supervisors_avg);
             const maxValue = 5;
             const leaderPercentage = (data.leader_avg / maxValue) * 100;
             const collaboratorsPercentage = (data.collaborators_avg / maxValue) * 100;
+            const supervisorsPercentage = (data.supervisors_avg / maxValue) * 100;
 
             let differenceColor: 'success' | 'warning' | 'error' = 'success';
-            if (difference > 1.5) differenceColor = 'error';
-            else if (difference > 0.8) differenceColor = 'warning';
+            const maxDifference = Math.max(difference, supervisorDifference);
+            if (maxDifference > 1.5) differenceColor = 'error';
+            else if (maxDifference > 0.8) differenceColor = 'warning';
 
             return (
               <Grid size={{ xs: 12, lg: 6 }} key={data.question_id}>
@@ -93,13 +97,45 @@ export function DetailedAnalysisTab({ comparativeData }: DetailedAnalysisTabProp
                           }}
                         />
                       </Box>
+
+                      {/* Supervisores */}
+                      {hasSupervisorData && (
+                        <Box sx={{ mb: 1 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                            <Typography variant="body2" fontWeight="medium" sx={{ color: '#ff6b35' }}>
+                              🎯 Supervisores
+                            </Typography>
+                            <Typography variant="body2" fontWeight="bold" sx={{ color: '#ff6b35' }}>
+                              {data.supervisors_avg.toFixed(1)}/{maxValue}
+                            </Typography>
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={supervisorsPercentage}
+                            sx={{
+                              height: 8,
+                              borderRadius: 4,
+                              backgroundColor: '#fff4f1',
+                              '& .MuiLinearProgress-bar': {
+                                backgroundColor: '#ff6b35',
+                                borderRadius: 4,
+                              },
+                            }}
+                          />
+                        </Box>
+                      )}
                     </Box>
 
                     {/* Diferencia y estado */}
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Chip label={`Diferencia: ${difference.toFixed(1)}`} color={differenceColor} size="small" />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Chip label={`Dif. Col: ${difference.toFixed(1)}`} color={differenceColor} size="small" />
+                        {hasSupervisorData && (
+                          <Chip label={`Dif. Sup: ${supervisorDifference.toFixed(1)}`} color={differenceColor} size="small" />
+                        )}
+                      </Box>
                       <Typography variant="caption" color="text.secondary">
-                        {data.leader_count + data.collaborators_count} respuestas
+                        {data.leader_count + data.collaborators_count + data.supervisors_count} respuestas
                       </Typography>
                     </Box>
                   </CardContent>

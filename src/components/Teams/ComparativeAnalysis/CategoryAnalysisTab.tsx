@@ -4,7 +4,7 @@
 // Pestaña de análisis por categorías con resumen y detalle
 // ============================================================================
 
-import { Grid, Card, CardContent, Typography, Box, Alert, Button } from '@mui/material';
+import { Grid, Card, CardContent, Typography, Box, Alert, Button, useTheme } from '@mui/material';
 import { CustomBarChart } from '../../Charts/BarChart';
 import type { CategoryData, CategorySummary } from './types';
 
@@ -16,8 +16,13 @@ interface CategoryAnalysisTabProps {
 }
 
 export function CategoryAnalysisTab({ categoryData, categorySummary = [], handleExportToExcel }: CategoryAnalysisTabProps) {
+  const hasSupervisorData = categoryData.some(category =>
+    category.questions.some(question => question.supervisor_responses && question.supervisor_responses.length > 0)
+  );
+  const { palette } = useTheme();
   return (
-    <Box sx={{ px: { xs: 1, md: 10, lg: 30, xl: 40 } }}>
+    <Box sx={{ px: { xs: 1, md: 5, lg: 10, xl: 20 } }}>
+      {/* // <Box> */}
       <Button onClick={handleExportToExcel} variant="contained">
         Exportar a Excel
       </Button>
@@ -40,7 +45,12 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                       <tr style={{ borderBottom: '2px solid #e0e0e0' }}>
                         <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600 }}>CATEGORÍA</th>
                         <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>AUTO</th>
-                        <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>OTROS</th>
+                        <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>COLABORADORES</th>
+                        {hasSupervisorData ? (
+                          <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>SUPERVISOR</th>
+                        ) : (
+                          <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>DIFERENCIA</th>
+                        )}
                       </tr>
                     </thead>
                     <tbody>
@@ -53,6 +63,23 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                           <td style={{ padding: '12px', textAlign: 'center', color: '#9c27b0', fontWeight: 600 }}>
                             {category.otros_total.toFixed(1)}
                           </td>
+                          {hasSupervisorData ? (
+                            <td style={{ padding: '12px', textAlign: 'center', color: '#ff6b35', fontWeight: 600 }}>
+                              {category.supervisor_total.toFixed(1)}
+                            </td>
+                          ) : (
+                            <td
+                              style={{
+                                padding: '12px',
+                                textAlign: 'center',
+                                color: category.otros_total - category.auto_total > 0 ? palette.success.main : palette.error.main,
+                                fontWeight: 600,
+                              }}
+                            >
+                              {category.otros_total - category.auto_total > 0 ? '+' : ''}
+                              {(category.otros_total - category.auto_total).toFixed(1)}
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -74,16 +101,23 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                     data={categorySummary.map((cat, index) => {
                       const catData = categoryData.find(c => c.category.name === cat.category);
                       const numQuestions = catData?.questions.length || 1;
-                      return {
-                        categoria: `Cat ${index + 1}`,
+                      const base = {
+                        name: `Cat ${index + 1}`,
                         AUTO: Number((cat.auto_total / numQuestions).toFixed(1)),
-                        OTROS: Number((cat.otros_total / numQuestions).toFixed(1)),
+                        COLABORADORES: Number((cat.otros_total / numQuestions).toFixed(1)),
                       };
+                      if (hasSupervisorData) {
+                        return {
+                          ...base,
+                          SUPERVISORES: Number((cat.supervisor_total / numQuestions).toFixed(1)),
+                        };
+                      }
+                      return base;
                     })}
                     height={300}
-                    xKey="categoria"
-                    yKeys={['AUTO', 'OTROS']}
-                    colors={['#1976d2', '#9c27b0']}
+                    xKey="name"
+                    yKeys={hasSupervisorData ? ['AUTO', 'COLABORADORES', 'SUPERVISORES'] : ['AUTO', 'COLABORADORES']}
+                    colors={hasSupervisorData ? ['#1976d2', '#9c27b0', '#ff6b35'] : ['#1976d2', '#9c27b0']}
                   />
                 )}
               </CardContent>
@@ -106,19 +140,31 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                           <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>No.</th>
                           <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, minWidth: '300px' }}>PREGUNTA</th>
                           <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>AUTO</th>
-                          <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>OBSERVADORES</th>
+                          <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>COLABORADORES</th>
+                          {hasSupervisorData && <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>SUPERVISORES</th>}
                           {/* Columnas dinámicas para cada colaborador */}
                           {category.questions.length > 0 &&
                             Array.from({ length: Math.max(...category.questions.map(q => q.collaborator_responses.length)) }, (_, i) => (
-                              <th key={`obs-${i}`} style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>
-                                Obs {i + 1}
+                              <th key={`col-${i}`} style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>
+                                Col {i + 1}
                               </th>
                             ))}
+                          {/* Columnas dinámicas para cada supervisor */}
+                          {/* {category.questions.length > 0 &&
+                            Array.from(
+                              { length: Math.max(...category.questions.map(q => q.supervisor_responses?.length || 0)) },
+                              (_, i) => (
+                                <th key={`sup-${i}`} style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>
+                                  Sup {i + 1}
+                                </th>
+                              )
+                            )} */}
                         </tr>
                       </thead>
                       <tbody>
                         {category.questions.map((question, questionIndex) => {
                           const maxCollaborators = Math.max(...category.questions.map(q => q.collaborator_responses.length));
+                          // const maxSupervisors = Math.max(...category.questions.map(q => q.supervisor_responses?.length || 0));
 
                           return (
                             <tr key={questionIndex} style={{ borderBottom: '1px solid #f0f0f0' }}>
@@ -130,10 +176,15 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                               <td style={{ padding: '12px', textAlign: 'center', color: '#9c27b0', fontWeight: 600 }}>
                                 {question.collaborator_avg.toFixed(1)}
                               </td>
+                              {hasSupervisorData && (
+                                <td style={{ padding: '12px', textAlign: 'center', color: '#ff6b35', fontWeight: 600 }}>
+                                  {question.supervisor_avg.toFixed(1)}
+                                </td>
+                              )}
                               {/* Columnas de respuestas individuales de colaboradores */}
                               {Array.from({ length: maxCollaborators }, (_, i) => (
                                 <td
-                                  key={`resp-${i}`}
+                                  key={`col-resp-${i}`}
                                   style={{
                                     padding: '12px',
                                     textAlign: 'center',
@@ -144,6 +195,20 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                                   {question.collaborator_responses[i] ? question.collaborator_responses[i].toFixed(1) : '-'}
                                 </td>
                               ))}
+                              {/* Columnas de respuestas individuales de supervisores */}
+                              {/* {Array.from({ length: maxSupervisors }, (_, i) => (
+                                <td
+                                  key={`sup-resp-${i}`}
+                                  style={{
+                                    padding: '12px',
+                                    textAlign: 'center',
+                                    color: '#ff6b35',
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  {question.supervisor_responses?.[i] ? question.supervisor_responses[i].toFixed(1) : '-'}
+                                </td>
+                              ))} */}
                             </tr>
                           );
                         })}
@@ -153,15 +218,24 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
 
                   {/* Gráfico de barras para cada categoría */}
                   <CustomBarChart
-                    data={category.questions.map(q => ({
-                      question: `P${q.question_number}`,
-                      AUTO: q.leader_avg,
-                      OBSERVADORES: q.collaborator_avg,
-                    }))}
+                    data={category.questions.map(q => {
+                      const base = {
+                        name: `P${q.question_number}`,
+                        AUTO: q.leader_avg,
+                        COLABORADORES: q.collaborator_avg,
+                      };
+                      if (hasSupervisorData) {
+                        return {
+                          ...base,
+                          SUPERVISORES: q.supervisor_avg,
+                        };
+                      }
+                      return base;
+                    })}
                     height={250}
-                    xKey="question"
-                    yKeys={['AUTO', 'OBSERVADORES']}
-                    colors={['#1976d2', '#9c27b0']}
+                    xKey="name"
+                    yKeys={hasSupervisorData ? ['AUTO', 'COLABORADORES', 'SUPERVISORES'] : ['AUTO', 'COLABORADORES']}
+                    colors={['#1976d2', '#9c27b0', '#ff6b35']}
                   />
                 </CardContent>
               </Card>

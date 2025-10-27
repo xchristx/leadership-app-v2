@@ -41,7 +41,7 @@ type EvaluationFormData = {
   evaluator_name: string;
   evaluator_email: string;
   team_id: string;
-  evaluator_role: 'leader' | 'collaborator';
+  evaluator_role: 'leader' | 'collaborator' | 'supervisor';
   evaluator_metadata?: Record<string, unknown>;
 };
 

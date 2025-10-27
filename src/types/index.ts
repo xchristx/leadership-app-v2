@@ -166,7 +166,7 @@ export interface Team {
 export interface TeamInvitation {
     id: string
     team_id: string
-    role_type: 'leader' | 'collaborator'
+    role_type: 'leader' | 'collaborator' | 'supervisor'
     unique_token: string
     is_active: boolean | null
     expires_at?: string
@@ -194,7 +194,7 @@ export interface Evaluation {
     invitation_id: string
     evaluator_name: string
     evaluator_email: string
-    evaluator_role: 'leader' | 'collaborator'
+    evaluator_role: 'leader' | 'collaborator' | 'supervisor'
     is_complete: boolean
     completion_percentage: number
     completed_at: string
@@ -571,7 +571,8 @@ export const QUESTION_TYPES = {
 
 export const EVALUATOR_ROLES = {
     LEADER: 'leader',
-    COLLABORATOR: 'collaborator'
+    COLLABORATOR: 'collaborator',
+    SUPERVISOR: 'supervisor'
 } as const
 
 export type UserRoleType = typeof USER_ROLES[keyof typeof USER_ROLES]
