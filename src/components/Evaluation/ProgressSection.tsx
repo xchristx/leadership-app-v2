@@ -36,7 +36,7 @@ export function ProgressSection({ currentResponses, totalQuestions, isSubmitting
         </Alert>
       )}
 
-      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ display: !isComplete ? 'none' : 'flex', justifyContent: 'center' }}>
         <Button
           variant="contained"
           onClick={onSubmit}

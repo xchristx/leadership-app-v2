@@ -189,6 +189,7 @@ export function TeamsModular() {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
+          disabled={projects.length === 0}
           onClick={() => setShowCreateDialog(true)}
           size="large"
           sx={{ mt: { xs: 1, sm: 0 }, width: { xs: '100%', sm: 'auto' } }}
@@ -265,135 +266,140 @@ export function TeamsModular() {
       </Grid>
 
       {/* Tabs principales */}
-      <Card sx={{ px: { xs: 0.5, sm: 2 }, width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs variant={'scrollable'} allowScrollButtonsMobile value={tabValue} onChange={handleTabChange}>
-            <Tab label="Todos los Equipos" />
-            <Tab label="Vista de Tarjetas" />
-            <Tab label="Dashboard de Equipo" />
-          </Tabs>
-        </Box>
-
-        {/* Panel: Lista de equipos */}
-        <TabPanel value={tabValue} index={0}>
-          {/* Filtros */}
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              gap: 2,
-              mb: 3,
-              flexWrap: 'wrap',
-              alignItems: { xs: 'stretch', sm: 'center' },
-              width: '100%',
-            }}
-          >
-            <TextField
-              placeholder="Buscar equipos..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ minWidth: { xs: '100%', sm: 250 }, width: { xs: '100%', sm: 'auto' } }}
-              fullWidth={true}
-            />
-
-            <FormControl sx={{ minWidth: { xs: '100%', sm: 200 }, width: { xs: '100%', sm: 'auto' } }} fullWidth={true}>
-              <InputLabel>Proyecto</InputLabel>
-              <Select value={selectedProjectId} onChange={e => setSelectedProjectId(e.target.value)} label="Proyecto">
-                <MenuItem value="">Todos</MenuItem>
-                {projects.map((project: Project) => (
-                  <MenuItem key={project.id} value={project.id}>
-                    {project.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {(searchTerm || selectedProjectId) && (
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedProjectId('');
-                }}
-                sx={{ width: { xs: '100%', sm: 'auto' } }}
-              >
-                Limpiar filtros
-              </Button>
-            )}
+      {projects.length === 0 ? (
+        <Grid size={{ xs: 12 }}>
+          <Alert severity="info">No hay proyectos disponibles. Crea un nuevo proyecto para comenzar.</Alert>
+        </Grid>
+      ) : (
+        <Card sx={{ px: { xs: 0.5, sm: 2 }, width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs variant={'scrollable'} allowScrollButtonsMobile value={tabValue} onChange={handleTabChange}>
+              <Tab label="Todos los Equipos" />
+              <Tab label="Vista de Tarjetas" />
+              <Tab label="Dashboard de Equipo" />
+            </Tabs>
           </Box>
 
-          {/* Resultados */}
-          {!selectedProjectId ? (
-            <Alert severity="info">Selecciona un proyecto para ver los equipos asociados.</Alert>
-          ) : isLoading ? (
-            <Typography>Cargando equipos...</Typography>
-          ) : isError ? (
-            <Alert severity="error">Error al cargar equipos: {error ? String(error) : 'Error desconocido'}</Alert>
-          ) : filteredTeams.length === 0 ? (
-            <Alert severity="info">No se encontraron equipos que coincidan con los filtros aplicados.</Alert>
-          ) : (
-            <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ width: '100%', margin: 0 }}>
+          {/* Panel: Lista de equipos */}
+          <TabPanel value={tabValue} index={0}>
+            {/* Filtros */}
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                gap: 2,
+                mb: 3,
+                flexWrap: 'wrap',
+                alignItems: { xs: 'stretch', sm: 'center' },
+                width: '100%',
+              }}
+            >
+              <TextField
+                placeholder="Buscar equipos..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ minWidth: { xs: '100%', sm: 250 }, width: { xs: '100%', sm: 'auto' } }}
+                fullWidth={true}
+              />
+
+              <FormControl sx={{ minWidth: { xs: '100%', sm: 200 }, width: { xs: '100%', sm: 'auto' } }} fullWidth={true}>
+                <InputLabel>Proyecto</InputLabel>
+                <Select value={selectedProjectId} onChange={e => setSelectedProjectId(e.target.value)} label="Proyecto">
+                  {projects.map((project: Project) => (
+                    <MenuItem key={project.id} value={project.id}>
+                      {project.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              {(searchTerm || selectedProjectId) && (
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedProjectId('');
+                  }}
+                  sx={{ width: { xs: '100%', sm: 'auto' } }}
+                >
+                  Limpiar filtros
+                </Button>
+              )}
+            </Box>
+
+            {/* Resultados */}
+            {!selectedProjectId ? (
+              <Alert severity="info">Selecciona un proyecto para ver los equipos asociados.</Alert>
+            ) : isLoading ? (
+              <Typography>Cargando equipos...</Typography>
+            ) : isError ? (
+              <Alert severity="error">Error al cargar equipos: {error ? String(error) : 'Error desconocido'}</Alert>
+            ) : filteredTeams.length === 0 ? (
+              <Alert severity="info">No se encontraron equipos que coincidan con los filtros aplicados.</Alert>
+            ) : (
+              <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ width: '100%', margin: 0 }}>
+                {filteredTeams.map((team: Team) => (
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={team.id} sx={{ width: '100%' }}>
+                    <TeamCard team={team} onEdit={openEditDialog} onDelete={handleDeleteTeam} onView={openDashboard} />
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </TabPanel>
+
+          {/* Panel: Vista de tarjetas simplificada */}
+          <TabPanel value={tabValue} index={1}>
+            <Typography variant="h6" gutterBottom>
+              Vista de Tarjetas ({filteredTeams.length} equipos)
+            </Typography>
+
+            <Grid container spacing={{ xs: 2, sm: 2, md: 3 }} sx={{ width: '100%', margin: 0 }}>
               {filteredTeams.map((team: Team) => (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={team.id} sx={{ width: '100%' }}>
-                  <TeamCard team={team} onEdit={openEditDialog} onDelete={handleDeleteTeam} onView={openDashboard} />
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={team.id} sx={{ width: '100%' }}>
+                  <Card
+                    sx={{
+                      cursor: 'pointer',
+                      '&:hover': { boxShadow: 2 },
+                      minHeight: { xs: 120, sm: 140 },
+                      width: '100%',
+                      boxSizing: 'border-box',
+                    }}
+                    onClick={() => openDashboard(team)}
+                  >
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom noWrap>
+                        {team.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Tamaño: {team.team_size || 'No especificado'} miembros
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Chip label={team.is_active ? 'Activo' : 'Inactivo'} color={team.is_active ? 'success' : 'default'} size="small" />
+                      </Box>
+                    </CardContent>
+                  </Card>
                 </Grid>
               ))}
             </Grid>
-          )}
-        </TabPanel>
+          </TabPanel>
 
-        {/* Panel: Vista de tarjetas simplificada */}
-        <TabPanel value={tabValue} index={1}>
-          <Typography variant="h6" gutterBottom>
-            Vista de Tarjetas ({filteredTeams.length} equipos)
-          </Typography>
-
-          <Grid container spacing={{ xs: 2, sm: 2, md: 3 }} sx={{ width: '100%', margin: 0 }}>
-            {filteredTeams.map((team: Team) => (
-              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={team.id} sx={{ width: '100%' }}>
-                <Card
-                  sx={{
-                    cursor: 'pointer',
-                    '&:hover': { boxShadow: 2 },
-                    minHeight: { xs: 120, sm: 140 },
-                    width: '100%',
-                    boxSizing: 'border-box',
-                  }}
-                  onClick={() => openDashboard(team)}
-                >
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom noWrap>
-                      {team.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Tamaño: {team.team_size || 'No especificado'} miembros
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Chip label={team.is_active ? 'Activo' : 'Inactivo'} color={team.is_active ? 'success' : 'default'} size="small" />
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </TabPanel>
-
-        {/* Panel: Dashboard de equipo seleccionado */}
-        <TabPanel value={tabValue} index={2}>
-          {selectedTeamForDashboard ? (
-            <TeamDashboard teamId={selectedTeamForDashboard.id} />
-          ) : (
-            <Alert severity="info">Selecciona un equipo desde la lista para ver su dashboard detallado.</Alert>
-          )}
-        </TabPanel>
-      </Card>
+          {/* Panel: Dashboard de equipo seleccionado */}
+          <TabPanel value={tabValue} index={2}>
+            {selectedTeamForDashboard ? (
+              <TeamDashboard teamId={selectedTeamForDashboard.id} />
+            ) : (
+              <Alert severity="info">Selecciona un equipo desde la lista para ver su dashboard detallado.</Alert>
+            )}
+          </TabPanel>
+        </Card>
+      )}
 
       {/* Diálogo para crear equipo */}
       <Dialog open={showCreateDialog} onClose={() => setShowCreateDialog(false)} maxWidth="md" fullWidth>

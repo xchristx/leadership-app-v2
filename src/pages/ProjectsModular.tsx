@@ -437,6 +437,11 @@ export function ProjectsModular() {
       {/* Contenido principal */}
       {viewMode === 'cards' ? (
         <Grid container spacing={3}>
+          {projects.length === 0 && (
+            <Grid size={{ xs: 12 }}>
+              <Alert severity="info">No hay proyectos disponibles. Crea un nuevo proyecto para comenzar.</Alert>
+            </Grid>
+          )}
           {filteredProjects.map(project => (
             <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={project.id}>
               <ProjectCard
