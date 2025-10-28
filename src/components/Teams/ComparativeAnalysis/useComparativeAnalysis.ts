@@ -192,6 +192,9 @@ export function useComparativeAnalysis(teamId: string, isOpen: boolean) {
 
             // Procesar datos de categorías
             const processedCategoryData = Array.from(categoryMap.values()).sort((a, b) => a.category.order_index - b.category.order_index);
+            processedCategoryData.forEach(cat => {
+                cat.questions.sort((a, b) => a.question_number - b.question_number);
+            });
             setCategoryData(processedCategoryData);
 
             // Crear resumen de categorías

@@ -5,6 +5,7 @@
 // ============================================================================
 
 import { Grid, Card, CardContent, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { CustomPieChart } from '../../Charts/PieChart';
 import { CustomLineChart } from '../../Charts/LineChart';
 import { CustomBarChart } from '../../Charts/BarChart';
@@ -41,6 +42,7 @@ interface ChartsTrendsTabProps {
 }
 
 export function ChartsTrendsTab({ comparativeData }: ChartsTrendsTabProps) {
+  const { palette } = useTheme();
   // Convertir datos a formato ChartData
   const chartData: ChartData = {
     alignment: [
@@ -97,7 +99,7 @@ export function ChartsTrendsTab({ comparativeData }: ChartsTrendsTabProps) {
                 height={300}
                 xKey="question"
                 yKeys={['leader', 'collaborator', 'supervisor']}
-                colors={['#1976d2', '#9c27b0', '#ff6b35']}
+                colors={[palette.primary.main, palette.secondary.main, palette.supervisor.main]}
               />
             )}
           </CardContent>

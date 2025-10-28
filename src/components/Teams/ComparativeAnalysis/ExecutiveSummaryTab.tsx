@@ -5,6 +5,7 @@
 // ============================================================================
 
 import { Grid, Card, CardContent, Typography, Box, LinearProgress, Chip, Paper } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
@@ -26,7 +27,9 @@ interface ExecutiveSummaryTabProps {
   loading: boolean;
 }
 
-export function ExecutiveSummaryTab({ metrics }: ExecutiveSummaryTabProps) {
+export function ExecutiveSummaryTab({ metrics, categorySummary }: ExecutiveSummaryTabProps) {
+  const { palette } = useTheme();
+  const hasSupervisorData = categorySummary?.some(cat => cat.supervisor_total > 0);
   return (
     <Grid sx={{ px: { xs: 1, md: 10, lg: 30, xl: 40 } }} container spacing={3}>
       {/* Métricas principales */}
@@ -127,7 +130,7 @@ export function ExecutiveSummaryTab({ metrics }: ExecutiveSummaryTabProps) {
             </Box>
 
             <Grid container spacing={2}>
-              <Grid size={{ xs: 12, md: 4 }}>
+              <Grid size={{ xs: 12, md: hasSupervisorData ? 4 : 6 }}>
                 <Paper sx={{ p: 2, bgcolor: 'primary.50' }}>
                   <Typography color="black" variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                     👑 Tendencia del Líder
@@ -147,7 +150,7 @@ export function ExecutiveSummaryTab({ metrics }: ExecutiveSummaryTabProps) {
                 </Paper>
               </Grid>
 
-              <Grid size={{ xs: 12, md: 4 }}>
+              <Grid size={{ xs: 12, md: hasSupervisorData ? 4 : 6 }}>
                 <Paper sx={{ p: 2, bgcolor: 'secondary.50' }}>
                   <Typography color="black" variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                     👥 Tendencia de Colaboradores
@@ -177,35 +180,37 @@ export function ExecutiveSummaryTab({ metrics }: ExecutiveSummaryTabProps) {
                 </Paper>
               </Grid>
 
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Paper sx={{ p: 2, bgcolor: '#fff4f1' }}>
-                  <Typography color="black" variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                    🎯 Tendencia de Supervisores
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {metrics?.supervisor_trend === 'positive' && <TrendingUpIcon color="success" />}
-                    {metrics?.supervisor_trend === 'negative' && <TrendingDownIcon color="error" />}
-                    {metrics?.supervisor_trend === 'neutral' && <BarChartIcon color="warning" />}
-                    <Chip
-                      label={
-                        metrics?.supervisor_trend === 'positive'
-                          ? 'Positiva'
-                          : metrics?.supervisor_trend === 'negative'
-                          ? 'Negativa'
-                          : 'Neutral'
-                      }
-                      color={
-                        metrics?.supervisor_trend === 'positive'
-                          ? 'success'
-                          : metrics?.supervisor_trend === 'negative'
-                          ? 'error'
-                          : 'warning'
-                      }
-                      size="small"
-                    />
-                  </Box>
-                </Paper>
-              </Grid>
+              {hasSupervisorData && (
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Paper sx={{ p: 2, bgcolor: palette.supervisor.light }}>
+                    <Typography color="black" variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                      🎯 Tendencia de Líder de líderes
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {metrics?.supervisor_trend === 'positive' && <TrendingUpIcon color="success" />}
+                      {metrics?.supervisor_trend === 'negative' && <TrendingDownIcon color="error" />}
+                      {metrics?.supervisor_trend === 'neutral' && <BarChartIcon color="warning" />}
+                      <Chip
+                        label={
+                          metrics?.supervisor_trend === 'positive'
+                            ? 'Positiva'
+                            : metrics?.supervisor_trend === 'negative'
+                            ? 'Negativa'
+                            : 'Neutral'
+                        }
+                        color={
+                          metrics?.supervisor_trend === 'positive'
+                            ? 'success'
+                            : metrics?.supervisor_trend === 'negative'
+                            ? 'error'
+                            : 'warning'
+                        }
+                        size="small"
+                      />
+                    </Box>
+                  </Paper>
+                </Grid>
+              )}
             </Grid>
           </CardContent>
         </Card>

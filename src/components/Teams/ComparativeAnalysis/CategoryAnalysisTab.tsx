@@ -47,7 +47,7 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                         <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>AUTO</th>
                         <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>COLABORADORES</th>
                         {hasSupervisorData ? (
-                          <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>SUPERVISOR</th>
+                          <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>LÍDER DE LÍDER</th>
                         ) : (
                           <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>DIFERENCIA</th>
                         )}
@@ -64,7 +64,7 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                             {category.otros_total.toFixed(1)}
                           </td>
                           {hasSupervisorData ? (
-                            <td style={{ padding: '12px', textAlign: 'center', color: '#ff6b35', fontWeight: 600 }}>
+                            <td style={{ padding: '12px', textAlign: 'center', color: palette.supervisor.main, fontWeight: 600 }}>
                               {category.supervisor_total.toFixed(1)}
                             </td>
                           ) : (
@@ -116,8 +116,12 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                     })}
                     height={300}
                     xKey="name"
-                    yKeys={hasSupervisorData ? ['AUTO', 'COLABORADORES', 'SUPERVISORES'] : ['AUTO', 'COLABORADORES']}
-                    colors={hasSupervisorData ? ['#1976d2', '#9c27b0', '#ff6b35'] : ['#1976d2', '#9c27b0']}
+                    yKeys={hasSupervisorData ? ['AUTO', 'COLABORADORES', 'LÍDER DE  LÍDER'] : ['AUTO', 'COLABORADORES']}
+                    colors={
+                      hasSupervisorData
+                        ? [palette.primary.main, palette.secondary.main, palette.supervisor.main]
+                        : [palette.primary.main, palette.secondary.main]
+                    }
                   />
                 )}
               </CardContent>
@@ -141,7 +145,7 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                           <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, minWidth: '300px' }}>PREGUNTA</th>
                           <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>AUTO</th>
                           <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>COLABORADORES</th>
-                          {hasSupervisorData && <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>SUPERVISORES</th>}
+                          {hasSupervisorData && <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>LÍDER DE LÍDER</th>}
                           {/* Columnas dinámicas para cada colaborador */}
                           {category.questions.length > 0 &&
                             Array.from({ length: Math.max(...category.questions.map(q => q.collaborator_responses.length)) }, (_, i) => (
@@ -177,7 +181,7 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                                 {question.collaborator_avg.toFixed(1)}
                               </td>
                               {hasSupervisorData && (
-                                <td style={{ padding: '12px', textAlign: 'center', color: '#ff6b35', fontWeight: 600 }}>
+                                <td style={{ padding: '12px', textAlign: 'center', color: palette.supervisor.main, fontWeight: 600 }}>
                                   {question.supervisor_avg.toFixed(1)}
                                 </td>
                               )}
@@ -235,7 +239,7 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                     height={250}
                     xKey="name"
                     yKeys={hasSupervisorData ? ['AUTO', 'COLABORADORES', 'SUPERVISORES'] : ['AUTO', 'COLABORADORES']}
-                    colors={['#1976d2', '#9c27b0', '#ff6b35']}
+                    colors={[palette.primary.main, palette.secondary.main, palette.supervisor.main]}
                   />
                 </CardContent>
               </Card>

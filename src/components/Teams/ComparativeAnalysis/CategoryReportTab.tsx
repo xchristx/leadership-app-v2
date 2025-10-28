@@ -18,6 +18,7 @@ import {
   TableHead,
   TableRow,
   CardMedia,
+  useTheme,
 } from '@mui/material';
 import { PictureAsPdf as PdfIcon, Description as WordIcon, Print as PrintIcon } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
@@ -68,9 +69,14 @@ export function CategoryReportTab({
   const [pdfLoading, setPdfLoading] = useState(false);
   const [currentPdfPage, setCurrentPdfPage] = useState(0);
   const [totalPdfPages, setTotalPdfPages] = useState(0);
+  // Estado para el loading del Word
+  const [wordLoading, setWordLoading] = useState(false);
 
   const LEADERSHIP_PRACTICES = categoryData.map(cat => cat.category);
 
+  const { palette } = useTheme();
+
+  const hasSupervisorData = categorySummary?.some(cat => cat.supervisor_total > 0);
   // Función para capturar un gráfico como imagen
   const captureChart = async (chartRef: HTMLDivElement): Promise<Uint8Array | null> => {
     try {
@@ -216,6 +222,8 @@ export function CategoryReportTab({
 
   const handleExportToWord = async () => {
     try {
+      setWordLoading(true);
+      // opcional: usar contadores de página si se quiere mostrar progreso más avanzado
       // Capturar gráficos como imágenes
       let lineChartImage: Uint8Array | null = null;
       const barChartImages: (Uint8Array | null)[] = [];
@@ -244,6 +252,9 @@ export function CategoryReportTab({
             cat.category.toLowerCase().includes(practice.name.toLowerCase())
         )
       );
+
+      // Preparar colores para el documento Word (hex sin '#')
+      const supervisorHex = (palette.supervisor?.main ?? '#ff6b35').replace('#', '');
 
       // Crear el documento
       const doc = new Document({
@@ -355,22 +366,31 @@ export function CategoryReportTab({
                       new DocxTableCell({
                         children: [new Paragraph({ text: 'PRÁCTICA DE LIDERAZGO', alignment: AlignmentType.CENTER })],
                         shading: { fill: '1976d2' },
-                        width: { size: 40, type: WidthType.PERCENTAGE },
+                        width: { size: 36, type: WidthType.PERCENTAGE },
                       }),
                       new DocxTableCell({
                         children: [new Paragraph({ text: 'AUTOPERCEPCIÓN', alignment: AlignmentType.CENTER })],
                         shading: { fill: '1976d2' },
-                        width: { size: 20, type: WidthType.PERCENTAGE },
+                        width: { size: 16, type: WidthType.PERCENTAGE },
                       }),
                       new DocxTableCell({
                         children: [new Paragraph({ text: 'OBSERVADORES', alignment: AlignmentType.CENTER })],
                         shading: { fill: '1976d2' },
-                        width: { size: 20, type: WidthType.PERCENTAGE },
+                        width: { size: 16, type: WidthType.PERCENTAGE },
                       }),
+                      ...(hasSupervisorData
+                        ? [
+                            new DocxTableCell({
+                              children: [new Paragraph({ text: 'SUPERVISORES', alignment: AlignmentType.CENTER })],
+                              shading: { fill: supervisorHex },
+                              width: { size: 16, type: WidthType.PERCENTAGE },
+                            }),
+                          ]
+                        : []),
                       new DocxTableCell({
                         children: [new Paragraph({ text: 'DIFERENCIA', alignment: AlignmentType.CENTER })],
                         shading: { fill: '1976d2' },
-                        width: { size: 20, type: WidthType.PERCENTAGE },
+                        width: { size: hasSupervisorData ? 16 : 28, type: WidthType.PERCENTAGE },
                       }),
                     ],
                   }),
@@ -388,6 +408,19 @@ export function CategoryReportTab({
                         new DocxTableCell({
                           children: [new Paragraph({ text: practice.otros_total.toFixed(1), alignment: AlignmentType.CENTER })],
                         }),
+                        ...(hasSupervisorData
+                          ? [
+                              new DocxTableCell({
+                                children: [
+                                  new Paragraph({
+                                    text: ((practice as { supervisor_total?: number }).supervisor_total ?? 0).toFixed(1),
+                                    alignment: AlignmentType.CENTER,
+                                  }),
+                                ],
+                                shading: { fill: supervisorHex },
+                              }),
+                            ]
+                          : []),
                         new DocxTableCell({
                           children: [
                             new Paragraph({
@@ -454,7 +487,9 @@ export function CategoryReportTab({
                 spacing: { after: 200 },
               }),
               new Paragraph({
-                text: 'El gráfico de líneas facilita la visualización de las diferencias entre autopercepción y percepción externa en cada práctica. Las líneas azules (autopercepción) y rojas (observadores) permiten identificar rápidamente:',
+                text: hasSupervisorData
+                  ? 'El gráfico de líneas facilita la visualización de las diferencias entre autopercepción, observadores y supervisores en cada práctica. Las líneas azules (autopercepción), rojas (observadores) y naranjas (supervisores) permiten identificar rápidamente:'
+                  : 'El gráfico de líneas facilita la visualización de las diferencias entre autopercepción y percepción externa en cada práctica. Las líneas azules (autopercepción) y rojas (observadores) permiten identificar rápidamente:',
                 spacing: { after: 200 },
               }),
               new Paragraph({
@@ -573,27 +608,36 @@ export function CategoryReportTab({
                           new DocxTableCell({
                             children: [new Paragraph({ text: 'No.', alignment: AlignmentType.CENTER })],
                             shading: { fill: '0369a1' },
-                            width: { size: 10, type: WidthType.PERCENTAGE },
+                            width: { size: 8, type: WidthType.PERCENTAGE },
                           }),
                           new DocxTableCell({
                             children: [new Paragraph({ text: 'PREGUNTA', alignment: AlignmentType.CENTER })],
                             shading: { fill: '0369a1' },
-                            width: { size: 50, type: WidthType.PERCENTAGE },
+                            width: { size: 48, type: WidthType.PERCENTAGE },
                           }),
                           new DocxTableCell({
                             children: [new Paragraph({ text: 'AUTOPERCEPCIÓN', alignment: AlignmentType.CENTER })],
                             shading: { fill: '0369a1' },
-                            width: { size: 15, type: WidthType.PERCENTAGE },
+                            width: { size: 14, type: WidthType.PERCENTAGE },
                           }),
                           new DocxTableCell({
                             children: [new Paragraph({ text: 'OBSERVADORES', alignment: AlignmentType.CENTER })],
                             shading: { fill: '0369a1' },
-                            width: { size: 15, type: WidthType.PERCENTAGE },
+                            width: { size: 14, type: WidthType.PERCENTAGE },
                           }),
+                          ...(hasSupervisorData
+                            ? [
+                                new DocxTableCell({
+                                  children: [new Paragraph({ text: 'SUPERVISORES', alignment: AlignmentType.CENTER })],
+                                  shading: { fill: 'ff6b35' },
+                                  width: { size: 12, type: WidthType.PERCENTAGE },
+                                }),
+                              ]
+                            : []),
                           new DocxTableCell({
                             children: [new Paragraph({ text: 'DIFERENCIA', alignment: AlignmentType.CENTER })],
                             shading: { fill: '0369a1' },
-                            width: { size: 10, type: WidthType.PERCENTAGE },
+                            width: { size: hasSupervisorData ? 8 : 10, type: WidthType.PERCENTAGE },
                           }),
                         ],
                       }),
@@ -614,6 +658,18 @@ export function CategoryReportTab({
                             new DocxTableCell({
                               children: [new Paragraph({ text: question.collaborator_avg.toFixed(1), alignment: AlignmentType.CENTER })],
                             }),
+                            ...(hasSupervisorData
+                              ? [
+                                  new DocxTableCell({
+                                    children: [
+                                      new Paragraph({
+                                        text: ((question as { supervisor_avg?: number }).supervisor_avg ?? 0).toFixed(1),
+                                        alignment: AlignmentType.CENTER,
+                                      }),
+                                    ],
+                                  }),
+                                ]
+                              : []),
                             new DocxTableCell({
                               children: [
                                 new Paragraph({
@@ -694,6 +750,8 @@ export function CategoryReportTab({
     } catch (error) {
       console.error('Error al generar el documento Word:', error);
       // Aquí podrías mostrar una notificación de error al usuario
+    } finally {
+      setWordLoading(false);
     }
   };
 
@@ -746,9 +804,10 @@ export function CategoryReportTab({
         {/* Solo permitir exportar en formato carta */}
         <SimplePDFExporter />
 
-        <Button variant="outlined" startIcon={<WordIcon />} onClick={handleExportToWord}>
-          Exportar Word
+        <Button variant="outlined" startIcon={<WordIcon />} onClick={handleExportToWord} disabled={wordLoading}>
+          {wordLoading ? 'Generando...' : 'Exportar Word'}
         </Button>
+
         <Button sx={{ display: 'none' }} variant="outlined" startIcon={<PrintIcon />} onClick={handlePrint}>
           Imprimir
         </Button>
@@ -780,7 +839,7 @@ export function CategoryReportTab({
               boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
             }}
           >
-            <Typography variant="h6" sx={{ mb: 2, color: '#1976d2', fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ mb: 2, color: palette.primary.main, fontWeight: 600 }}>
               Generando PDF
             </Typography>
             <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
@@ -799,10 +858,69 @@ export function CategoryReportTab({
                 <div
                   style={{
                     height: '100%',
-                    backgroundColor: '#1976d2',
+                    backgroundColor: palette.primary.main,
                     borderRadius: 4,
                     transition: 'width 0.3s ease',
                     width: totalPdfPages > 0 ? `${(currentPdfPage / totalPdfPages) * 100}%` : '0%',
+                  }}
+                />
+              </div>
+            </Box>
+            <Typography variant="caption" sx={{ color: '#999' }}>
+              Por favor espera mientras se genera tu documento...
+            </Typography>
+          </Box>
+        </Box>
+      )}
+      {/* Loading del Word */}
+      {wordLoading && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+          }}
+        >
+          <Box
+            sx={{
+              backgroundColor: 'white',
+              borderRadius: 2,
+              p: 4,
+              minWidth: 300,
+              textAlign: 'center',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 2, color: palette.primary.main, fontWeight: 600 }}>
+              Generando Word
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
+              Preparando y empaquetando el documento. Por favor espera...
+            </Typography>
+            <Box sx={{ width: '100%', mb: 2 }}>
+              <div
+                style={{
+                  width: '100%',
+                  height: 8,
+                  backgroundColor: '#e0e0e0',
+                  borderRadius: 4,
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    height: '100%',
+                    backgroundColor: palette.primary.main,
+                    borderRadius: 4,
+                    transition: 'width 0.3s ease',
+                    width: '60%',
                   }}
                 />
               </div>
@@ -909,7 +1027,7 @@ export function CategoryReportTab({
                   variant="h3"
                   sx={{
                     fontWeight: 700,
-                    color: '#1976d2',
+                    color: palette.primary.main,
                     mb: 1,
                     fontSize: { xs: '2rem', md: '2.5rem' },
                     letterSpacing: '1px',
@@ -961,7 +1079,7 @@ export function CategoryReportTab({
                   variant="h4"
                   sx={{
                     fontWeight: 600,
-                    color: '#1976d2',
+                    color: palette.primary.main,
                     mb: 2,
                     fontSize: '1.8rem',
                   }}
@@ -1003,7 +1121,7 @@ export function CategoryReportTab({
                       width: 12,
                       height: 12,
                       borderRadius: '50%',
-                      backgroundColor: index === 2 ? '#1976d2' : '#e3f2fd',
+                      backgroundColor: index === 2 ? palette.primary.main : '#e3f2fd',
                       transform: index === 2 ? 'scale(1.5)' : 'scale(1)',
                       transition: 'all 0.3s ease',
                     }}
@@ -1039,7 +1157,7 @@ export function CategoryReportTab({
                     width: 40,
                     height: 40,
                     borderRadius: 2,
-                    backgroundColor: '#1976d2',
+                    backgroundColor: palette.primary.main,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1068,7 +1186,7 @@ export function CategoryReportTab({
                   <Typography
                     variant="h6"
                     sx={{
-                      color: '#1976d2',
+                      color: palette.primary.main,
                       fontWeight: 600,
                       fontSize: '1.1rem',
                     }}
@@ -1328,7 +1446,7 @@ export function CategoryReportTab({
                           <TableCell
                             align="center"
                             sx={{
-                              color: '#1976d2',
+                              color: palette.primary.main,
                               fontWeight: '700',
                               fontSize: '1rem',
                               borderRight: '1px solid #e2e8f0',
@@ -1341,7 +1459,7 @@ export function CategoryReportTab({
                           <TableCell
                             align="center"
                             sx={{
-                              color: '#d32f2f',
+                              color: palette.secondary.main,
                               fontWeight: '700',
                               fontSize: '1rem',
                               borderRight: '1px solid #e2e8f0',
@@ -1356,7 +1474,7 @@ export function CategoryReportTab({
                             sx={{
                               fontWeight: '700',
                               fontSize: '1rem',
-                              color: difference > 0 ? '#2e7d32' : difference < 0 ? '#d32f2f' : '#1e3a8a',
+                              color: difference > 0 ? palette.success.main : difference < 0 ? palette.error.main : '#1e3a8a',
                               backgroundColor:
                                 difference > 0
                                   ? 'rgba(46, 125, 50, 0.1)'
@@ -1411,6 +1529,7 @@ export function CategoryReportTab({
                 fontWeight: '600',
                 color: '#374151',
                 mb: 2,
+                display: 'none',
               }}
             >
               Interpretación
@@ -1426,226 +1545,234 @@ export function CategoryReportTab({
             >
               Este cuadro presenta la comparación entre la <strong>autopercepción del líder</strong> y la{' '}
               <strong>percepción de sus colaboradores</strong> en las cinco prácticas fundamentales del liderazgo. Las{' '}
-              <span style={{ color: '#059669', fontWeight: '600' }}>diferencias positivas</span> indican que el líder se percibe con mayor
-              competencia, mientras que las <span style={{ color: '#dc2626', fontWeight: '600' }}>diferencias negativas</span> sugieren
-              áreas donde los colaboradores ven un desempeño superior al que el líder reconoce en sí mismo.
+              <span style={{ color: palette.success.main, fontWeight: '600' }}>diferencias negativas</span> indican que el líder se percibe
+              con mayor competencia, mientras que las{' '}
+              <span style={{ color: palette.error.main, fontWeight: '600' }}>diferencias positivas</span> sugieren que los colaboradores ven
+              áreas con oportunidades de mejora. Esta información es crucial para identificar brechas en la percepción y enfocar los
+              esfuerzos de desarrollo del liderazgo.
             </Typography>
           </Box>
         </Paper>
-        <Paper sx={pageStyle} className="pagina-comun" data-testid="page">
-          {/* Tabla comparativa principal simplificada */}
-          <Box sx={{ mb: 4 }}>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: '600',
-                fontSize: '18px',
-                color: '#374151',
-                mb: 2,
-                textAlign: 'center',
-              }}
-            >
-              Cuadro Comparativo - Autopercepción vs Percepción del líder de líderes de equipo
-            </Typography>
+        {/* ==================== PÁGINA 1.1: RESUMEN EJECUTIVO ==================== */}
+        {hasSupervisorData && (
+          <Paper sx={pageStyle} className="pagina-comun" data-testid="page">
+            {/* Tabla comparativa principal simplificada */}
+            <Box sx={{ mb: 4 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: '600',
+                  fontSize: '18px',
+                  color: '#374151',
+                  mb: 2,
+                  textAlign: 'center',
+                }}
+              >
+                Cuadro Comparativo - Autopercepción vs Percepción del líder de líder de equipo
+              </Typography>
 
-            <TableContainer
-              component={Paper}
-              variant="outlined"
-              sx={{
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-              }}
-            >
-              <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: '#f9fafb' }}>
-                    <TableCell
-                      sx={{
-                        color: '#374151',
-                        fontWeight: '600',
-                        fontSize: '0.85rem',
-                        borderBottom: '2px solid #e5e7eb',
-                        py: 1.5,
-                      }}
-                    >
-                      Práctica de Liderazgo
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        color: '#374151',
-                        fontWeight: '600',
-                        fontSize: '0.85rem',
-                        borderBottom: '2px solid #e5e7eb',
-                        py: 1.5,
-                        minWidth: '100px',
-                      }}
-                    >
-                      Autopercepción
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        color: '#374151',
-                        fontWeight: '600',
-                        fontSize: '0.85rem',
-                        borderBottom: '2px solid #e5e7eb',
-                        py: 1.5,
-                        minWidth: '100px',
-                      }}
-                    >
-                      Líder de Líderes
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        color: '#374151',
-                        fontWeight: '600',
-                        fontSize: '0.85rem',
-                        borderBottom: '2px solid #e5e7eb',
-                        py: 1.5,
-                        minWidth: '90px',
-                      }}
-                    >
-                      Diferencia
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {leadershipPractices.length > 0 ? (
-                    leadershipPractices.map((practice, index) => {
-                      const difference = practice.supervisor_total - practice.auto_total;
-                      return (
-                        <TableRow
-                          key={index}
+              <TableContainer
+                component={Paper}
+                variant="outlined"
+                sx={{
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                }}
+              >
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: '#f9fafb' }}>
+                      <TableCell
+                        sx={{
+                          color: '#374151',
+                          fontWeight: '600',
+                          fontSize: '0.85rem',
+                          borderBottom: '2px solid #e5e7eb',
+                          py: 1.5,
+                        }}
+                      >
+                        Práctica de Liderazgo
+                      </TableCell>
+                      <TableCell
+                        align="center"
+                        sx={{
+                          color: '#374151',
+                          fontWeight: '600',
+                          fontSize: '0.85rem',
+                          borderBottom: '2px solid #e5e7eb',
+                          py: 1.5,
+                          minWidth: '100px',
+                        }}
+                      >
+                        Autopercepción
+                      </TableCell>
+                      <TableCell
+                        align="center"
+                        sx={{
+                          color: '#374151',
+                          fontWeight: '600',
+                          fontSize: '0.85rem',
+                          borderBottom: '2px solid #e5e7eb',
+                          py: 1.5,
+                          minWidth: '100px',
+                        }}
+                      >
+                        Líder de Líder
+                      </TableCell>
+                      <TableCell
+                        align="center"
+                        sx={{
+                          color: '#374151',
+                          fontWeight: '600',
+                          fontSize: '0.85rem',
+                          borderBottom: '2px solid #e5e7eb',
+                          py: 1.5,
+                          minWidth: '90px',
+                        }}
+                      >
+                        Diferencia
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {leadershipPractices.length > 0 ? (
+                      leadershipPractices.map((practice, index) => {
+                        const difference = practice.supervisor_total - practice.auto_total;
+                        return (
+                          <TableRow
+                            key={index}
+                            sx={{
+                              '&:nth-of-type(odd)': {
+                                backgroundColor: '#f8fafc',
+                              },
+                              '&:hover': {
+                                backgroundColor: '#e2e8f0',
+                              },
+                            }}
+                          >
+                            <TableCell
+                              sx={{
+                                fontWeight: '600',
+                                fontSize: '0.85rem',
+                                maxWidth: '200px',
+                                color: '#1e3a8a',
+                                borderRight: '1px solid #e2e8f0',
+                                padding: '12px 8px',
+                              }}
+                            >
+                              {practice.category}
+                            </TableCell>
+                            <TableCell
+                              align="center"
+                              sx={{
+                                color: palette.primary.main,
+                                fontWeight: '700',
+                                fontSize: '1rem',
+                                borderRight: '1px solid #e2e8f0',
+                                backgroundColor: index % 2 === 0 ? 'rgba(25, 118, 210, 0.05)' : 'inherit',
+                                padding: '12px 8px',
+                              }}
+                            >
+                              {practice.auto_total.toFixed(1)}
+                            </TableCell>
+                            <TableCell
+                              align="center"
+                              sx={{
+                                color: palette.supervisor.main,
+                                fontWeight: '700',
+                                fontSize: '1rem',
+                                borderRight: '1px solid #e2e8f0',
+                                backgroundColor: index % 2 === 0 ? 'rgba(211, 47, 47, 0.05)' : 'inherit',
+                                padding: '12px 8px',
+                              }}
+                            >
+                              {practice.supervisor_total.toFixed(1)}
+                            </TableCell>
+                            <TableCell
+                              align="center"
+                              sx={{
+                                fontWeight: '700',
+                                fontSize: '1rem',
+                                color: difference > 0 ? palette.success.main : difference < 0 ? palette.error.main : '#1e3a8a',
+                                backgroundColor:
+                                  difference > 0
+                                    ? 'rgba(46, 125, 50, 0.1)'
+                                    : difference < 0
+                                    ? 'rgba(211, 47, 47, 0.1)'
+                                    : 'rgba(30, 58, 138, 0.05)',
+                                padding: '12px 8px',
+                                borderRadius: difference !== 0 ? '4px' : 'inherit',
+                              }}
+                            >
+                              {difference > 0 ? '+' : ''}
+                              {difference.toFixed(1)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={4}
+                          align="center"
                           sx={{
-                            '&:nth-of-type(odd)': {
-                              backgroundColor: '#f8fafc',
-                            },
-                            '&:hover': {
-                              backgroundColor: '#e2e8f0',
-                            },
+                            fontSize: '0.9rem',
+                            color: '#64748b',
+                            fontStyle: 'italic',
+                            padding: '20px',
                           }}
                         >
-                          <TableCell
-                            sx={{
-                              fontWeight: '600',
-                              fontSize: '0.85rem',
-                              maxWidth: '200px',
-                              color: '#1e3a8a',
-                              borderRight: '1px solid #e2e8f0',
-                              padding: '12px 8px',
-                            }}
-                          >
-                            {practice.category}
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            sx={{
-                              color: '#1976d2',
-                              fontWeight: '700',
-                              fontSize: '1rem',
-                              borderRight: '1px solid #e2e8f0',
-                              backgroundColor: index % 2 === 0 ? 'rgba(25, 118, 210, 0.05)' : 'inherit',
-                              padding: '12px 8px',
-                            }}
-                          >
-                            {practice.auto_total.toFixed(1)}
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            sx={{
-                              color: '#d32f2f',
-                              fontWeight: '700',
-                              fontSize: '1rem',
-                              borderRight: '1px solid #e2e8f0',
-                              backgroundColor: index % 2 === 0 ? 'rgba(211, 47, 47, 0.05)' : 'inherit',
-                              padding: '12px 8px',
-                            }}
-                          >
-                            {practice.supervisor_total.toFixed(1)}
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            sx={{
-                              fontWeight: '700',
-                              fontSize: '1rem',
-                              color: difference > 0 ? '#2e7d32' : difference < 0 ? '#d32f2f' : '#1e3a8a',
-                              backgroundColor:
-                                difference > 0
-                                  ? 'rgba(46, 125, 50, 0.1)'
-                                  : difference < 0
-                                  ? 'rgba(211, 47, 47, 0.1)'
-                                  : 'rgba(30, 58, 138, 0.05)',
-                              padding: '12px 8px',
-                              borderRadius: difference !== 0 ? '4px' : 'inherit',
-                            }}
-                          >
-                            {difference > 0 ? '+' : ''}
-                            {difference.toFixed(1)}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={4}
-                        align="center"
-                        sx={{
-                          fontSize: '0.9rem',
-                          color: '#64748b',
-                          fontStyle: 'italic',
-                          padding: '20px',
-                        }}
-                      >
-                        No se encontraron prácticas de liderazgo definidas
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Box>
+                          No se encontraron prácticas de liderazgo definidas
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
 
-          {/* Interpretación inicial simplificada */}
-          <Box
-            sx={{
-              backgroundColor: '#f9fafb',
-              borderRadius: '8px',
-              border: '1px solid #e5e7eb',
-              padding: '20px',
-              borderLeft: '4px solid #3b82f6',
-            }}
-          >
-            <Typography
-              variant="h6"
+            {/* Interpretación inicial simplificada */}
+            <Box
               sx={{
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#374151',
-                mb: 2,
+                backgroundColor: '#f9fafb',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+                padding: '20px',
+                borderLeft: '4px solid #3b82f6',
               }}
             >
-              Interpretación
-            </Typography>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  mb: 2,
+                  display: 'none',
+                }}
+              >
+                Interpretación
+              </Typography>
 
-            <Typography
-              variant="body2"
-              sx={{
-                fontSize: '0.9rem',
-                lineHeight: 1.6,
-                color: '#6b7280',
-              }}
-            >
-              Este cuadro presenta la comparación entre la <strong>autopercepción del líder</strong> y la{' '}
-              <strong>percepción de sus colaboradores</strong> en las cinco prácticas fundamentales del liderazgo. Las{' '}
-              <span style={{ color: '#059669', fontWeight: '600' }}>diferencias positivas</span> indican que el líder se percibe con mayor
-              competencia, mientras que las <span style={{ color: '#dc2626', fontWeight: '600' }}>diferencias negativas</span> sugieren
-              áreas donde los colaboradores ven un desempeño superior al que el líder reconoce en sí mismo.
-            </Typography>
-          </Box>
-        </Paper>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontSize: '0.9rem',
+                  lineHeight: 1.6,
+                  color: '#6b7280',
+                }}
+              >
+                Este cuadro presenta la comparación entre la <strong>autopercepción del líder</strong> y la{' '}
+                <strong>percepción de su superior</strong> en las cinco prácticas fundamentales del liderazgo. Las{' '}
+                <span style={{ color: palette.success.main, fontWeight: '600' }}>diferencias negativas</span> indican que el líder se
+                percibe con mayor competencia, mientras que las{' '}
+                <span style={{ color: palette.error.main, fontWeight: '600' }}>diferencias positivas</span> sugieren que su superior ve
+                áreas con oportunidades de mejora. Esta información es crucial para identificar brechas en la percepción y enfocar los
+                esfuerzos de desarrollo del liderazgo.
+              </Typography>
+            </Box>
+          </Paper>
+        )}
 
         {/* ==================== PÁGINA 2: ANÁLISIS GRÁFICO ==================== */}
         <Paper sx={pageStyle} data-testid="page" className="pagina-comun">
@@ -1692,6 +1819,7 @@ export function CategoryReportTab({
                       practica: practice.category.length > 20 ? practice.category.substring(0, 17) + '...' : practice.category,
                       AUTO: Number(practice.auto_total.toFixed(1)),
                       OBSERVADORES: Number(practice.otros_total.toFixed(1)),
+                      SUPERVISORES: Number(((practice as { supervisor_total?: number }).supervisor_total ?? 0).toFixed(1)),
                       index: index + 1,
                     }))}
                     margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
@@ -1738,21 +1866,32 @@ export function CategoryReportTab({
                     <Line
                       type="monotone"
                       dataKey="AUTO"
-                      stroke="#1976d2"
+                      stroke={palette.primary.main}
                       strokeWidth={4}
-                      dot={{ fill: '#1976d2', strokeWidth: 3, r: 3 }}
-                      activeDot={{ r: 8, fill: '#1976d2', strokeWidth: 3, stroke: '#fff' }}
-                      label={{ position: 'top', fontSize: 10, fill: '#1976d2', fontWeight: '600' }}
+                      dot={{ fill: palette.primary.main, strokeWidth: 3, r: 3 }}
+                      activeDot={{ r: 8, fill: palette.primary.main, strokeWidth: 3, stroke: '#fff' }}
+                      label={{ position: 'top', fontSize: 10, fill: palette.primary.main, fontWeight: '600' }}
                     />
                     <Line
                       type="monotone"
                       dataKey="OBSERVADORES"
-                      stroke="#d32f2f"
+                      stroke={palette.secondary.main}
                       strokeWidth={4}
-                      dot={{ fill: '#d32f2f', strokeWidth: 3, r: 3 }}
-                      activeDot={{ r: 8, fill: '#d32f2f', strokeWidth: 3, stroke: '#fff' }}
-                      label={{ position: 'bottom', fontSize: 10, fill: '#d32f2f', fontWeight: '600' }}
+                      dot={{ fill: palette.secondary.main, strokeWidth: 3, r: 3 }}
+                      activeDot={{ r: 8, fill: palette.secondary.main, strokeWidth: 3, stroke: '#fff' }}
+                      label={{ position: 'bottom', fontSize: 10, fill: palette.secondary.main, fontWeight: '600' }}
                     />
+                    {hasSupervisorData && (
+                      <Line
+                        type="monotone"
+                        dataKey="SUPERVISORES"
+                        stroke={palette.supervisor.main}
+                        strokeWidth={4}
+                        dot={{ fill: palette.supervisor.main, strokeWidth: 3, r: 3 }}
+                        activeDot={{ r: 8, fill: palette.supervisor.main, strokeWidth: 3, stroke: '#fff' }}
+                        label={{ position: 'top', fontSize: 10, fill: palette.supervisor.main, fontWeight: '600' }}
+                      />
+                    )}
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
@@ -1776,6 +1915,7 @@ export function CategoryReportTab({
                 fontWeight: '600',
                 color: '#374151',
                 mb: 2,
+                display: 'none',
               }}
             >
               Interpretación del Análisis
@@ -1791,9 +1931,21 @@ export function CategoryReportTab({
               }}
             >
               <strong>El gráfico de líneas</strong> facilita la visualización de las diferencias entre autopercepción y percepción externa
-              en cada práctica.
-              <span style={{ color: '#1976d2', fontWeight: '600' }}> Las líneas azules (autopercepción)</span> y
-              <span style={{ color: '#d32f2f', fontWeight: '600' }}> rojas (observadores)</span> permiten identificar rápidamente:
+              en cada práctica.{' '}
+              {hasSupervisorData ? (
+                <>
+                  <span style={{ color: palette.primary.main, fontWeight: '600' }}> Las líneas azules (autopercepción),</span>
+                  <span style={{ color: palette.secondary.main, fontWeight: '600' }}> moradas (observadores)</span>
+                  <span style={{ color: palette.supervisor.main, fontWeight: '600' }}> y naranjas (líder de líder)</span> permiten
+                  identificar rápidamente:
+                </>
+              ) : (
+                <>
+                  <span style={{ color: palette.primary.main, fontWeight: '600' }}> Las líneas azules (autopercepción)</span> y
+                  <span style={{ color: palette.secondary.main, fontWeight: '600' }}> moradas (observadores)</span> permiten identificar
+                  rápidamente:
+                </>
+              )}
             </Typography>
 
             <Box
@@ -1811,14 +1963,10 @@ export function CategoryReportTab({
               }}
             >
               <li>
-                <strong style={{ color: '#059669' }}>Convergencias:</strong> Donde ambas líneas se aproximan, indicando alineación
-                perceptual
+                <strong>Convergencias:</strong> Donde ambas líneas se aproximan, indicando alineación perceptual
               </li>
               <li>
-                <strong style={{ color: '#d97706' }}>Divergencias:</strong> Separaciones significativas que requieren atención y desarrollo
-              </li>
-              <li>
-                <strong style={{ color: '#7c3aed' }}>Patrones:</strong> Tendencias consistentes que revelan fortalezas o áreas de mejora
+                <strong>Divergencias:</strong> Separaciones significativas que requieren atención y desarrollo
               </li>
             </Box>
           </Box>
@@ -1855,10 +2003,24 @@ export function CategoryReportTab({
                       fontWeight: '600',
                       color: '#1e293b',
                       textAlign: 'center',
+                      mb: 1,
                     }}
                   >
                     {category.category.name}
                   </Typography>
+                  {practiceInfo && practiceInfo.description && (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontSize: '0.9rem',
+                        lineHeight: 1.6,
+                        color: '#6b7280',
+                        whiteSpace: 'break-spaces',
+                      }}
+                    >
+                      {practiceInfo.description}
+                    </Typography>
+                  )}
                 </Box>
 
                 {/* Descripción de la práctica simplificada */}
@@ -1871,20 +2033,9 @@ export function CategoryReportTab({
                       padding: '20px',
                       mb: 4,
                       borderLeft: '4px solid #3b82f6',
+                      display: 'none',
                     }}
                   >
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        color: '#374151',
-                        mb: 2,
-                      }}
-                    >
-                      Descripción de la Práctica
-                    </Typography>
-
                     <Typography
                       variant="body1"
                       sx={{
@@ -1924,24 +2075,28 @@ export function CategoryReportTab({
                     }}
                   >
                     <Box
-                      sx={{ height: '300px' }}
+                      sx={{ height: '425px' }}
                       ref={el => {
                         barChartRefs.current[categoryIndex] = el as HTMLDivElement | null;
                       }}
                     >
-                      <ResponsiveContainer width="100%" height={300}>
+                      <ResponsiveContainer width="100%" height={'100%'}>
                         <BarChart
                           data={category.questions.map(q => ({
-                            pregunta: q.question_text.length > 60 ? q.question_text.substring(0, 57) + '...' : q.question_text,
+                            pregunta:
+                              q.question_text.length > 300
+                                ? q.question_number + '. ' + q.question_text.slice(0, 300) + '...'
+                                : q.question_number + '. ' + q.question_text,
                             AUTO: q.leader_avg,
-                            OBSERVADORES: q.collaborator_avg,
+                            OBSERVADORES: q.collaborator_avg.toFixed(1),
+                            SUPERVISORES: q.supervisor_avg,
                           }))}
                           layout="vertical"
                           margin={{ top: 20, right: 40, left: 10, bottom: 20 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
                           <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#475569' }} tickCount={6} />
-                          <YAxis type="category" dataKey="pregunta" tick={{ fontSize: 8, width: 160, fill: '#475569' }} width={160} />
+                          <YAxis type="category" dataKey="pregunta" tick={{ fontSize: 10, width: 160, fill: '#475569' }} width={300} />
                           <Tooltip
                             formatter={(value, name) => [value, name]}
                             contentStyle={{
@@ -1959,8 +2114,29 @@ export function CategoryReportTab({
                               fontWeight: '600',
                             }}
                           />
-                          <Bar dataKey="AUTO" fill="#1976d2" name="AUTOPERCEPCIÓN" barSize={20} />
-                          <Bar dataKey="OBSERVADORES" fill="#d32f2f" name="OBSERVADORES" barSize={20} />
+                          <Bar
+                            label={{ position: 'right', fontSize: 10, fill: palette.primary.main, fontWeight: '600' }}
+                            dataKey="AUTO"
+                            fill={palette.primary.main}
+                            name="AUTOPERCEPCIÓN"
+                            barSize={hasSupervisorData ? 12 : 20}
+                          />
+                          {hasSupervisorData && (
+                            <Bar
+                              dataKey="SUPERVISORES"
+                              fill={palette.supervisor.main}
+                              name="LÍDER DE LÍDER"
+                              label={{ position: 'right', fontSize: 10, fill: palette.supervisor.main, fontWeight: '600' }}
+                              barSize={hasSupervisorData ? 12 : 20}
+                            />
+                          )}
+                          <Bar
+                            dataKey="OBSERVADORES"
+                            fill={palette.secondary.main}
+                            name="OBSERVADORES"
+                            label={{ position: 'right', fontSize: 10, fill: palette.secondary.main, fontWeight: '600' }}
+                            barSize={hasSupervisorData ? 12 : 20}
+                          />
                         </BarChart>
                       </ResponsiveContainer>
                     </Box>
@@ -1984,6 +2160,7 @@ export function CategoryReportTab({
                       fontWeight: '600',
                       color: '#374151',
                       mb: 2,
+                      display: 'none',
                     }}
                   >
                     Interpretación del Análisis
@@ -1997,10 +2174,15 @@ export function CategoryReportTab({
                       color: '#6b7280',
                     }}
                   >
-                    Este gráfico muestra la comparación entre la <strong>autopercepción del líder</strong> y la{' '}
-                    <strong>percepción de los colaboradores</strong> para cada pregunta específica de la práctica{' '}
-                    <span style={{ color: '#059669', fontWeight: '600' }}>{category.category.name}</span>. Las barras permiten identificar
-                    preguntas con mayor o menor alineación perceptual.
+                    Este gráfico muestra la comparación entre la <strong>autopercepción del líder</strong>{' '}
+                    {hasSupervisorData && (
+                      <>
+                        , la <strong>percepción del líder de líder</strong>
+                      </>
+                    )}{' '}
+                    y la <strong>percepción de los colaboradores</strong> para cada pregunta específica de la práctica{' '}
+                    <span style={{ color: palette.success.main, fontWeight: '600' }}>{category.category.name}</span>. Las barras permiten
+                    identificar preguntas con mayor o menor alineación perceptual.
                   </Typography>
                 </Box>
               </Paper>
@@ -2030,7 +2212,6 @@ export function CategoryReportTab({
                   sx={{
                     border: '1px solid #d1d5db',
                     borderRadius: '8px',
-                    maxHeight: '550px',
                     mb: 3,
                   }}
                 >
@@ -2045,6 +2226,7 @@ export function CategoryReportTab({
                             width: '60px',
                             borderRight: '1px solid rgba(255,255,255,0.2)',
                             letterSpacing: '0.5px',
+                            p: 1,
                           }}
                         >
                           No.
@@ -2056,6 +2238,7 @@ export function CategoryReportTab({
                             fontSize: '0.9rem',
                             borderRight: '1px solid rgba(255,255,255,0.2)',
                             letterSpacing: '0.5px',
+                            p: 1,
                           }}
                         >
                           PREGUNTA
@@ -2069,6 +2252,7 @@ export function CategoryReportTab({
                             width: '100px',
                             borderRight: '1px solid rgba(255,255,255,0.2)',
                             letterSpacing: '0.5px',
+                            p: 1,
                           }}
                         >
                           AUTOPERCEPCIÓN
@@ -2082,6 +2266,7 @@ export function CategoryReportTab({
                             width: '110px',
                             borderRight: '1px solid rgba(255,255,255,0.2)',
                             letterSpacing: '0.5px',
+                            p: 1,
                           }}
                         >
                           OBSERVADORES
@@ -2094,6 +2279,7 @@ export function CategoryReportTab({
                             fontSize: '0.9rem',
                             width: '90px',
                             letterSpacing: '0.5px',
+                            p: 1,
                           }}
                         >
                           DIFERENCIA
@@ -2102,7 +2288,7 @@ export function CategoryReportTab({
                     </TableHead>
                     <TableBody>
                       {category.questions.map((question, qIndex) => {
-                        const difference = question.leader_avg - question.collaborator_avg;
+                        const difference = question.collaborator_avg - question.leader_avg;
                         return (
                           <TableRow
                             key={qIndex}
@@ -2154,7 +2340,7 @@ export function CategoryReportTab({
                             <TableCell
                               align="center"
                               sx={{
-                                color: '#dc2626',
+                                color: palette.secondary.main,
                                 fontWeight: '600',
                                 fontSize: '0.8rem',
                                 py: 0.5,
@@ -2170,7 +2356,7 @@ export function CategoryReportTab({
                                 fontSize: '0.8rem',
                                 py: 0.5,
                                 px: 1,
-                                color: difference > 0 ? '#059669' : difference < 0 ? '#dc2626' : '#6b7280',
+                                color: difference > 0 ? palette.success.main : difference < 0 ? palette.error.main : '#6b7280',
                               }}
                             >
                               {difference > 0 ? '+' : ''}
@@ -2222,7 +2408,7 @@ export function CategoryReportTab({
                       <Typography
                         variant="h6"
                         sx={{
-                          color: '#1976d2',
+                          color: palette.primary.main,
                           fontWeight: '700',
                           fontSize: '1.2rem',
                         }}
@@ -2245,7 +2431,7 @@ export function CategoryReportTab({
                       <Typography
                         variant="h6"
                         sx={{
-                          color: '#d32f2f',
+                          color: palette.secondary.main,
                           fontWeight: '700',
                           fontSize: '1.2rem',
                         }}
@@ -2269,26 +2455,316 @@ export function CategoryReportTab({
                         variant="h6"
                         sx={{
                           color:
-                            category.questions.reduce((sum, q) => sum + (q.leader_avg - q.collaborator_avg), 0) /
+                            category.questions.reduce((sum, q) => sum + (q.collaborator_avg - q.leader_avg), 0) /
                               category.questions.length >
                             0
-                              ? '#2e7d32'
-                              : '#d32f2f',
+                              ? palette.success.main
+                              : palette.error.main,
                           fontWeight: '700',
                           fontSize: '1.2rem',
                         }}
                       >
-                        {category.questions.reduce((sum, q) => sum + (q.leader_avg - q.collaborator_avg), 0) / category.questions.length > 0
+                        {category.questions.reduce((sum, q) => sum + (q.collaborator_avg - q.leader_avg), 0) / category.questions.length > 0
                           ? '+'
                           : ''}
                         {(
-                          category.questions.reduce((sum, q) => sum + (q.leader_avg - q.collaborator_avg), 0) / category.questions.length
+                          category.questions.reduce((sum, q) => sum + (q.collaborator_avg - q.leader_avg), 0) / category.questions.length
                         ).toFixed(1)}
                       </Typography>
                     </Grid>
                   </Grid>
                 </Box>
               </Paper>
+              {hasSupervisorData && (
+                <Paper key={`${categoryIndex}-table`} sx={pageStyle} data-testid="page">
+                  {/* Encabezado compacto */}
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontSize: '20px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      textAlign: 'center',
+                      mb: 2,
+                      pb: 1,
+                      borderBottom: '2px solid #e5e7eb',
+                    }}
+                  >
+                    Detalle por Pregunta - {category.category.name} (Líder de Líder)
+                  </Typography>
+
+                  {/* Tabla detallada compacta */}
+                  <TableContainer
+                    component={Paper}
+                    variant="outlined"
+                    sx={{
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      mb: 3,
+                    }}
+                  >
+                    <Table>
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: '#0369a1' }}>
+                          <TableCell
+                            sx={{
+                              color: 'white',
+                              fontWeight: '700',
+                              fontSize: '0.9rem',
+                              width: '60px',
+                              borderRight: '1px solid rgba(255,255,255,0.2)',
+                              letterSpacing: '0.5px',
+                              p: 1,
+                            }}
+                          >
+                            No.
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              color: 'white',
+                              fontWeight: '700',
+                              fontSize: '0.9rem',
+                              borderRight: '1px solid rgba(255,255,255,0.2)',
+                              letterSpacing: '0.5px',
+                              p: 1,
+                            }}
+                          >
+                            PREGUNTA
+                          </TableCell>
+                          <TableCell
+                            align="center"
+                            sx={{
+                              color: 'white',
+                              fontWeight: '700',
+                              fontSize: '0.9rem',
+                              width: '100px',
+                              borderRight: '1px solid rgba(255,255,255,0.2)',
+                              letterSpacing: '0.5px',
+                              p: 1,
+                            }}
+                          >
+                            AUTOPERCEPCIÓN
+                          </TableCell>
+                          <TableCell
+                            align="center"
+                            sx={{
+                              color: 'white',
+                              fontWeight: '700',
+                              fontSize: '0.9rem',
+                              width: '110px',
+                              borderRight: '1px solid rgba(255,255,255,0.2)',
+                              letterSpacing: '0.5px',
+                              p: 1,
+                            }}
+                          >
+                            LÍDER DE LÍDER
+                          </TableCell>
+                          <TableCell
+                            align="center"
+                            sx={{
+                              color: 'white',
+                              fontWeight: '700',
+                              fontSize: '0.9rem',
+                              width: '90px',
+                              letterSpacing: '0.5px',
+                              p: 1,
+                            }}
+                          >
+                            DIFERENCIA
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {category.questions.map((question, qIndex) => {
+                          const difference = question.supervisor_avg - question.leader_avg;
+                          return (
+                            <TableRow
+                              key={qIndex}
+                              sx={{
+                                '&:nth-of-type(odd)': {
+                                  backgroundColor: '#f8fafc',
+                                },
+                                '&:hover': {
+                                  backgroundColor: '#e2e8f0',
+                                },
+                              }}
+                            >
+                              <TableCell
+                                sx={{
+                                  fontSize: '0.75rem',
+                                  py: 0.5,
+                                  px: 1,
+                                  fontWeight: '600',
+                                  color: '#374151',
+                                  textAlign: 'center',
+                                  minWidth: '35px',
+                                }}
+                              >
+                                {question.question_number}
+                              </TableCell>
+                              <TableCell
+                                sx={{
+                                  fontSize: '0.75rem',
+                                  py: 0.5,
+                                  px: 1.5,
+                                  lineHeight: 1.2,
+                                  color: '#374151',
+                                }}
+                              >
+                                {question.question_text}
+                              </TableCell>
+                              <TableCell
+                                align="center"
+                                sx={{
+                                  color: '#2563eb',
+                                  fontWeight: '600',
+                                  fontSize: '0.8rem',
+                                  py: 0.5,
+                                  px: 1,
+                                }}
+                              >
+                                {question.leader_avg.toFixed(1)}
+                              </TableCell>
+                              <TableCell
+                                align="center"
+                                sx={{
+                                  color: palette.error.main,
+                                  fontWeight: '600',
+                                  fontSize: '0.8rem',
+                                  py: 0.5,
+                                  px: 1,
+                                }}
+                              >
+                                {question.collaborator_avg.toFixed(1)}
+                              </TableCell>
+                              <TableCell
+                                align="center"
+                                sx={{
+                                  fontWeight: '600',
+                                  fontSize: '0.8rem',
+                                  py: 0.5,
+                                  px: 1,
+                                  color: difference > 0 ? palette.success.main : difference < 0 ? palette.error.main : '#6b7280',
+                                }}
+                              >
+                                {difference > 0 ? '+' : ''}
+                                {difference.toFixed(1)}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+
+                  {/* Resumen de la categoría simplificado */}
+                  <Box
+                    sx={{
+                      mt: 4,
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      padding: '20px',
+                      borderLeft: '4px solid #3b82f6',
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        mb: 2,
+                      }}
+                    >
+                      Resumen de la Práctica
+                    </Typography>
+
+                    <Grid container spacing={3}>
+                      <Grid size={{ xs: 4 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: '700',
+                            color: '#065f46',
+                            fontSize: '0.9rem',
+                            mb: 1,
+                          }}
+                        >
+                          Promedio Autopercepción:
+                        </Typography>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color: palette.primary.main,
+                            fontWeight: '700',
+                            fontSize: '1.2rem',
+                          }}
+                        >
+                          {(category.questions.reduce((sum, q) => sum + q.leader_avg, 0) / category.questions.length).toFixed(1)}
+                        </Typography>
+                      </Grid>
+                      <Grid size={{ xs: 4 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: '700',
+                            color: '#065f46',
+                            fontSize: '0.9rem',
+                            mb: 1,
+                          }}
+                        >
+                          Promedio Líder de Líder:
+                        </Typography>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color: palette.supervisor.main,
+                            fontWeight: '700',
+                            fontSize: '1.2rem',
+                          }}
+                        >
+                          {(category.questions.reduce((sum, q) => sum + q.collaborator_avg, 0) / category.questions.length).toFixed(1)}
+                        </Typography>
+                      </Grid>
+                      <Grid size={{ xs: 4 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: '700',
+                            color: '#065f46',
+                            fontSize: '0.9rem',
+                            mb: 1,
+                          }}
+                        >
+                          Diferencia Promedio:
+                        </Typography>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color:
+                              category.questions.reduce((sum, q) => sum + (q.collaborator_avg - q.leader_avg), 0) /
+                                category.questions.length >
+                              0
+                                ? palette.success.main
+                                : palette.error.main,
+                            fontWeight: '700',
+                            fontSize: '1.2rem',
+                          }}
+                        >
+                          {category.questions.reduce((sum, q) => sum + (q.collaborator_avg - q.leader_avg), 0) / category.questions.length >
+                          0
+                            ? '+'
+                            : ''}
+                          {(
+                            category.questions.reduce((sum, q) => sum + (q.collaborator_avg - q.leader_avg), 0) / category.questions.length
+                          ).toFixed(1)}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </Paper>
+              )}
             </>
           );
         })}

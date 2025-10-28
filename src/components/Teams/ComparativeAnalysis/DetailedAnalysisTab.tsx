@@ -5,6 +5,7 @@
 // ============================================================================
 
 import { Grid, Card, CardContent, Typography, Box, LinearProgress, Chip, Alert } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import type { ComparativeData } from './types';
 
 interface DetailedAnalysisTabProps {
@@ -14,6 +15,7 @@ interface DetailedAnalysisTabProps {
 
 export function DetailedAnalysisTab({ comparativeData }: DetailedAnalysisTabProps) {
   const hasSupervisorData = comparativeData.some(data => data.supervisors_count > 0);
+  const { palette } = useTheme();
   return (
     <Box sx={{ px: { xs: 1, md: 10, lg: 30, xl: 40 } }}>
       <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
@@ -98,14 +100,14 @@ export function DetailedAnalysisTab({ comparativeData }: DetailedAnalysisTabProp
                         />
                       </Box>
 
-                      {/* Supervisores */}
+                      {/* Líder de líderes */}
                       {hasSupervisorData && (
                         <Box sx={{ mb: 1 }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                            <Typography variant="body2" fontWeight="medium" sx={{ color: '#ff6b35' }}>
-                              🎯 Supervisores
+                            <Typography variant="body2" fontWeight="medium" sx={{ color: palette.supervisor.main }}>
+                              🎯 Líder de líder
                             </Typography>
-                            <Typography variant="body2" fontWeight="bold" sx={{ color: '#ff6b35' }}>
+                            <Typography variant="body2" fontWeight="bold" sx={{ color: palette.supervisor.main }}>
                               {data.supervisors_avg.toFixed(1)}/{maxValue}
                             </Typography>
                           </Box>
@@ -115,9 +117,9 @@ export function DetailedAnalysisTab({ comparativeData }: DetailedAnalysisTabProp
                             sx={{
                               height: 8,
                               borderRadius: 4,
-                              backgroundColor: '#fff4f1',
+                              backgroundColor: palette.supervisor.light,
                               '& .MuiLinearProgress-bar': {
-                                backgroundColor: '#ff6b35',
+                                backgroundColor: palette.supervisor.main,
                                 borderRadius: 4,
                               },
                             }}

@@ -61,6 +61,12 @@ const statusColors = {
         main: '#2196f3',
         dark: '#1976d2',
     },
+    // Color específico para el rol "supervisor" (jerarquía por encima del líder/colaborador)
+    supervisor: {
+        light: '#fff4f1',
+        main: '#ff6b35',
+        dark: '#e64a19',
+    },
 }
 
 // ============================================================================
