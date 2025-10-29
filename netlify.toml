@@ -28,9 +28,9 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-  # Permitimos carga de scripts de Google reCAPTCHA (v3 / enterprise) y recursos asociados
   # Permitimos carga de scripts y frames necesarias para reCAPTCHA v3/Enterprise
-  Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com; script-src-elem 'self' https://www.google.com https://www.gstatic.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google.com; frame-src 'self' https://www.google.com https://www.gstatic.com https://www.recaptcha.net; frame-src-elem 'self' https://www.google.com https://www.gstatic.com https://www.recaptcha.net"
+  # Nota: eliminamos directivas no reconocidas (p.ej. frame-src-elem) para evitar warnings en consola
+  Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google.com; frame-src 'self' https://www.google.com https://www.gstatic.com https://www.recaptcha.net"
 
 # Cache para assets estáticos
 [[headers]]
