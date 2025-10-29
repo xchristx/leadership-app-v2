@@ -61,7 +61,7 @@ const GeneralGraphicAnalysis = ({ pageStyle, leadershipPractices, hasSupervisorD
                   practica: practice.category.length > 20 ? practice.category.substring(0, 17) + '...' : practice.category,
                   AUTO: Number(practice.auto_total.toFixed(1)),
                   OBSERVADORES: Number(practice.otros_total.toFixed(1)),
-                  SUPERVISORES: Number(((practice as { supervisor_total?: number }).supervisor_total ?? 0).toFixed(1)),
+                  DIRECTOR: Number(((practice as { supervisor_total?: number }).supervisor_total ?? 0).toFixed(1)),
                   index: index + 1,
                 }))}
                 margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
@@ -126,7 +126,7 @@ const GeneralGraphicAnalysis = ({ pageStyle, leadershipPractices, hasSupervisorD
                 {hasSupervisorData && (
                   <Line
                     type="monotone"
-                    dataKey="SUPERVISORES"
+                    dataKey="DIRECTOR"
                     stroke={palette.supervisor.main}
                     strokeWidth={4}
                     dot={{ fill: palette.supervisor.main, strokeWidth: 3, r: 3 }}
@@ -178,7 +178,7 @@ const GeneralGraphicAnalysis = ({ pageStyle, leadershipPractices, hasSupervisorD
             <>
               <span style={{ color: palette.primary.main, fontWeight: '600' }}> Las líneas azules (autopercepción),</span>
               <span style={{ color: palette.secondary.main, fontWeight: '600' }}> moradas (observadores)</span>
-              <span style={{ color: palette.supervisor.main, fontWeight: '600' }}> y naranjas (líder de líder)</span> permiten identificar
+              <span style={{ color: palette.supervisor.main, fontWeight: '600' }}> y naranjas (DIRECTOR)</span> permiten identificar
               rápidamente:
             </>
           ) : (

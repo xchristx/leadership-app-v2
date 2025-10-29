@@ -47,7 +47,7 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                         <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>AUTO</th>
                         <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>COLABORADORES</th>
                         {hasSupervisorData ? (
-                          <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>LÍDER DE LÍDER</th>
+                          <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>DIRECTOR</th>
                         ) : (
                           <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>DIFERENCIA</th>
                         )}
@@ -109,14 +109,14 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                       if (hasSupervisorData) {
                         return {
                           ...base,
-                          SUPERVISORES: Number((cat.supervisor_total / numQuestions).toFixed(1)),
+                          DIRECTOR: Number((cat.supervisor_total / numQuestions).toFixed(1)),
                         };
                       }
                       return base;
                     })}
                     height={300}
                     xKey="name"
-                    yKeys={hasSupervisorData ? ['AUTO', 'COLABORADORES', 'LÍDER DE  LÍDER'] : ['AUTO', 'COLABORADORES']}
+                    yKeys={hasSupervisorData ? ['AUTO', 'COLABORADORES', 'DIRECTOR'] : ['AUTO', 'COLABORADORES']}
                     colors={
                       hasSupervisorData
                         ? [palette.primary.main, palette.secondary.main, palette.supervisor.main]
@@ -145,7 +145,7 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                           <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, minWidth: '300px' }}>PREGUNTA</th>
                           <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>AUTO</th>
                           <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>COLABORADORES</th>
-                          {hasSupervisorData && <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>LÍDER DE LÍDER</th>}
+                          {hasSupervisorData && <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>DIRECTOR</th>}
                           {/* Columnas dinámicas para cada colaborador */}
                           {category.questions.length > 0 &&
                             Array.from({ length: Math.max(...category.questions.map(q => q.collaborator_responses.length)) }, (_, i) => (
@@ -199,7 +199,7 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                                   {question.collaborator_responses[i] ? question.collaborator_responses[i].toFixed(1) : '-'}
                                 </td>
                               ))}
-                              {/* Columnas de respuestas individuales de supervisores */}
+                              {/* Columnas de respuestas individuales de DIRECTOR */}
                               {/* {Array.from({ length: maxSupervisors }, (_, i) => (
                                 <td
                                   key={`sup-resp-${i}`}
@@ -231,14 +231,14 @@ export function CategoryAnalysisTab({ categoryData, categorySummary = [], handle
                       if (hasSupervisorData) {
                         return {
                           ...base,
-                          SUPERVISORES: q.supervisor_avg,
+                          DIRECTOR: q.supervisor_avg,
                         };
                       }
                       return base;
                     })}
                     height={250}
                     xKey="name"
-                    yKeys={hasSupervisorData ? ['AUTO', 'COLABORADORES', 'SUPERVISORES'] : ['AUTO', 'COLABORADORES']}
+                    yKeys={hasSupervisorData ? ['AUTO', 'COLABORADORES', 'DIRECTOR'] : ['AUTO', 'COLABORADORES']}
                     colors={[palette.primary.main, palette.secondary.main, palette.supervisor.main]}
                   />
                 </CardContent>

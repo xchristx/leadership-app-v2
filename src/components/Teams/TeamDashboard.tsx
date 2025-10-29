@@ -615,7 +615,7 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
                                       {evaluation.evaluator_role === 'leader'
                                         ? 'Líder'
                                         : evaluation.evaluator_role === 'supervisor'
-                                        ? 'Líder de líder'
+                                        ? 'DIRECTOR'
                                         : 'Colaborador'}
                                     </Typography>
                                     <Typography
@@ -785,7 +785,7 @@ export function TeamDashboard({ teamId }: TeamDashboardProps) {
                                   {evaluation.evaluator_role === 'leader'
                                     ? 'Líder'
                                     : evaluation.evaluator_role === 'supervisor'
-                                    ? 'Líder de líder'
+                                    ? 'DIRECTOR'
                                     : 'Colaborador'}
                                 </Typography>
                               </Grid>

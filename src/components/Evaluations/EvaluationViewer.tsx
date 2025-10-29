@@ -409,7 +409,7 @@ export function EvaluationViewer({ open, evaluationId, onClose }: EvaluationView
                           {data.evaluation.evaluator_role === 'leader'
                             ? 'Líder'
                             : data.evaluation.evaluator_role === 'supervisor'
-                            ? 'Líder de líder'
+                            ? 'DIRECTOR'
                             : 'Colaborador'}
                         </Typography>
                       </Box>

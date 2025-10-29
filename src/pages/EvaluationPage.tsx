@@ -6,7 +6,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Box, Card, CardContent, Alert, CircularProgress, Container, useMediaQuery } from '@mui/material';
+import { Box, Card, CardContent, Alert, CircularProgress, Container, useMediaQuery, Snackbar } from '@mui/material';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { supabase } from '../lib/supabase';
 import {
@@ -30,6 +31,8 @@ interface EvaluationPageState {
     id: string;
     title: string;
     description?: string;
+    title_collaborator: string;
+    description_collaborator?: string;
   } | null;
   questions: Question[];
   isLoading: boolean;
@@ -64,23 +67,60 @@ export function EvaluationPage() {
     existingEvaluation: null,
   });
 
-  const [evaluatorInfo, setEvaluatorInfo] = useState<EvaluatorInfo>({
-    name: '',
-    email: '',
-    additionalInfo: '',
-  });
-
   const [responses, setResponses] = useState<Record<string, string | number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [evaluationStartTime] = useState<Date>(new Date()); // Para trackear tiempo de evaluación
+  const [hasLocalSubmission, setHasLocalSubmission] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'info' | 'warning' | 'error'>('info');
+
+  const showSnackbar = (message: string, severity: 'success' | 'info' | 'warning' | 'error' = 'info') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
+  const handleCloseSnackbar = (_?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') return;
+    setSnackbarOpen(false);
+  };
 
   const isMobile = useMediaQuery('(max-width:600px)');
+
+  // ReCAPTCHA site key from environment (Vite uses import.meta.env)
+  const RECAPTCHA_SITE_KEY = (import.meta as unknown as { env?: { VITE_RECAPTCHA_SITE_KEY?: string } }).env?.VITE_RECAPTCHA_SITE_KEY || '';
+
+  // Load reCAPTCHA v3 script for anonymous flows (we will execute grecaptcha.execute on submit)
+  useEffect(() => {
+    const isAnonFlow = state.invitation && state.invitation.role_type !== 'leader' && !state.configuration?.require_evaluator_info;
+    if (!RECAPTCHA_SITE_KEY || !isAnonFlow) return;
+
+    const scriptId = 'recaptcha-v3-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      // reCAPTCHA v3 loads with render=site_key
+      script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        // grecaptcha should be available to execute when submitting
+      };
+      document.body.appendChild(script);
+    }
+  }, [RECAPTCHA_SITE_KEY, state.invitation, state.configuration]);
 
   // Función helper para validar email
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email.trim());
   };
+  const [evaluatorInfo, setEvaluatorInfo] = useState<EvaluatorInfo>({
+    name: state.team?.leader_name || '',
+    email: state.team?.leader_email || '',
+    additionalInfo: '',
+  });
 
   const loadInvitationData = useCallback(async () => {
     try {
@@ -134,7 +174,7 @@ export function EvaluationPage() {
       // 4. Obtener template información
       const { data: template, error: templateError } = await supabase
         .from('question_templates')
-        .select('id, title, description')
+        .select('id, title, description, title_collaborator, description_collaborator')
         .eq('id', project.template_id!)
         .single();
 
@@ -168,6 +208,24 @@ export function EvaluationPage() {
       // Determinar si se debe pedir info personal
       const isLeader = invitation.role_type === 'leader';
       const mustAskPersonalInfo = isLeader || configuration?.require_evaluator_info;
+      // comprobar si en este navegador ya se envió la evaluación (localStorage)
+      try {
+        const localKey = `anon_evaluation_submitted:${invitation.id}`;
+        // Solo consideramos la marca local si no se requiere info del evaluador (anónimo)
+        if (!mustAskPersonalInfo) {
+          setHasLocalSubmission(!!localStorage.getItem(localKey));
+        } else {
+          setHasLocalSubmission(false);
+        }
+      } catch {
+        // localStorage puede no estar disponible en algunos entornos, ignorar
+        setHasLocalSubmission(false);
+      }
+      setEvaluatorInfo({
+        name: isLeader ? team.leader_name || '' : '',
+        email: isLeader ? team.leader_email || '' : '',
+        additionalInfo: '',
+      });
       setState({
         invitation: invitation as TeamInvitation,
         team: team as Team,
@@ -178,6 +236,8 @@ export function EvaluationPage() {
               id: template.id,
               title: template.title,
               description: template.description || undefined,
+              title_collaborator: template.title_collaborator || template.title,
+              description_collaborator: template.description_collaborator || template.description || undefined,
             }
           : null,
         questions: (questions || []) as Question[],
@@ -214,13 +274,13 @@ export function EvaluationPage() {
 
     // Si es líder o se requiere info, validar campos
     if (!evaluatorInfo.name.trim() || !evaluatorInfo.email.trim()) {
-      alert('Por favor completa tu nombre y email');
+      showSnackbar('Por favor completa tu nombre y email', 'warning');
       return;
     }
 
     // Validación de formato de email
     if (!isValidEmail(evaluatorInfo.email)) {
-      alert('Por favor ingresa un email válido (ejemplo: usuario@dominio.com)');
+      showSnackbar('Por favor ingresa un email válido (ejemplo: usuario@dominio.com)', 'warning');
       return;
     }
 
@@ -252,7 +312,7 @@ export function EvaluationPage() {
             setState(prev => ({ ...prev, step: 'evaluation', existingEvaluation: null }));
           }
         } else {
-          alert('Ya has completado una evaluación para este equipo y no está permitido editarla.');
+          showSnackbar('Ya has completado una evaluación para este equipo y no está permitido editarla.');
           return;
         }
       } else {
@@ -261,7 +321,7 @@ export function EvaluationPage() {
       }
     } catch (error) {
       console.error('Error al verificar email:', error);
-      alert('Error al verificar la información. Por favor intenta de nuevo.');
+      showSnackbar('Error al verificar la información. Por favor intenta de nuevo.', 'error');
     }
   };
 
@@ -281,12 +341,12 @@ export function EvaluationPage() {
       const mustAskPersonalInfoSubmit = isLeaderSubmit || state.configuration?.require_evaluator_info;
       if (mustAskPersonalInfoSubmit) {
         if (!isValidEmail(evaluatorInfo.email)) {
-          alert('Por favor ingresa un email válido antes de enviar la evaluación');
+          showSnackbar('Por favor ingresa un email válido antes de enviar la evaluación', 'warning');
           return;
         }
         const emailValidation = validateEmail(evaluatorInfo.email);
         if (!emailValidation.isValid) {
-          alert(emailValidation.message);
+          showSnackbar(emailValidation.message || 'Formato de email inválido', 'warning');
           return;
         }
       }
@@ -296,7 +356,10 @@ export function EvaluationPage() {
       const answeredQuestions = Object.keys(responses).length;
 
       if (answeredQuestions < totalQuestions) {
-        alert(`Por favor responde todas las preguntas. Has respondido ${answeredQuestions} de ${totalQuestions} preguntas.`);
+        showSnackbar(
+          `Por favor responde todas las preguntas. Has respondido ${answeredQuestions} de ${totalQuestions} preguntas.`,
+          'warning'
+        );
         return;
       }
 
@@ -312,13 +375,13 @@ export function EvaluationPage() {
       });
 
       if (emptyResponses.length > 0) {
-        alert('Por favor completa todas las respuestas. Algunas preguntas tienen respuestas vacías.');
+        showSnackbar('Por favor completa todas las respuestas. Algunas preguntas tienen respuestas vacías.', 'warning');
         return;
       }
 
       const responsesValidation = validateResponses(responses, totalQuestions);
       if (!responsesValidation.isValid) {
-        alert(responsesValidation.message);
+        showSnackbar(responsesValidation.message || 'Validación de respuestas fallida', 'warning');
         return;
       }
 
@@ -326,6 +389,37 @@ export function EvaluationPage() {
       const deviceInfo = isMobile ? 'mobile' : 'desktop';
 
       const isNewEvaluation = !state.existingEvaluation?.evaluation;
+
+      // Key local para evitar envíos repetidos por navegador en modo anónimo
+      const localAnonKey = state.invitation ? `anon_evaluation_submitted:${state.invitation.id}` : null;
+
+      // token temporal para enviar al servidor junto con la evaluación (se obtiene con grecaptcha.execute)
+      let recaptchaToken: string | null = null;
+      const isAnonymousSubmission = !(state.invitation?.role_type === 'leader') && !state.configuration?.require_evaluator_info;
+      // If reCAPTCHA v3 is configured and this is an anonymous submission, execute grecaptcha to obtain a token
+      if (RECAPTCHA_SITE_KEY && isAnonymousSubmission) {
+        try {
+          if ((window as any).grecaptcha && (window as any).grecaptcha.execute) {
+            const token = await (window as any).grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'submit' });
+            recaptchaToken = token;
+          } else {
+            showSnackbar('El captcha no está listo. Por favor espera un momento e intenta de nuevo.', 'warning');
+            setIsSubmitting(false);
+            return;
+          }
+        } catch (e) {
+          console.error('Error ejecutando reCAPTCHA v3:', e);
+          showSnackbar('Error al validar captcha. Por favor intenta de nuevo.', 'error');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      // Si es envío anónimo, bloquear si ya se envió desde este navegador (localStorage)
+      if (isAnonymousSubmission && localAnonKey && localStorage.getItem(localAnonKey)) {
+        showSnackbar('Ya has enviado esta evaluación.', 'info');
+        setIsSubmitting(false);
+        return;
+      }
 
       // Determinar datos a guardar según el rol y configuración
       const isLeaderSave = state.invitation?.role_type === 'leader';
@@ -344,12 +438,31 @@ export function EvaluationPage() {
           {
             name: nameToSave,
             email: emailToSave,
-            additionalInfo: evaluatorInfo.additionalInfo,
+            // incluir token de captcha en additionalInfo como JSON para que el servicio lo persista
+            additionalInfo: JSON.stringify({ additional_info: evaluatorInfo.additionalInfo || '', recaptcha_token: recaptchaToken }),
           },
           evaluationStartTime,
           deviceInfo
         );
+        // Si fue anónimo y se actualizó correctamente, marcar envío local
+        if (isAnonymousSubmission && localAnonKey) {
+          try {
+            localStorage.setItem(localAnonKey, new Date().toISOString());
+          } catch (e) {
+            console.warn('No se pudo guardar marca local de envío anónimo:', e);
+          }
+        }
       } else {
+        console.log('Payload para crear evaluación:', {
+          team_id: state.team!.id,
+          invitation_id: state.invitation!.id,
+          evaluator_name: nameToSave,
+          evaluator_email: emailToSave,
+          evaluator_role: state.invitation!.role_type,
+          template_id: state.template!.id,
+          project_id: state.project!.id,
+          responsesCount: Object.keys(responses).length,
+        });
         await createEvaluationWithJson(
           {
             team_id: state.team!.id,
@@ -359,6 +472,7 @@ export function EvaluationPage() {
             evaluator_role: state.invitation!.role_type,
             evaluator_metadata: {
               additional_info: evaluatorInfo.additionalInfo,
+              recaptcha_token: recaptchaToken,
             },
             template_id: state.template!.id,
             project_id: state.project!.id,
@@ -367,6 +481,15 @@ export function EvaluationPage() {
           evaluationStartTime,
           deviceInfo
         );
+        // Marcar en localStorage que ya se envió esta invitación desde este navegador (si es anónimo)
+        if (isAnonymousSubmission && localAnonKey) {
+          try {
+            localStorage.setItem(localAnonKey, new Date().toISOString());
+          } catch (e) {
+            console.warn('No se pudo guardar marca local de envío anónimo:', e);
+          }
+        }
+        // limpiar token en memoria (local variable)
       }
 
       // Actualizar contador de usos solo para nuevas evaluaciones
@@ -419,7 +542,7 @@ export function EvaluationPage() {
       setResponses({});
     } catch (error) {
       console.error('Error al enviar evaluación:', error);
-      alert(error instanceof Error ? error.message : 'Error al enviar evaluación');
+      showSnackbar(error instanceof Error ? error.message : 'Error al enviar evaluación', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -501,9 +624,15 @@ export function EvaluationPage() {
     <Container maxWidth="md" sx={{ py: 4, px: { xs: 1, md: 4 } }}>
       {/* Header Premium */}
       <EvaluationHeader
-        templateTitle={state.template?.title || 'Evaluación de Liderazgo'}
+        templateTitle={
+          state?.invitation?.role_type === 'leader'
+            ? state.template?.title || 'Evaluación de Liderazgo'
+            : state.template?.title_collaborator || 'Evaluación de Liderazgo'
+        }
         team={state.team ?? undefined}
-        templateDescription={state.template?.description}
+        templateDescription={
+          state?.invitation?.role_type === 'leader' ? state.template?.description : state.template?.description_collaborator || ''
+        }
         showDescription={state.step === 'evaluation'}
         activeStep={activeStep}
         steps={steps}
@@ -511,7 +640,31 @@ export function EvaluationPage() {
 
       {/* Contenido principal */}
       <Card elevation={3}>
-        <CardContent sx={{ py: { xs: 3, md: 4 }, px: { xs: 1, md: 4 } }}>{renderCurrentStep()}</CardContent>
+        <CardContent sx={{ py: { xs: 3, md: 4 }, px: { xs: 1, md: 4 } }}>
+          {hasLocalSubmission &&
+          state.invitation &&
+          state.invitation.role_type !== 'leader' &&
+          !state.configuration?.require_evaluator_info ? (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Ya has enviado esta evaluación.
+            </Alert>
+          ) : (
+            <>
+              {/* reCAPTCHA v3 no requiere un contenedor visual; se ejecuta en el submit */}
+              {renderCurrentStep()}
+            </>
+          )}
+          <Snackbar
+            open={snackbarOpen}
+            autoHideDuration={6000}
+            onClose={handleCloseSnackbar}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
+              {snackbarMessage}
+            </Alert>
+          </Snackbar>
+        </CardContent>
       </Card>
     </Container>
   );

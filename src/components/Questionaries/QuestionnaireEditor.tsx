@@ -97,8 +97,6 @@ export function QuestionnaireEditor({ open, templateId, onClose, onSaved }: Ques
   };
 
   const convertToFormData = (template: QuestionTemplate, questions: Question[]): QuestionnaireFormData => {
-    console.log({ template, questions });
-
     // Extraer categorías únicas de las preguntas
     const uniqueCategories = new Map<string, { id: string; name: string; description?: string; color?: string; order_index: number }>();
     let categoryIndex = 0;
@@ -136,9 +134,9 @@ export function QuestionnaireEditor({ open, templateId, onClose, onSaved }: Ques
 
     return {
       title_leader: template.title || '',
-      title_collaborator: template.title || '',
+      title_collaborator: template.title_collaborator || '',
       description_leader: template.description || '',
-      description_collaborator: template.description || '',
+      description_collaborator: template.description_collaborator || '',
       version_type: 'both' as const,
       is_active: template.is_active || false,
       use_categories: questions.some(q => q.category),

@@ -26,8 +26,8 @@ export function EvaluatorInfoStep({
   const theme = useTheme();
   const [emailError, setEmailError] = useState('');
   const infoMessage = isLeader
-    ? 'Este cuestionario permite identificar los comportamientos relacionados a las prácticas de liderazgo, promoviendo una reflexión para su desarrollo directivo y el mejoramiento de la efectividad del equipo.'
-    : 'Este cuestionario permite identificar los comportamientos relacionados a las prácticas de liderazgo de su línea de supervisión para promover su desarrollo directivo y el mejoramiento de la efectividad del equipo.';
+    ? 'Este cuestionario permite identificar los comportamientos relacionados a las prácticas de liderazgo, para promover  el desarrollo directivo y el mejoramiento de la efectividad del equipo.'
+    : 'Este cuestionario permite identificar los comportamientos relacionados a las prácticas de liderazgo, para promover  el desarrollo directivo y el mejoramiento de la efectividad del equipo.';
 
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

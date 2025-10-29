@@ -29,6 +29,8 @@ export const questionnaireService = {
             const templateData: QuestionTemplateInsert = {
                 title: formData.title_leader,
                 description: formData.description_leader || formData.description_collaborator || null,
+                title_collaborator: formData.title_collaborator || null,
+                description_collaborator: formData.description_collaborator || null,
                 organization_id: formData.organizationId,
                 is_active: formData.is_active,
                 categories: (formData.categories as unknown as Json) || null
@@ -201,6 +203,8 @@ export const questionnaireService = {
             const templateUpdates: Partial<QuestionTemplateInsert> = {
                 title: formData.title_leader,
                 description: formData.description_leader || formData.description_collaborator || null,
+                title_collaborator: formData.title_collaborator || null,
+                description_collaborator: formData.description_collaborator || null,
                 categories: (formData.categories as unknown as Json) || null
             };
 
@@ -291,6 +295,8 @@ export const questionnaireService = {
             const templateUpdates: Partial<QuestionTemplateInsert> = {
                 title: formData.title_leader,
                 description: formData.description_leader || formData.description_collaborator || null,
+                title_collaborator: formData.title_collaborator || null,
+                description_collaborator: formData.description_collaborator || null,
                 categories: (formData.categories as unknown as Json) || null
             };
 
@@ -485,6 +491,8 @@ export const questionnaireService = {
             const newTemplateData: QuestionTemplateInsert = {
                 title: formData.title_leader + (formData.title_leader.includes('(v') ? '' : versionSuffix),
                 description: formData.description_leader || formData.description_collaborator || null,
+                title_collaborator: formData.title_collaborator || null,
+                description_collaborator: formData.description_collaborator || null,
                 organization_id: formData.organizationId,
                 is_active: true,
                 categories: (formData.categories as unknown as Json) || null

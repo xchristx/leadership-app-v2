@@ -17,6 +17,7 @@ import {
   LinearProgress,
   Tooltip,
   Badge,
+  Button,
 } from '@mui/material';
 import {
   MoreVert as MoreVertIcon,
@@ -235,7 +236,9 @@ export function TeamCard({ team, onEdit, onDelete, onView, onManageInvitations, 
             }}
           />
         </Box>
-
+        <Button sx={{ mb: 1 }} variant="outlined">
+          Ver
+        </Button>
         {/* Información adicional */}
         <Box sx={{ mt: 'auto', pt: 2, borderTop: 1, borderColor: 'divider' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

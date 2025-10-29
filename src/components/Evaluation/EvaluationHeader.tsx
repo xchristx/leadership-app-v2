@@ -21,7 +21,6 @@ export function EvaluationHeader({
   steps,
 }: EvaluationHeaderProps) {
   const theme = useTheme();
-
   return (
     <Paper
       elevation={0}

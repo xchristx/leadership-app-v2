@@ -20,9 +20,18 @@ interface ExecutiveSumaryProps {
   teamName: string;
   comparativeData: ComparativeData[];
   leadershipPractices: CategorySummary[];
+  leaderName?: string;
+  hasSupervisorData?: boolean;
 }
 
-const ExecutiveSumary = ({ pageStyle, teamName, comparativeData, leadershipPractices }: ExecutiveSumaryProps) => {
+const ExecutiveSumary = ({
+  pageStyle,
+  teamName,
+  comparativeData,
+  leadershipPractices,
+  leaderName,
+  hasSupervisorData,
+}: ExecutiveSumaryProps) => {
   const { palette } = useTheme();
 
   // Subcomponent to render a CardMedia for a practice image (PNG -> JPG fallback),
@@ -108,18 +117,21 @@ const ExecutiveSumary = ({ pageStyle, teamName, comparativeData, leadershipPract
             <Typography variant="body2" sx={{ fontSize: '0.9rem', mb: 1, color: '#252525' }}>
               <strong style={{ color: '#1e3a8a' }}>Equipo:</strong> {teamName}
             </Typography>
+
             <Typography variant="body2" sx={{ fontSize: '0.9rem', color: '#252525' }}>
               <strong style={{ color: '#1e3a8a' }}>Período:</strong>{' '}
               {new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
             </Typography>
           </Grid>
           <Grid size={{ xs: 6 }}>
-            <Typography variant="body2" sx={{ fontSize: '0.9rem', mb: 1, color: '#252525' }}>
+            {leaderName && (
+              <Typography variant="body2" sx={{ fontSize: '0.9rem', mb: 1 }}>
+                <strong style={{ color: '#1e3a8a' }}>Líder:</strong> {leaderName}
+              </Typography>
+            )}
+            <Typography variant="body2" sx={{ fontSize: '0.9rem', color: '#252525' }}>
               <strong style={{ color: '#1e3a8a' }}>Total preguntas:</strong> {comparativeData.length}
             </Typography>
-            {/* <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
-                <strong style={{ color: '#1e3a8a' }}>Evaluadores:</strong> Autopercepción + Observadores
-              </Typography> */}
           </Grid>
         </Grid>
       </Box>
@@ -185,26 +197,43 @@ const ExecutiveSumary = ({ pageStyle, teamName, comparativeData, leadershipPract
                 >
                   Observadores
                 </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{
-                    color: '#374151',
-                    fontWeight: '600',
-                    fontSize: '0.85rem',
-                    borderBottom: '2px solid #e5e7eb',
-                    py: 1.5,
-                    minWidth: '90px',
-                  }}
-                >
-                  Diferencia
-                </TableCell>
+                {hasSupervisorData && (
+                  <TableCell
+                    align="center"
+                    sx={{
+                      color: '#374151',
+                      fontWeight: '600',
+                      fontSize: '0.85rem',
+                      borderBottom: '2px solid #e5e7eb',
+                      py: 1.5,
+                      minWidth: '100px',
+                    }}
+                  >
+                    Director
+                  </TableCell>
+                )}
+
+                {hasSupervisorData && (
+                  <TableCell
+                    align="center"
+                    sx={{
+                      color: '#374151',
+                      fontWeight: '600',
+                      fontSize: '0.85rem',
+                      borderBottom: '2px solid #e5e7eb',
+                      py: 1.5,
+                      minWidth: '90px',
+                    }}
+                  >
+                    Promedio (Director, Observadores)
+                  </TableCell>
+                )}
               </TableRow>
             </TableHead>
             <TableBody>
               {leadershipPractices.length > 0 ? (
                 leadershipPractices.map((practice, index) => {
                   const difference = practice.otros_total - practice.auto_total;
-                  console.log(practice);
                   return (
                     <TableRow
                       key={index}
@@ -243,7 +272,7 @@ const ExecutiveSumary = ({ pageStyle, teamName, comparativeData, leadershipPract
                           padding: '12px 8px',
                         }}
                       >
-                        {practice.auto_total.toFixed(1)}
+                        {practice.auto_total}
                       </TableCell>
                       <TableCell
                         align="center"
@@ -256,27 +285,48 @@ const ExecutiveSumary = ({ pageStyle, teamName, comparativeData, leadershipPract
                           padding: '12px 8px',
                         }}
                       >
-                        {practice.otros_total.toFixed(1)}
+                        {practice.otros_total}
                       </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{
-                          fontWeight: '700',
-                          fontSize: '1rem',
-                          color: difference > 0 ? palette.success.main : difference < 0 ? palette.error.main : '#1e3a8a',
-                          backgroundColor:
-                            difference > 0
-                              ? 'rgba(46, 125, 50, 0.1)'
-                              : difference < 0
-                              ? 'rgba(211, 47, 47, 0.1)'
-                              : 'rgba(30, 58, 138, 0.05)',
-                          padding: '12px 8px',
-                          borderRadius: difference !== 0 ? '4px' : 'inherit',
-                        }}
-                      >
-                        {difference > 0 ? '+' : ''}
-                        {difference.toFixed(1)}
-                      </TableCell>
+                      {hasSupervisorData && (
+                        <TableCell
+                          align="center"
+                          sx={{
+                            fontWeight: '700',
+                            fontSize: '1rem',
+                            color: palette.supervisor.main,
+                            backgroundColor:
+                              difference > 0
+                                ? 'rgba(46, 125, 50, 0.1)'
+                                : difference < 0
+                                ? 'rgba(211, 47, 47, 0.1)'
+                                : 'rgba(30, 58, 138, 0.05)',
+                            padding: '12px 8px',
+                            borderRadius: difference !== 0 ? '4px' : 'inherit',
+                          }}
+                        >
+                          {practice.supervisor_total}
+                        </TableCell>
+                      )}
+                      {hasSupervisorData && (
+                        <TableCell
+                          align="center"
+                          sx={{
+                            fontWeight: '700',
+                            fontSize: '1rem',
+                            color: palette.supervisor.main,
+                            backgroundColor:
+                              difference > 0
+                                ? 'rgba(46, 125, 50, 0.1)'
+                                : difference < 0
+                                ? 'rgba(211, 47, 47, 0.1)'
+                                : 'rgba(30, 58, 138, 0.05)',
+                            padding: '12px 8px',
+                            borderRadius: difference !== 0 ? '4px' : 'inherit',
+                          }}
+                        >
+                          {((practice.supervisor_total + practice.otros_total) / 2).toFixed(1)}
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })
@@ -332,12 +382,10 @@ const ExecutiveSumary = ({ pageStyle, teamName, comparativeData, leadershipPract
             color: '#6b7280',
           }}
         >
-          Este cuadro presenta la comparación entre la <strong>autopercepción del líder</strong> y la{' '}
-          <strong>percepción de sus colaboradores</strong> en las cinco prácticas fundamentales del liderazgo. Las{' '}
-          <span style={{ color: palette.success.main, fontWeight: '600' }}>diferencias negativas</span> indican que el líder se percibe con
-          mayor competencia, mientras que las <span style={{ color: palette.error.main, fontWeight: '600' }}>diferencias positivas</span>{' '}
-          sugieren que los colaboradores ven áreas con oportunidades de mejora. Esta información es crucial para identificar brechas en la
-          percepción y enfocar los esfuerzos de desarrollo del liderazgo.
+          Las diferencias entre la autopercepción del <strong>líder</strong> y la percepción de sus colaboradores constituyen una
+          oportunidad para el desarrollo del liderazgo. Analizar estas brechas permite identificar fortalezas, reconocer áreas de mejora y
+          ajustar las prácticas de liderazgo para lograr una mayor coherencia entre la intención y el impacto. Este proceso favorece el
+          crecimiento personal, mejora la comunicación con el equipo y contribuye a un liderazgo más efectivo y consciente.
         </Typography>
       </Box>
     </Paper>

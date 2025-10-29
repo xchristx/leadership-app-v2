@@ -156,7 +156,7 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                               : q.question_number + '. ' + q.question_text,
                           AUTO: q.leader_avg,
                           OBSERVADORES: q.collaborator_avg.toFixed(1),
-                          SUPERVISORES: q.supervisor_avg,
+                          DIRECTOR: q.supervisor_avg,
                         }))}
                         layout="vertical"
                         margin={{ top: 20, right: 40, left: 10, bottom: 20 }}
@@ -190,9 +190,9 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                         />
                         {hasSupervisorData && (
                           <Bar
-                            dataKey="SUPERVISORES"
+                            dataKey="DIRECTOR"
                             fill={palette.supervisor.main}
-                            name="LÍDER DE LÍDER"
+                            name="DIRECTOR"
                             label={{ position: 'right', fontSize: 10, fill: palette.supervisor.main, fontWeight: '600' }}
                             barSize={hasSupervisorData ? 12 : 20}
                           />
@@ -244,7 +244,7 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                   Este gráfico muestra la comparación entre la <strong>autopercepción del líder</strong>{' '}
                   {hasSupervisorData && (
                     <>
-                      , la <strong>percepción del líder de líder</strong>
+                      , la <strong>percepción del DIRECTOR</strong>
                     </>
                   )}{' '}
                   y la <strong>percepción de los colaboradores</strong> para cada pregunta específica de la práctica{' '}
@@ -346,24 +346,40 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                       >
                         OBSERVADORES
                       </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{
-                          color: 'white',
-                          fontWeight: '700',
-                          fontSize: '0.9rem',
-                          width: '90px',
-                          letterSpacing: '0.5px',
-                          p: 1,
-                        }}
-                      >
-                        DIFERENCIA
-                      </TableCell>
+                      {hasSupervisorData && (
+                        <TableCell
+                          align="center"
+                          sx={{
+                            color: 'white',
+                            fontWeight: '700',
+                            fontSize: '0.9rem',
+                            width: '90px',
+                            letterSpacing: '0.5px',
+                            p: 1,
+                          }}
+                        >
+                          DIRECTOR
+                        </TableCell>
+                      )}
+                      {/* {hasSupervisorData && (
+                        <TableCell
+                          align="center"
+                          sx={{
+                            color: 'white',
+                            fontWeight: '700',
+                            fontSize: '0.9rem',
+                            width: '90px',
+                            letterSpacing: '0.5px',
+                            p: 1,
+                          }}
+                        >
+                          Promedio (DIRECTOR, Observadores)
+                        </TableCell>
+                      )} */}
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {category.questions.map((question, qIndex) => {
-                      const difference = question.collaborator_avg - question.leader_avg;
                       return (
                         <TableRow
                           key={qIndex}
@@ -410,7 +426,7 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                               px: 1,
                             }}
                           >
-                            {question.leader_avg.toFixed(1)}
+                            {question.leader_avg}
                           </TableCell>
                           <TableCell
                             align="center"
@@ -424,19 +440,34 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                           >
                             {question.collaborator_avg.toFixed(1)}
                           </TableCell>
-                          <TableCell
-                            align="center"
-                            sx={{
-                              fontWeight: '600',
-                              fontSize: '0.8rem',
-                              py: 0.5,
-                              px: 1,
-                              color: difference > 0 ? palette.success.main : difference < 0 ? palette.error.main : '#6b7280',
-                            }}
-                          >
-                            {difference > 0 ? '+' : ''}
-                            {difference.toFixed(1)}
-                          </TableCell>
+                          {hasSupervisorData && (
+                            <TableCell
+                              align="center"
+                              sx={{
+                                fontWeight: '600',
+                                fontSize: '0.8rem',
+                                py: 0.5,
+                                px: 1,
+                                color: palette.supervisor.main,
+                              }}
+                            >
+                              {question.supervisor_avg}
+                            </TableCell>
+                          )}
+                          {/* {hasSupervisorData && (
+                            <TableCell
+                              align="center"
+                              sx={{
+                                fontWeight: '600',
+                                fontSize: '0.8rem',
+                                py: 0.5,
+                                px: 1,
+                                color: palette.supervisor.main,
+                              }}
+                            >
+                              {(question.collaborator_avg + question.supervisor_avg) / 2}
+                            </TableCell>
+                          )} */}
                         </TableRow>
                       );
                     })}
@@ -468,7 +499,7 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                 </Typography>
 
                 <Grid container spacing={3}>
-                  <Grid size={{ xs: 4 }}>
+                  <Grid size={{ xs: hasSupervisorData ? 4 : 6 }}>
                     <Typography
                       variant="body2"
                       sx={{
@@ -491,7 +522,7 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                       {(category.questions.reduce((sum, q) => sum + q.leader_avg, 0) / category.questions.length).toFixed(1)}
                     </Typography>
                   </Grid>
-                  <Grid size={{ xs: 4 }}>
+                  <Grid size={{ xs: hasSupervisorData ? 4 : 6 }}>
                     <Typography
                       variant="body2"
                       sx={{
@@ -514,7 +545,32 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                       {(category.questions.reduce((sum, q) => sum + q.collaborator_avg, 0) / category.questions.length).toFixed(1)}
                     </Typography>
                   </Grid>
-                  <Grid size={{ xs: 4 }}>
+                  {hasSupervisorData && (
+                    <Grid size={{ xs: hasSupervisorData ? 4 : 6 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: '700',
+                          color: '#065f46',
+                          fontSize: '0.9rem',
+                          mb: 1,
+                        }}
+                      >
+                        Promedio Director:
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: palette.supervisor.main,
+                          fontWeight: '700',
+                          fontSize: '1.2rem',
+                        }}
+                      >
+                        {(category.questions.reduce((sum, q) => sum + q.supervisor_avg, 0) / category.questions.length).toFixed(1)}
+                      </Typography>
+                    </Grid>
+                  )}
+                  {/* <Grid size={{ xs: 4 }}>
                     <Typography
                       variant="body2"
                       sx={{
@@ -545,13 +601,12 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                         category.questions.reduce((sum, q) => sum + (q.collaborator_avg - q.leader_avg), 0) / category.questions.length
                       ).toFixed(1)}
                     </Typography>
-                  </Grid>
+                  </Grid> */}
                 </Grid>
               </Box>
             </Paper>
-            {hasSupervisorData && (
+            {/* {hasSupervisorData && (
               <Paper key={`${categoryIndex}-table`} sx={pageStyle} data-testid="page">
-                {/* Encabezado compacto */}
                 <Box
                   sx={{
                     display: 'flex',
@@ -573,11 +628,10 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                       textAlign: 'center',
                     }}
                   >
-                    Detalle por Pregunta - {category.category.name} (Líder de Líder)
+                    Detalle por Pregunta - {category.category.name} (DIRECTOR)
                   </Typography>
                 </Box>
 
-                {/* Tabla detallada compacta */}
                 <TableContainer
                   sx={{
                     border: '1px solid #d1d5db',
@@ -639,7 +693,7 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                             p: 1,
                           }}
                         >
-                          LÍDER DE LÍDER
+                          DIRECTOR
                         </TableCell>
                         <TableCell
                           align="center"
@@ -739,7 +793,6 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                   </Table>
                 </TableContainer>
 
-                {/* Resumen de la categoría simplificado */}
                 <Box
                   sx={{
                     mt: 4,
@@ -796,7 +849,7 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                           mb: 1,
                         }}
                       >
-                        Promedio Líder de Líder:
+                        Promedio DIRECTOR:
                       </Typography>
                       <Typography
                         variant="h6"
@@ -845,7 +898,7 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                   </Grid>
                 </Box>
               </Paper>
-            )}
+            )} */}
           </React.Fragment>
         );
       })}

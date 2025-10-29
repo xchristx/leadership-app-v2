@@ -358,10 +358,12 @@ export type Database = {
                     created_at: string
                     created_by: string | null
                     description: string | null
+                    description_collaborator: string | null
                     id: string
                     is_active: boolean | null
                     organization_id: string
                     title: string
+                    title_collaborator: string | null
                     updated_at: string
                     version_type: string | null
                 }
@@ -370,10 +372,12 @@ export type Database = {
                     created_at?: string
                     created_by?: string | null
                     description?: string | null
+                    description_collaborator?: string | null
                     id?: string
                     is_active?: boolean | null
                     organization_id: string
                     title: string
+                    title_collaborator?: string | null
                     updated_at?: string
                     version_type?: string | null
                 }
@@ -382,10 +386,12 @@ export type Database = {
                     created_at?: string
                     created_by?: string | null
                     description?: string | null
+                    description_collaborator?: string | null
                     id?: string
                     is_active?: boolean | null
                     organization_id?: string
                     title?: string
+                    title_collaborator?: string | null
                     updated_at?: string
                     version_type?: string | null
                 }
@@ -605,21 +611,15 @@ export type Database = {
             [_ in never]: never
         }
         Functions: {
-            activate_project: {
-                Args: { project_uuid: string }
-                Returns: boolean
-            }
+            activate_project: { Args: { project_uuid: string }; Returns: boolean }
             cleanup_expired_data: {
-                Args: Record<PropertyKey, never>
+                Args: never
                 Returns: {
                     cleanup_type: string
                     items_cleaned: number
                 }[]
             }
-            cleanup_expired_sessions: {
-                Args: Record<PropertyKey, never>
-                Returns: number
-            }
+            cleanup_expired_sessions: { Args: never; Returns: number }
             complete_evaluation: {
                 Args: { p_evaluation_id: string }
                 Returns: boolean
@@ -709,40 +709,14 @@ export type Database = {
                     total_responses: number
                 }[]
             }
-            get_user_organization_id: {
-                Args: Record<PropertyKey, never>
-                Returns: string
-            }
-            gtrgm_compress: {
-                Args: { "": unknown }
-                Returns: unknown
-            }
-            gtrgm_decompress: {
-                Args: { "": unknown }
-                Returns: unknown
-            }
-            gtrgm_in: {
-                Args: { "": unknown }
-                Returns: unknown
-            }
-            gtrgm_options: {
-                Args: { "": unknown }
-                Returns: undefined
-            }
-            gtrgm_out: {
-                Args: { "": unknown }
-                Returns: unknown
-            }
+            get_user_organization_id: { Args: never; Returns: string }
             increment_invitation_uses: {
                 Args: { invitation_id: string }
                 Returns: Json
             }
-            is_organization_admin: {
-                Args: Record<PropertyKey, never>
-                Returns: boolean
-            }
+            is_organization_admin: { Args: never; Returns: boolean }
             migrate_existing_responses_to_json: {
-                Args: Record<PropertyKey, never>
+                Args: never
                 Returns: {
                     evaluation_id: string
                     responses_migrated: number
@@ -753,18 +727,8 @@ export type Database = {
                 Args: { invitation_uuid: string }
                 Returns: string
             }
-            set_limit: {
-                Args: { "": number }
-                Returns: number
-            }
-            show_limit: {
-                Args: Record<PropertyKey, never>
-                Returns: number
-            }
-            show_trgm: {
-                Args: { "": string }
-                Returns: string[]
-            }
+            show_limit: { Args: never; Returns: number }
+            show_trgm: { Args: { "": string }; Returns: string[] }
             start_evaluation_session: {
                 Args: {
                     p_evaluator_email: string

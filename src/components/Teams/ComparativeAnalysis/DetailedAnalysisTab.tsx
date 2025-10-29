@@ -100,12 +100,12 @@ export function DetailedAnalysisTab({ comparativeData }: DetailedAnalysisTabProp
                         />
                       </Box>
 
-                      {/* Líder de líderes */}
+                      {/* DIRECTORes */}
                       {hasSupervisorData && (
                         <Box sx={{ mb: 1 }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
                             <Typography variant="body2" fontWeight="medium" sx={{ color: palette.supervisor.main }}>
-                              🎯 Líder de líder
+                              🎯 DIRECTOR
                             </Typography>
                             <Typography variant="body2" fontWeight="bold" sx={{ color: palette.supervisor.main }}>
                               {data.supervisors_avg.toFixed(1)}/{maxValue}

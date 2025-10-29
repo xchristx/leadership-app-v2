@@ -39,9 +39,9 @@ import { useTeams } from '../hooks/useTeams';
 import { TeamCard } from '../components/Teams/TeamCard';
 import { TeamForm } from '../components/Forms';
 import { CreateProjectLeadershipDialog } from '../components/Teams/CreateProjectLeadershipDialog';
-import type { CreateTeamData } from '../services/teamService';
 import type { Team, TeamFormData } from '../types';
 import { TeamEditor } from '../components/Teams';
+import type { UpdateTeamData } from '../types/index';
 
 function ProjectDetailPage() {
   // Estado para edición de equipo
@@ -72,11 +72,14 @@ function ProjectDetailPage() {
   const handleCreateTeam = async (teamData: TeamFormData) => {
     try {
       // Convertir TeamFormData a CreateTeamData
-      const createData: CreateTeamData = {
+      const createData: TeamFormData = {
         name: teamData.name,
         project_id: projectId!, // Usar el projectId actual
         team_size: teamData.team_size ?? undefined,
         is_active: teamData.is_active ?? undefined,
+        leader_email: teamData.leader_email ?? undefined,
+        leader_name: teamData.leader_name ?? undefined,
+        department: teamData.department ?? undefined,
       };
 
       const result = await createTeamWithInvitations(createData);
@@ -106,7 +109,7 @@ function ProjectDetailPage() {
   const handleEditTeam = async (teamData: TeamFormData) => {
     if (!selectedTeam) return { success: false, error: 'No hay equipo seleccionado' };
     try {
-      const updateData = {
+      const updateData: UpdateTeamData = {
         name: teamData.name,
         team_size: teamData.team_size ?? undefined,
         leader_name: teamData.leader_name ?? undefined,

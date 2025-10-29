@@ -238,11 +238,7 @@ export function TeamInvitations({ teamId: propTeamId }: TeamInvitationsProps = {
                   <TableCell>
                     <Chip
                       label={
-                        invitation.role_type === 'leader'
-                          ? 'Líder'
-                          : invitation.role_type === 'supervisor'
-                          ? 'Líder de líder'
-                          : 'Colaborador'
+                        invitation.role_type === 'leader' ? 'Líder' : invitation.role_type === 'supervisor' ? 'DIRECTOR' : 'Colaborador'
                       }
                       color={
                         invitation.role_type === 'leader' ? 'primary' : invitation.role_type === 'supervisor' ? 'warning' : 'secondary'
@@ -319,7 +315,7 @@ export function TeamInvitations({ teamId: propTeamId }: TeamInvitationsProps = {
               <Select value={newRole} onChange={e => setNewRole(e.target.value as 'leader' | 'collaborator')} label="Rol">
                 <MenuItem value="leader">Líder</MenuItem>
                 <MenuItem value="collaborator">Colaborador</MenuItem>
-                <MenuItem value="supervisor">Líder de líder</MenuItem>
+                <MenuItem value="supervisor">DIRECTOR</MenuItem>
               </Select>
             </FormControl>
 
@@ -391,7 +387,7 @@ export function TeamInvitations({ teamId: propTeamId }: TeamInvitationsProps = {
             {selectedInvitation?.role_type === 'leader'
               ? 'Líder'
               : selectedInvitation?.role_type === 'supervisor'
-              ? 'Líder de líder'
+              ? 'DIRECTOR'
               : 'Colaborador'}
           </Box>
         </DialogTitle>

@@ -184,7 +184,7 @@ export function ExecutiveSummaryTab({ metrics, categorySummary }: ExecutiveSumma
                 <Grid size={{ xs: 12, md: 4 }}>
                   <Paper sx={{ p: 2, bgcolor: palette.supervisor.light }}>
                     <Typography color="black" variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                      🎯 Tendencia de Líder de líderes
+                      🎯 Tendencia del DIRECTOR
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {metrics?.supervisor_trend === 'positive' && <TrendingUpIcon color="success" />}

@@ -127,7 +127,7 @@ export function TeamForm({ initialData, onSubmit, onCancel, isLoading = false, m
 
               <Grid container spacing={3}>
                 {/* Nombre del equipo */}
-                <Grid size={{ xs: 12 }}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     name="name"
@@ -139,45 +139,6 @@ export function TeamForm({ initialData, onSubmit, onCancel, isLoading = false, m
                     required
                   />
                 </Grid>
-                {/* Nombre del líder */}
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    name="leader_name"
-                    label="Nombre del Líder"
-                    value={values.leader_name}
-                    onChange={e => setFieldValue('leader_name', e.target.value)}
-                    error={touched.leader_name && !!errors.leader_name}
-                    helperText={touched.leader_name && errors.leader_name}
-                    required
-                  />
-                </Grid>
-                {/* Email del líder */}
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    name="leader_email"
-                    label="Email del Líder"
-                    value={values.leader_email}
-                    onChange={e => setFieldValue('leader_email', e.target.value)}
-                    error={touched.leader_email && !!errors.leader_email}
-                    helperText={touched.leader_email && errors.leader_email}
-                    type="email"
-                  />
-                </Grid>
-                {/* Departamento */}
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    name="department"
-                    label="Departamento"
-                    value={values.department}
-                    onChange={e => setFieldValue('department', e.target.value)}
-                    error={touched.department && !!errors.department}
-                    helperText={touched.department && errors.department}
-                  />
-                </Grid>
-
                 {/* Selección de proyecto */}
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl fullWidth error={touched.project_id && !!errors.project_id} disabled={mode === 'edit' || projectsLoading}>
@@ -205,6 +166,44 @@ export function TeamForm({ initialData, onSubmit, onCancel, isLoading = false, m
                         : 'Seleccione el proyecto al que pertenecerá este equipo'}
                     </FormHelperText>
                   </FormControl>
+                </Grid>
+                {/* Nombre del líder */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    name="leader_name"
+                    label="Nombre del Líder"
+                    value={values.leader_name}
+                    onChange={e => setFieldValue('leader_name', e.target.value)}
+                    error={touched.leader_name && !!errors.leader_name}
+                    helperText={touched.leader_name && errors.leader_name}
+                    required
+                  />
+                </Grid>
+                {/* Email del líder */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    name="leader_email"
+                    label="Email del Líder (opcional)"
+                    value={values.leader_email}
+                    onChange={e => setFieldValue('leader_email', e.target.value)}
+                    error={touched.leader_email && !!errors.leader_email}
+                    helperText={touched.leader_email && errors.leader_email}
+                    type="email"
+                  />
+                </Grid>
+                {/* Departamento */}
+                <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'none' }}>
+                  <TextField
+                    fullWidth
+                    name="department"
+                    label="Departamento"
+                    value={values.department}
+                    onChange={e => setFieldValue('department', e.target.value)}
+                    error={touched.department && !!errors.department}
+                    helperText={touched.department && errors.department}
+                  />
                 </Grid>
 
                 {/* Tamaño del equipo */}

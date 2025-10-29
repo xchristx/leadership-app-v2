@@ -37,7 +37,7 @@ const ExecutiveSumarySuper = ({ pageStyle, leadershipPractices }: ExecutiveSumar
             textAlign: 'center',
           }}
         >
-          Cuadro Comparativo - Autopercepción vs Percepción del líder de líder de equipo
+          Cuadro Comparativo - Autopercepción vs Percepción del DIRECTOR de equipo
         </Typography>
 
         <TableContainer
@@ -84,7 +84,7 @@ const ExecutiveSumarySuper = ({ pageStyle, leadershipPractices }: ExecutiveSumar
                     minWidth: '100px',
                   }}
                 >
-                  Líder de Líder
+                  DIRECTOR
                 </TableCell>
                 <TableCell
                   align="center"

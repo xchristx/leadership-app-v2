@@ -26,7 +26,7 @@ import { useRef, useState } from 'react';
 import type { CategoryData, CategorySummary, ComparativeData } from './types';
 import Cover from './CategoryReportTab/Cover';
 import ExecutiveSumary from './CategoryReportTab/ExecutiveSumary';
-import ExecutiveSumarySuper from './CategoryReportTab/ExecutiveSumarySuper';
+// import ExecutiveSumarySuper from './CategoryReportTab/ExecutiveSumarySuper';
 import GeneralGraphicAnalysis from './CategoryReportTab/GeneralGraphicAnalysis';
 import PageByCategory from './CategoryReportTab/PageByCategory';
 import LoadingWord from './CategoryReportTab/LoadingWord';
@@ -286,7 +286,7 @@ export function CategoryReportTab({
                       ...(hasSupervisorData
                         ? [
                             new DocxTableCell({
-                              children: [new Paragraph({ text: 'SUPERVISORES', alignment: AlignmentType.CENTER })],
+                              children: [new Paragraph({ text: 'DIRECTOR', alignment: AlignmentType.CENTER })],
                               shading: { fill: supervisorHex },
                               width: { size: 16, type: WidthType.PERCENTAGE },
                             }),
@@ -393,7 +393,7 @@ export function CategoryReportTab({
               }),
               new Paragraph({
                 text: hasSupervisorData
-                  ? 'El gráfico de líneas facilita la visualización de las diferencias entre autopercepción, observadores y supervisores en cada práctica. Las líneas azules (autopercepción), rojas (observadores) y naranjas (supervisores) permiten identificar rápidamente:'
+                  ? 'El gráfico de líneas facilita la visualización de las diferencias entre autopercepción, observadores y DIRECTOR en cada práctica. Las líneas azules (autopercepción), rojas (observadores) y naranjas (DIRECTOR) permiten identificar rápidamente:'
                   : 'El gráfico de líneas facilita la visualización de las diferencias entre autopercepción y percepción externa en cada práctica. Las líneas azules (autopercepción) y rojas (observadores) permiten identificar rápidamente:',
                 spacing: { after: 200 },
               }),
@@ -533,7 +533,7 @@ export function CategoryReportTab({
                           ...(hasSupervisorData
                             ? [
                                 new DocxTableCell({
-                                  children: [new Paragraph({ text: 'SUPERVISORES', alignment: AlignmentType.CENTER })],
+                                  children: [new Paragraph({ text: 'DIRECTOR', alignment: AlignmentType.CENTER })],
                                   shading: { fill: 'ff6b35' },
                                   width: { size: 12, type: WidthType.PERCENTAGE },
                                 }),
@@ -710,20 +710,22 @@ export function CategoryReportTab({
 
         {/* ==================== PÁGINA 1: RESUMEN EJECUTIVO ==================== */}
         <ExecutiveSumary
+          leaderName={teamLeader}
           pageStyle={pageStyle}
           teamName={teamName}
           comparativeData={comparativeData}
           leadershipPractices={leadershipPractices}
+          hasSupervisorData={hasSupervisorData}
         />
         {/* ==================== PÁGINA 1.1: RESUMEN EJECUTIVO ==================== */}
-        {hasSupervisorData && (
+        {/* {hasSupervisorData && (
           <ExecutiveSumarySuper
             pageStyle={pageStyle}
             teamName={teamName}
             comparativeData={comparativeData}
             leadershipPractices={leadershipPractices}
           />
-        )}
+        )} */}
 
         {/* ==================== PÁGINA 2: ANÁLISIS GRÁFICO ==================== */}
 

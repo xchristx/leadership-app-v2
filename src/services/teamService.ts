@@ -246,7 +246,8 @@ export const updateTeam = async (id: string, updates: UpdateTeamData): Promise<T
         leader_name: updates.leader_name,
         leader_email: updates.leader_email || null,
         updated_at: new Date().toISOString(),
-        is_active: updates.is_active
+        is_active: updates.is_active,
+        department: updates.department ?? undefined
       })
       .eq('id', id)
       .select(`
@@ -256,7 +257,8 @@ export const updateTeam = async (id: string, updates: UpdateTeamData): Promise<T
         is_active,
         project_id,
         created_at,
-        updated_at
+        updated_at,
+        department
       `)
       .single();
 

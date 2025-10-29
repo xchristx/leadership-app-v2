@@ -528,14 +528,7 @@ export interface CreateTeamData {
     is_active?: boolean
 }
 
-export interface UpdateTeamData {
-    name?: string
-    team_type?: 'regular' | 'project_leadership' // Tipo de equipo
-    team_size?: number
-    leader_name?: string
-    leader_email?: string
-    is_active?: boolean
-}
+export type UpdateTeamData = Database['public']['Tables']['teams']['Update']
 
 // Filtros para evaluaciones
 export interface EvaluationFilters {

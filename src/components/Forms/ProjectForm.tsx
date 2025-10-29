@@ -142,7 +142,7 @@ export function ProjectForm({ initialData, onSubmit, onCancel, isLoading = false
   const initialValues: ProjectFormData = {
     name: initialData?.name || '',
     description: initialData?.description || '',
-    status: initialData?.status || 'draft',
+    status: initialData?.status || 'active',
     start_date: initialData?.start_date ? new Date(initialData.start_date) : null,
     end_date: initialData?.end_date ? new Date(initialData.end_date) : null,
     budget: null,
@@ -150,7 +150,7 @@ export function ProjectForm({ initialData, onSubmit, onCancel, isLoading = false
     template_id: initialData?.template_id || '',
     // Configuraciones con valores por defecto
     allow_re_evaluation: initialData?.configuration?.allow_re_evaluation ?? false,
-    require_evaluator_info: initialData?.configuration?.require_evaluator_info ?? true,
+    require_evaluator_info: initialData?.configuration?.require_evaluator_info ?? false,
     evaluation_deadline: initialData?.configuration?.evaluation_deadline ? new Date(initialData.configuration.evaluation_deadline) : null,
     reminder_days: initialData?.configuration?.reminder_days || [7, 3, 1],
     email_notifications: initialData?.configuration?.email_notifications ?? true,
