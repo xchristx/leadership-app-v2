@@ -34,6 +34,17 @@ const ExecutiveSumary = ({
 }: ExecutiveSumaryProps) => {
   const { palette } = useTheme();
 
+  // estilos de resaltado para partes importantes del texto (no cambian el texto)
+  const highlightAuto: SxProps = { fontWeight: 700, color: palette.primary.main };
+  const highlightOtros: SxProps = { fontWeight: 700, color: palette.secondary.main };
+  const highlightSupervisor: SxProps = { fontWeight: 700, color: palette.supervisor?.main || palette.primary.main };
+  const highlightOpportunity: SxProps = {
+    fontWeight: 700,
+    backgroundColor: 'rgba(59,130,246,0.06)',
+    padding: '2px 4px',
+    borderRadius: '4px',
+  };
+
   // Subcomponent to render a CardMedia for a practice image (PNG -> JPG fallback),
   // and a colored dot fallback if image is not available.
 
@@ -58,60 +69,11 @@ const ExecutiveSumary = ({
             fontWeight: '600',
             color: '#1e293b',
             textAlign: 'center',
+            mb: 3,
           }}
         >
           Resumen Ejecutivo
         </Typography>
-        {/* <Typography
-            variant="body1"
-            sx={{
-              color: '#64748b',
-              textAlign: 'center',
-              mt: 1,
-              fontSize: '14px',
-            }}
-          >
-            Análisis comparativo de prácticas de liderazgo
-          </Typography> */}
-      </Box>
-
-      <Typography
-        variant="h6"
-        sx={{
-          mb: 3,
-          color: 'text.secondary',
-          textAlign: 'center',
-          fontWeight: '600',
-          fontSize: '16px',
-        }}
-      >
-        Cinco Prácticas de Liderazgo - Análisis Comparativo
-      </Typography>
-
-      {/* Información del equipo en tarjeta corporativa */}
-      <Box
-        sx={{
-          background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-          borderRadius: '12px',
-          border: '1px solid #cbd5e1',
-          padding: '20px',
-          mb: 4,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Línea decorativa */}
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '4px',
-            background: 'linear-gradient(90deg, #1e3a8a 0%, #0369a1 100%)',
-          }}
-        />
-
         <Grid container spacing={3}>
           <Grid size={{ xs: 6 }}>
             <Typography variant="body2" sx={{ fontSize: '0.9rem', mb: 1, color: '#252525' }}>
@@ -134,6 +96,65 @@ const ExecutiveSumary = ({
             </Typography>
           </Grid>
         </Grid>
+        {/* <Typography
+            variant="body1"
+            sx={{
+              color: '#64748b',
+              textAlign: 'center',
+              mt: 1,
+              fontSize: '14px',
+            }}
+          >
+            Análisis comparativo de prácticas de liderazgo
+          </Typography> */}
+      </Box>
+
+      {/* Información del equipo en tarjeta corporativa */}
+      <Box
+        sx={{
+          background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+          borderRadius: '12px',
+          border: '1px solid #cbd5e1',
+          padding: '20px',
+          mb: 4,
+          position: 'relative',
+          overflow: 'hidden',
+          display: 'none',
+        }}
+      >
+        {/* <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            background: 'linear-gradient(90deg, #1e3a8a 0%, #0369a1 100%)',
+          }}
+        /> */}
+
+        {/* <Grid container spacing={3}>
+          <Grid size={{ xs: 6 }}>
+            <Typography variant="body2" sx={{ fontSize: '0.9rem', mb: 1, color: '#252525' }}>
+              <strong style={{ color: '#1e3a8a' }}>Equipo:</strong> {teamName}
+            </Typography>
+
+            <Typography variant="body2" sx={{ fontSize: '0.9rem', color: '#252525' }}>
+              <strong style={{ color: '#1e3a8a' }}>Período:</strong>{' '}
+              {new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+            </Typography>
+          </Grid>
+          <Grid size={{ xs: 6 }}>
+            {leaderName && (
+              <Typography variant="body2" sx={{ fontSize: '0.9rem', mb: 1 }}>
+                <strong style={{ color: '#1e3a8a' }}>Líder:</strong> {leaderName}
+              </Typography>
+            )}
+            <Typography variant="body2" sx={{ fontSize: '0.9rem', color: '#252525' }}>
+              <strong style={{ color: '#1e3a8a' }}>Total preguntas:</strong> {comparativeData.length}
+            </Typography>
+          </Grid>
+        </Grid> */}
       </Box>
 
       {/* Tabla comparativa principal simplificada */}
@@ -148,7 +169,7 @@ const ExecutiveSumary = ({
             textAlign: 'center',
           }}
         >
-          Cuadro Comparativo - Autopercepción vs Percepción de Colaboradores
+          Cuadro Comparativo - Autopercepción vs {hasSupervisorData ? 'Percepción externa' : 'Percepción de Colaboradores'}
         </Typography>
 
         <TableContainer
@@ -382,10 +403,32 @@ const ExecutiveSumary = ({
             color: '#6b7280',
           }}
         >
-          Las diferencias entre la autopercepción del <strong>líder</strong> y la percepción de sus colaboradores constituyen una
-          oportunidad para el desarrollo del liderazgo. Analizar estas brechas permite identificar fortalezas, reconocer áreas de mejora y
-          ajustar las prácticas de liderazgo para lograr una mayor coherencia entre la intención y el impacto. Este proceso favorece el
-          crecimiento personal, mejora la comunicación con el equipo y contribuye a un liderazgo más efectivo y consciente.
+          Las diferencias entre la{' '}
+          <Box component="span" sx={highlightAuto}>
+            la autopercepción del <strong>líder</strong>
+          </Box>{' '}
+          {hasSupervisorData ? (
+            <>
+              <Box component="span">, </Box>
+              <Box component="span" sx={highlightOtros}>
+                la percepción de sus colaboradores
+              </Box>{' '}
+              <Box component="span" sx={highlightSupervisor}>
+                y el Director
+              </Box>
+            </>
+          ) : (
+            <Box component="span" sx={highlightOtros}>
+              y la percepción de sus colaboradores
+            </Box>
+          )}{' '}
+          constituyen{' '}
+          <Box component="span" sx={highlightOpportunity}>
+            una oportunidad para el desarrollo del liderazgo
+          </Box>
+          . Analizar estas brechas permite identificar fortalezas, reconocer áreas de mejora y ajustar las prácticas de liderazgo para
+          lograr una mayor coherencia entre la intención y el impacto. Este proceso favorece el crecimiento personal, mejora la comunicación
+          con el equipo y contribuye a un liderazgo más efectivo y consciente.
         </Typography>
       </Box>
     </Paper>

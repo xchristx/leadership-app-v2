@@ -162,8 +162,8 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                         margin={{ top: 20, right: 40, left: 10, bottom: 20 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-                        <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#475569' }} tickCount={6} />
-                        <YAxis type="category" dataKey="pregunta" tick={{ fontSize: 11, width: 160, fill: '#475569' }} width={300} />
+                        <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#252525' }} tickCount={6} />
+                        <YAxis type="category" dataKey="pregunta" tick={{ fontSize: 11, width: 160, fill: '#252525' }} width={300} />
                         <Tooltip
                           formatter={(value, name) => [value, name]}
                           contentStyle={{

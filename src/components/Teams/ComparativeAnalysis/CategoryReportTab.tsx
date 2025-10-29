@@ -133,6 +133,45 @@ export function CategoryReportTab({
       let lineChartImage: Uint8Array | null = null;
       const barChartImages: (Uint8Array | null)[] = [];
 
+      // helper: fetch image as uint8array (for docx ImageRun)
+      const fetchImageAsUint8Array = async (url: string): Promise<Uint8Array | null> => {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) return null;
+          const buffer = await res.arrayBuffer();
+          return new Uint8Array(buffer);
+        } catch (e) {
+          console.warn('No se pudo obtener imagen:', url, e);
+          return null;
+        }
+      };
+
+      // Intentar obtener logo para la carátula
+      const logoImage = await fetchImageAsUint8Array('/ho_logo.jpg');
+
+      // Obtener thumbnails de prácticas (siguiendo la misma lógica de PracticeMedia)
+      const fetchPracticeThumb = async (categoryName: string) => {
+        const slug = categoryName
+          .toLowerCase()
+          .replace(/\s+/g, '_')
+          .replace(/[^a-z0-9_]/g, '');
+        const png = `/categories/${slug}.png`;
+        const jpg = `/categories/${slug}.jpg`;
+
+        const pngData = await fetchImageAsUint8Array(png);
+        if (pngData) return { data: pngData, type: 'png' as const };
+        const jpgData = await fetchImageAsUint8Array(jpg);
+        if (jpgData) return { data: jpgData, type: 'jpg' as const };
+        return { data: null as Uint8Array | null, type: null as 'png' | 'jpg' | null };
+      };
+
+      const practiceThumbs: { data: Uint8Array | null; type: 'png' | 'jpg' | null }[] = [];
+      for (let i = 0; i < categoryData.length; i++) {
+        const cat = categoryData[i];
+        const thumb = await fetchPracticeThumb(cat.category.name);
+        practiceThumbs.push(thumb);
+      }
+
       // Capturar gráfico de líneas principal
       if (lineChartRef.current) {
         lineChartImage = await captureChart(lineChartRef.current);
@@ -177,6 +216,42 @@ export function CategoryReportTab({
             },
             children: [
               // CARÁTULA
+              // Logo (si está disponible)
+              ...(logoImage
+                ? [
+                    new Paragraph({
+                      children: [
+                        new ImageRun({
+                          data: logoImage,
+                          transformation: { width: 200, height: 80 },
+                          type: 'jpg',
+                        }),
+                      ],
+                      alignment: AlignmentType.CENTER,
+                      spacing: { after: 300 },
+                    }),
+                  ]
+                : []),
+              // Thumbnails de prácticas en la carátula (si existen)
+              ...(practiceThumbs && practiceThumbs.length > 0
+                ? [
+                    new Paragraph({
+                      children: practiceThumbs
+                        .filter(t => t.data)
+                        .map(
+                          t =>
+                            new ImageRun({
+                              data: t.data as Uint8Array,
+                              transformation: { width: 56, height: 56 },
+                              type: t.type === 'png' ? 'png' : 'jpg',
+                            })
+                        ),
+                      alignment: AlignmentType.CENTER,
+                      spacing: { after: 300 },
+                    }),
+                  ]
+                : []),
+
               new Paragraph({
                 text: 'INVENTARIO DE PRÁCTICAS DE LIDERAZGO',
                 heading: HeadingLevel.TITLE,
@@ -187,8 +262,17 @@ export function CategoryReportTab({
                 text: teamName,
                 heading: HeadingLevel.HEADING_1,
                 alignment: AlignmentType.CENTER,
-                spacing: { after: 400 },
+                spacing: { after: 200 },
               }),
+              ...(teamLeader
+                ? [
+                    new Paragraph({
+                      children: [new TextRun({ text: 'Líder: ', bold: true }), new TextRun({ text: teamLeader })],
+                      alignment: AlignmentType.CENTER,
+                      spacing: { after: 400 },
+                    }),
+                  ]
+                : []),
               new Paragraph({
                 text: 'Análisis Comparativo de las Cinco Prácticas de Liderazgo',
                 alignment: AlignmentType.CENTER,
@@ -229,6 +313,14 @@ export function CategoryReportTab({
                 children: [new TextRun({ text: 'Equipo: ', bold: true }), new TextRun({ text: teamName })],
                 spacing: { after: 200 },
               }),
+              ...(teamLeader
+                ? [
+                    new Paragraph({
+                      children: [new TextRun({ text: 'Líder: ', bold: true }), new TextRun({ text: teamLeader })],
+                      spacing: { after: 200 },
+                    }),
+                  ]
+                : []),
               new Paragraph({
                 children: [
                   new TextRun({ text: 'Período: ', bold: true }),
@@ -258,7 +350,7 @@ export function CategoryReportTab({
                 spacing: { after: 300 },
               }),
 
-              // Crear tabla de resumen
+              // Crear tabla de resumen (editable) que refleje la tabla mostrada en la UI
               new DocxTable({
                 width: {
                   size: 100,
@@ -290,18 +382,19 @@ export function CategoryReportTab({
                               shading: { fill: supervisorHex },
                               width: { size: 16, type: WidthType.PERCENTAGE },
                             }),
+                            new DocxTableCell({
+                              children: [new Paragraph({ text: 'PROMEDIO (Director, Observadores)', alignment: AlignmentType.CENTER })],
+                              shading: { fill: '1976d2' },
+                              width: { size: 16, type: WidthType.PERCENTAGE },
+                            }),
                           ]
                         : []),
-                      new DocxTableCell({
-                        children: [new Paragraph({ text: 'DIFERENCIA', alignment: AlignmentType.CENTER })],
-                        shading: { fill: '1976d2' },
-                        width: { size: hasSupervisorData ? 16 : 28, type: WidthType.PERCENTAGE },
-                      }),
                     ],
                   }),
                   // Filas de datos
                   ...leadershipPractices.map(practice => {
-                    const difference = practice.auto_total - practice.otros_total;
+                    const supervisorVal = (practice as { supervisor_total?: number }).supervisor_total ?? 0;
+                    const promedio = hasSupervisorData ? ((supervisorVal + practice.otros_total) / 2).toFixed(1) : null;
                     return new DocxTableRow({
                       children: [
                         new DocxTableCell({
@@ -318,22 +411,22 @@ export function CategoryReportTab({
                               new DocxTableCell({
                                 children: [
                                   new Paragraph({
-                                    text: ((practice as { supervisor_total?: number }).supervisor_total ?? 0).toFixed(1),
+                                    text: supervisorVal.toFixed(1),
                                     alignment: AlignmentType.CENTER,
                                   }),
                                 ],
                                 shading: { fill: supervisorHex },
                               }),
+                              new DocxTableCell({
+                                children: [
+                                  new Paragraph({
+                                    text: promedio ?? '',
+                                    alignment: AlignmentType.CENTER,
+                                  }),
+                                ],
+                              }),
                             ]
                           : []),
-                        new DocxTableCell({
-                          children: [
-                            new Paragraph({
-                              text: `${difference > 0 ? '+' : ''}${difference.toFixed(1)}`,
-                              alignment: AlignmentType.CENTER,
-                            }),
-                          ],
-                        }),
                       ],
                     });
                   }),
@@ -347,7 +440,9 @@ export function CategoryReportTab({
                 spacing: { before: 400, after: 200 },
               }),
               new Paragraph({
-                text: 'Este cuadro presenta la comparación entre la autopercepción del líder y la percepción de sus colaboradores en las cinco prácticas fundamentales del liderazgo. Las diferencias positivas indican que el líder se percibe con mayor competencia, mientras que las diferencias negativas sugieren áreas donde los colaboradores ven un desempeño superior al que el líder reconoce en sí mismo.',
+                text: hasSupervisorData
+                  ? 'Las diferencias entre la autopercepción del líder, la percepción de sus colaboradores y el Director constituyen una oportunidad para el desarrollo del liderazgo. Analizar estas brechas permite identificar fortalezas, reconocer áreas de mejora y ajustar las prácticas de liderazgo para lograr una mayor coherencia entre la intención y el impacto. Este proceso favorece el crecimiento personal, mejora la comunicación con el equipo y contribuye a un liderazgo más efectivo y consciente.'
+                  : 'Las diferencias entre la autopercepción del líder y la percepción de sus colaboradores constituyen una oportunidad para el desarrollo del liderazgo. Analizar estas brechas permite identificar fortalezas, reconocer áreas de mejora y ajustar las prácticas de liderazgo para lograr una mayor coherencia entre la intención y el impacto. Este proceso favorece el crecimiento personal, mejora la comunicación con el equipo y contribuye a un liderazgo más efectivo y consciente.',
                 spacing: { after: 400 },
               }),
 
@@ -391,22 +486,36 @@ export function CategoryReportTab({
                 heading: HeadingLevel.HEADING_3,
                 spacing: { after: 200 },
               }),
+              // Texto exportado que debe coincidir con el contenido mostrado en GeneralGraphicAnalysis
               new Paragraph({
-                text: hasSupervisorData
-                  ? 'El gráfico de líneas facilita la visualización de las diferencias entre autopercepción, observadores y DIRECTOR en cada práctica. Las líneas azules (autopercepción), rojas (observadores) y naranjas (DIRECTOR) permiten identificar rápidamente:'
-                  : 'El gráfico de líneas facilita la visualización de las diferencias entre autopercepción y percepción externa en cada práctica. Las líneas azules (autopercepción) y rojas (observadores) permiten identificar rápidamente:',
+                children: [
+                  new TextRun({ text: 'El gráfico de líneas', bold: true }),
+                  new TextRun({
+                    text: ' facilita la visualización de las diferencias entre autopercepción y percepción externa en cada práctica. ',
+                  }),
+                  ...(hasSupervisorData
+                    ? [
+                        new TextRun({
+                          text: 'Las líneas azules (autopercepción), moradas (observadores) y naranjas (DIRECTOR) permiten identificar rápidamente:',
+                          break: 0,
+                        }),
+                      ]
+                    : [
+                        new TextRun({
+                          text: 'Las líneas azules (autopercepción) y moradas (observadores) permiten identificar rápidamente:',
+                          break: 0,
+                        }),
+                      ]),
+                ],
                 spacing: { after: 200 },
               }),
+
               new Paragraph({
                 text: '• Convergencias: Donde ambas líneas se aproximan, indicando alineación perceptual',
                 spacing: { after: 100 },
               }),
               new Paragraph({
                 text: '• Divergencias: Separaciones significativas que requieren atención y desarrollo',
-                spacing: { after: 100 },
-              }),
-              new Paragraph({
-                text: '• Patrones: Tendencias consistentes que revelan fortalezas o áreas de mejora',
                 spacing: { after: 400 },
               }),
 
@@ -426,6 +535,22 @@ export function CategoryReportTab({
 
                 return [
                   // PÁGINA A: TÍTULO, DESCRIPCIÓN Y GRÁFICO
+                  // Thumbnail de la categoría (si existe)
+                  ...(practiceThumbs[categoryIndex] && practiceThumbs[categoryIndex].data
+                    ? [
+                        new Paragraph({
+                          children: [
+                            new ImageRun({
+                              data: practiceThumbs[categoryIndex].data as Uint8Array,
+                              transformation: { width: 80, height: 80 },
+                              type: practiceThumbs[categoryIndex].type === 'png' ? 'png' : 'jpg',
+                            }),
+                          ],
+                          alignment: AlignmentType.CENTER,
+                          spacing: { after: 200 },
+                        }),
+                      ]
+                    : []),
                   // Título de la categoría
                   new Paragraph({
                     text: category.category.name,
@@ -539,16 +664,10 @@ export function CategoryReportTab({
                                 }),
                               ]
                             : []),
-                          new DocxTableCell({
-                            children: [new Paragraph({ text: 'DIFERENCIA', alignment: AlignmentType.CENTER })],
-                            shading: { fill: '0369a1' },
-                            width: { size: hasSupervisorData ? 8 : 10, type: WidthType.PERCENTAGE },
-                          }),
                         ],
                       }),
-                      // Filas de preguntas
+                      // Filas de preguntas (coinciden con la tabla mostrada en PageByCategory)
                       ...category.questions.map(question => {
-                        const difference = question.leader_avg - question.collaborator_avg;
                         return new DocxTableRow({
                           children: [
                             new DocxTableCell({
@@ -575,21 +694,13 @@ export function CategoryReportTab({
                                   }),
                                 ]
                               : []),
-                            new DocxTableCell({
-                              children: [
-                                new Paragraph({
-                                  text: `${difference > 0 ? '+' : ''}${difference.toFixed(1)}`,
-                                  alignment: AlignmentType.CENTER,
-                                }),
-                              ],
-                            }),
                           ],
                         });
                       }),
                     ],
                   }),
 
-                  // Resumen de la categoría
+                  // Resumen de la categoría (igual que en la UI)
                   new Paragraph({
                     text: 'Resumen de la Práctica',
                     heading: HeadingLevel.HEADING_3,
@@ -614,17 +725,21 @@ export function CategoryReportTab({
                     ],
                     spacing: { after: 200 },
                   }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: 'Diferencia Promedio: ', bold: true }),
-                      new TextRun({
-                        text: `${(
-                          category.questions.reduce((sum, q) => sum + (q.leader_avg - q.collaborator_avg), 0) / category.questions.length
-                        ).toFixed(1)}`,
-                      }),
-                    ],
-                    spacing: { after: 400 },
-                  }),
+                  ...(hasSupervisorData
+                    ? [
+                        new Paragraph({
+                          children: [
+                            new TextRun({ text: 'Promedio Director: ', bold: true }),
+                            new TextRun({
+                              text: (
+                                category.questions.reduce((sum, q) => sum + (q.supervisor_avg ?? 0), 0) / category.questions.length
+                              ).toFixed(1),
+                            }),
+                          ],
+                          spacing: { after: 400 },
+                        }),
+                      ]
+                    : []),
 
                   // Salto de página excepto en la última categoría
                   ...(categoryIndex < categoryData.length - 1
@@ -718,14 +833,6 @@ export function CategoryReportTab({
           hasSupervisorData={hasSupervisorData}
         />
         {/* ==================== PÁGINA 1.1: RESUMEN EJECUTIVO ==================== */}
-        {/* {hasSupervisorData && (
-          <ExecutiveSumarySuper
-            pageStyle={pageStyle}
-            teamName={teamName}
-            comparativeData={comparativeData}
-            leadershipPractices={leadershipPractices}
-          />
-        )} */}
 
         {/* ==================== PÁGINA 2: ANÁLISIS GRÁFICO ==================== */}
 
