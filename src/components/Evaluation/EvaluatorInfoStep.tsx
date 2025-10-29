@@ -26,8 +26,8 @@ export function EvaluatorInfoStep({
   const theme = useTheme();
   const [emailError, setEmailError] = useState('');
   const infoMessage = isLeader
-    ? 'Como líder, tu evaluación ayuda a identificar oportunidades de mejora en el equipo. Tus respuestas se manejarán con confidencialidad; los resultados se mostrarán únicamente de forma agregada para proteger tu identidad. Proporciona ejemplos concretos cuando sea posible.'
-    : 'Como colaborador, tus respuestas son anónimas y confidenciales. Usaremos la información de forma agregada para mejorar el liderazgo y las condiciones de trabajo. Evita incluir información personal identificable en los campos abiertos.';
+    ? 'Este cuestionario permite identificar los comportamientos relacionados a las prácticas de liderazgo, promoviendo una reflexión para su desarrollo directivo y el mejoramiento de la efectividad del equipo.'
+    : 'Este cuestionario permite identificar los comportamientos relacionados a las prácticas de liderazgo de su línea de supervisión para promover su desarrollo directivo y el mejoramiento de la efectividad del equipo.';
 
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -63,7 +63,7 @@ export function EvaluatorInfoStep({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <Shield color="primary" />
           <Typography variant="h6" fontWeight="600">
-            Información Protegida
+            Información
           </Typography>
         </Box>
         <Typography variant="body2" color="text.secondary">
