@@ -64,8 +64,8 @@ export function EvaluatorInfoStep({
           </Typography>
         </Box>
         <Typography variant="body2" color="text.secondary">
-          Estos datos son para evitar que una persona envíe un cuestionario 2 veces. Tus respuestas son completamente anónimas y
-          confidenciales. Los resultados se presentan de forma agregada para proteger tu privacidad.
+          Tus respuestas son completamente anónimas y confidenciales. Los resultados se presentan de forma agregada para proteger tu
+          privacidad.
         </Typography>
       </Card>
 
