@@ -25,6 +25,9 @@ export function EvaluatorInfoStep({
 }: EvaluatorInfoStepProps) {
   const theme = useTheme();
   const [emailError, setEmailError] = useState('');
+  const infoMessage = isLeader
+    ? 'Como líder, tu evaluación ayuda a identificar oportunidades de mejora en el equipo. Tus respuestas se manejarán con confidencialidad; los resultados se mostrarán únicamente de forma agregada para proteger tu identidad. Proporciona ejemplos concretos cuando sea posible.'
+    : 'Como colaborador, tus respuestas son anónimas y confidenciales. Usaremos la información de forma agregada para mejorar el liderazgo y las condiciones de trabajo. Evita incluir información personal identificable en los campos abiertos.';
 
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -64,8 +67,7 @@ export function EvaluatorInfoStep({
           </Typography>
         </Box>
         <Typography variant="body2" color="text.secondary">
-          Tus respuestas son completamente anónimas y confidenciales. Los resultados se presentan de forma agregada para proteger tu
-          privacidad.
+          {infoMessage}
         </Typography>
       </Card>
 
