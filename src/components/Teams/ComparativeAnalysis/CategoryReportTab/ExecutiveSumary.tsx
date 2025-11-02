@@ -403,7 +403,7 @@ const ExecutiveSumary = ({
             color: '#6b7280',
           }}
         >
-          Las diferencias entre la{' '}
+          Las diferencias entre{' '}
           <Box component="span" sx={highlightAuto}>
             la autopercepción del <strong>líder</strong>
           </Box>{' '}

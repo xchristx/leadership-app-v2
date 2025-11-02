@@ -316,7 +316,7 @@ const PageByCategory = ({ pageStyle, categoryData, LEADERSHIP_PRACTICES, barChar
                           p: 1,
                         }}
                       >
-                        PREGUNTA
+                        COMPORTAMIENTO OBSERVABLE
                       </TableCell>
                       <TableCell
                         align="center"
