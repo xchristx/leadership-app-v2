@@ -112,7 +112,7 @@ const GeneralGraphicAnalysis = ({ pageStyle, leadershipPractices, hasSupervisorD
                   strokeWidth={4}
                   dot={{ fill: palette.primary.main, strokeWidth: 3, r: 3 }}
                   activeDot={{ r: 8, fill: palette.primary.main, strokeWidth: 3, stroke: '#fff' }}
-                  label={{ position: 'top', fontSize: 10, fill: palette.primary.main, fontWeight: '600' }}
+                  label={{ position: 'insideTopLeft', fontSize: 10, fill: palette.primary.main, fontWeight: '600' }}
                 />
                 <Line
                   type="monotone"
@@ -121,7 +121,7 @@ const GeneralGraphicAnalysis = ({ pageStyle, leadershipPractices, hasSupervisorD
                   strokeWidth={4}
                   dot={{ fill: palette.secondary.main, strokeWidth: 3, r: 3 }}
                   activeDot={{ r: 8, fill: palette.secondary.main, strokeWidth: 3, stroke: '#fff' }}
-                  label={{ position: 'bottom', fontSize: 10, fill: palette.secondary.main, fontWeight: '600' }}
+                  label={{ position: 'insideTopLeft', fontSize: 10, fill: palette.secondary.main, fontWeight: '600' }}
                 />
                 {hasSupervisorData && (
                   <Line
@@ -131,7 +131,7 @@ const GeneralGraphicAnalysis = ({ pageStyle, leadershipPractices, hasSupervisorD
                     strokeWidth={4}
                     dot={{ fill: palette.supervisor.main, strokeWidth: 3, r: 3 }}
                     activeDot={{ r: 8, fill: palette.supervisor.main, strokeWidth: 3, stroke: '#fff' }}
-                    label={{ position: 'top', fontSize: 10, fill: palette.supervisor.main, fontWeight: '600' }}
+                    label={{ position: 'insideTopLeft', fontSize: 10, fill: palette.supervisor.main, fontWeight: '600' }}
                   />
                 )}
               </LineChart>
