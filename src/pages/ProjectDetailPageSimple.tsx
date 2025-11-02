@@ -323,6 +323,7 @@ function ProjectDetailPage() {
               {regularTeams.map(team => (
                 <Grid size={{ xs: 12, md: 6, lg: 4 }} key={team.id}>
                   <TeamCard
+                    projectName={currentProject.name}
                     team={team}
                     onView={() => handleTeamClick(team.id)}
                     onDelete={() => handleDeleteTeam(team.id)}

@@ -320,29 +320,28 @@ export function ProjectCard({ project, onView, onEdit, onDelete, onManageTeams, 
           transition: 'all 0.2s ease',
         }}
       >
-        <Tooltip title="Ver detalles del proyecto">
+        <Tooltip title="Gestionar equipos">
           <Button
             variant="contained"
+            size="small"
+            startIcon={<GroupIcon />}
+            onClick={() => onManageTeams?.(project)}
+            disabled={loading}
+            sx={{ flex: 2 }}
+          >
+            Equipos
+          </Button>
+        </Tooltip>
+        <Tooltip title="Ver detalles del proyecto">
+          <Button
+            variant="outlined"
             size="small"
             startIcon={<VisibilityIcon />}
             onClick={() => setViewerOpen(true)}
             disabled={loading}
             sx={{ flex: 1 }}
           >
-            Ver Proyecto
-          </Button>
-        </Tooltip>
-
-        <Tooltip title="Gestionar equipos">
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<GroupIcon />}
-            onClick={() => onManageTeams?.(project)}
-            disabled={loading}
-            sx={{ flex: 1 }}
-          >
-            Equipos
+            Detalles
           </Button>
         </Tooltip>
       </CardActions>

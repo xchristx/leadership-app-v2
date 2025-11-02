@@ -40,9 +40,10 @@ export interface TeamCardProps {
   onView?: (team: Team) => void;
   onManageInvitations?: (team: Team) => void;
   showActions?: boolean;
+  projectName?: string;
 }
 
-export function TeamCard({ team, onEdit, onDelete, onView, onManageInvitations, showActions = true }: TeamCardProps) {
+export function TeamCard({ team, onEdit, onDelete, onView, onManageInvitations, showActions = true, projectName }: TeamCardProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -236,8 +237,9 @@ export function TeamCard({ team, onEdit, onDelete, onView, onManageInvitations, 
             }}
           />
         </Box>
-        <Button sx={{ mb: 1 }} variant="outlined">
-          Ver
+        <Button sx={{ mb: 1 }} variant="contained">
+          <GroupIcon fontSize="small" sx={{ mr: 1 }} />
+          Administrar
         </Button>
         {/* Información adicional */}
         <Box sx={{ mt: 'auto', pt: 2, borderTop: 1, borderColor: 'divider' }}>
@@ -250,7 +252,13 @@ export function TeamCard({ team, onEdit, onDelete, onView, onManageInvitations, 
             </Box>
 
             <Tooltip title={`ID del Proyecto: ${team.project_id}`}>
-              <Chip icon={<AssignmentIcon />} label="Proyecto" size="small" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />
+              <Chip
+                icon={<AssignmentIcon />}
+                label={projectName || 'Poryecto'}
+                size="small"
+                variant="outlined"
+                sx={{ height: 20, fontSize: '0.65rem' }}
+              />
             </Tooltip>
           </Box>
         </Box>
