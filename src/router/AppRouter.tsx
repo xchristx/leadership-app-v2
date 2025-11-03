@@ -24,6 +24,7 @@ const LoginPage = lazy(() => import('../pages').then(m => ({ default: m.LoginPag
 const RegisterPage = lazy(() => import('../components').then(m => ({ default: m.RegisterPage })));
 const EvaluationPage = lazy(() => import('../pages/EvaluationPage').then(m => ({ default: m.EvaluationPage })));
 const PDFPreview = lazy(() => import('../components/Teams/ComparativeAnalysis/PDF/PDFPreview').then(m => ({ default: m.PDFPreview })));
+const Guides = lazy(() => import('../pages/Guides'));
 
 // Componente de loading
 function LoadingSpinner() {
@@ -177,6 +178,15 @@ export function AppRouter() {
           element={
             <ProtectedLayout>
               <Reports />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/guides"
+          element={
+            <ProtectedLayout>
+              <Guides />
             </ProtectedLayout>
           }
         />

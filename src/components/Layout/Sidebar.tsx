@@ -30,6 +30,7 @@ import {
   ExpandMore,
   ChevronLeft as ChevronLeftIcon,
   Business as OrganizationIcon,
+  HelpCenter,
 } from '@mui/icons-material';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -75,6 +76,12 @@ const navigationItems: NavigationItem[] = [
     title: 'Cuestionarios',
     icon: <QuestionnairesIcon />,
     path: '/questionnaires',
+  },
+  {
+    id: 'guides',
+    title: 'Guías y tutoriales',
+    icon: <HelpCenter />,
+    path: '/guides',
   },
 ];
 

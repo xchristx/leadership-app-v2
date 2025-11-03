@@ -8,8 +8,10 @@ interface CoverProps {
   teamLeader?: string;
   categoryData: CategoryData[];
 }
+
 const Cover = ({ pageStyle, teamName, teamLeader, categoryData }: CoverProps) => {
   const { palette } = useTheme();
+
   return (
     <Paper sx={{ ...pageStyle, p: 0 }} className="caratula" data-testid="page">
       <Box
@@ -23,42 +25,116 @@ const Cover = ({ pageStyle, teamName, teamLeader, categoryData }: CoverProps) =>
           backgroundColor: '#fafafa',
         }}
       >
-        {/* Header corporativo con líneas geométricas */}
+        {/* Header corporativo unificado */}
         <Box
           sx={{
-            height: '80px',
+            height: '100px',
             background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 50%, #0d47a1 100%)',
             position: 'relative',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 4,
+            // Efectos de diseño mejorados
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: `
+                linear-gradient(45deg, transparent 65%, rgba(255,255,255,0.03) 65%, rgba(255,255,255,0.03) 70%, transparent 70%),
+                linear-gradient(-45deg, transparent 65%, rgba(255,255,255,0.03) 65%, rgba(255,255,255,0.03) 70%, transparent 70%)
+              `,
+              backgroundSize: '40px 40px',
+              opacity: 0.6,
+            },
             '&::after': {
               content: '""',
               position: 'absolute',
               bottom: 0,
               left: 0,
               right: 0,
-              height: '20px',
-              background: 'linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.1) 41%, rgba(255,255,255,0.1) 59%, transparent 60%)',
+              height: '3px',
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
             },
           }}
-        />
-
-        {/* Logo y marca superior */}
-        <Box sx={{ position: 'absolute', top: 3, left: 4, right: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', pt: 2 }}>
+        >
+          {/* Logo con contenedor mejorado */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              position: 'relative',
+            }}
+          >
             <Box
               sx={{
-                width: 120,
-                height: 60,
+                width: 140,
+                height: 70,
                 backgroundColor: 'white',
-                borderRadius: 2,
+                borderRadius: '12px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                border: '2px solid #e3f2fd',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                border: '2px solid rgba(255,255,255,0.8)',
+                padding: '8px',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.2)',
+                  transform: 'translateY(-2px)',
+                },
               }}
             >
-              <CardMedia component="img" image="/ho_logo.jpg" sx={{ width: 100, height: 'auto', maxHeight: 50 }} />
+              <CardMedia
+                component="img"
+                image="/ho_logo.jpg"
+                sx={{
+                  width: '100%',
+                  height: 'auto',
+                  maxHeight: 54,
+                  objectFit: 'contain',
+                }}
+              />
             </Box>
+          </Box>
+
+          {/* Título del header alineado a la derecha */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              position: 'relative',
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '1.1rem',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                mb: 0.5,
+              }}
+            ></Typography>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                color: 'rgba(255,255,255,0.9)',
+                fontWeight: 400,
+                fontSize: '0.9rem',
+                letterSpacing: '0.5px',
+                textShadow: '0 1px 1px rgba(0,0,0,0.1)',
+              }}
+            >
+              Consultores para el desarrollo
+            </Typography>
           </Box>
         </Box>
 
@@ -73,10 +149,10 @@ const Cover = ({ pageStyle, teamName, teamLeader, categoryData }: CoverProps) =>
             px: 6,
             py: 8,
             textAlign: 'center',
-            mt: 4,
+            mt: 2,
           }}
         >
-          {/* Título principal con diseño corporativo */}
+          {/* Título principal mejorado */}
           <Box
             sx={{
               mb: 6,
@@ -97,6 +173,15 @@ const Cover = ({ pageStyle, teamName, teamLeader, categoryData }: CoverProps) =>
                 height: '6px',
                 background: 'linear-gradient(90deg, #1976d2, #42a5f5, #1976d2)',
                 borderRadius: '3px 3px 0 0',
+              },
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: '1px',
+                background: 'linear-gradient(90deg, transparent, #e0e0e0, transparent)',
               },
             }}
           >
@@ -123,11 +208,24 @@ const Cover = ({ pageStyle, teamName, teamLeader, categoryData }: CoverProps) =>
                 letterSpacing: '1px',
                 textTransform: 'uppercase',
                 lineHeight: 1.1,
+                mb: 3,
               }}
             >
               PRÁCTICAS DE LIDERAZGO
             </Typography>
-            <Box sx={{ mt: 3, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+
+            {/* Prácticas de liderazgo */}
+            <Box
+              sx={{
+                mt: 3,
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 2,
+                flexWrap: 'wrap',
+              }}
+            >
               {categoryData.length > 0 &&
                 categoryData.map(category => (
                   <PracticeMedia key={category.category.id} index={category.category.order_index} category={category.category.name} />
@@ -135,7 +233,7 @@ const Cover = ({ pageStyle, teamName, teamLeader, categoryData }: CoverProps) =>
             </Box>
           </Box>
 
-          {/* Información del equipo con diseño elegante */}
+          {/* Información del equipo mejorada */}
           <Box
             sx={{
               backgroundColor: '#f8f9fa',
@@ -173,13 +271,14 @@ const Cover = ({ pageStyle, teamName, teamLeader, categoryData }: CoverProps) =>
                 variant="h6"
                 sx={{
                   color: 'primary.light',
-                  fontWeight: 400,
+                  fontWeight: 500,
                   lineHeight: 1.4,
                   fontSize: '1.1rem',
-                  mb: 2,
+                  mb: 3,
+                  borderRadius: 2,
                 }}
               >
-                Líder: {teamLeader}
+                Líder del equipo: <strong>{teamLeader}</strong>
               </Typography>
             )}
             <Typography
@@ -195,7 +294,7 @@ const Cover = ({ pageStyle, teamName, teamLeader, categoryData }: CoverProps) =>
             </Typography>
           </Box>
 
-          {/* Elementos decorativos geométricos */}
+          {/* Indicadores de progreso mejorados */}
           <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
             {[0, 1, 2, 3, 4].map(index => (
               <Box
@@ -220,6 +319,7 @@ const Cover = ({ pageStyle, teamName, teamLeader, categoryData }: CoverProps) =>
             borderTop: '3px solid #1976d2',
             py: 3,
             px: 4,
+            position: 'relative',
           }}
         >
           <Box
@@ -232,28 +332,31 @@ const Cover = ({ pageStyle, teamName, teamLeader, categoryData }: CoverProps) =>
               borderRadius: 2,
               p: 2,
               border: '1px solid #e0e0e0',
+              maxWidth: 400,
+              margin: '0 auto',
             }}
           >
-            {/* Icono de calendario elegante */}
+            {/* Icono de calendario mejorado */}
             <Box
               sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 2,
+                width: 44,
+                height: 44,
+                borderRadius: '10px',
                 backgroundColor: palette.primary.main,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
               }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                   d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.89-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"
                   fill="white"
                 />
               </svg>
             </Box>
-            <Box sx={{ textAlign: 'left' }}>
+            <Box sx={{ textAlign: 'left', flex: 1 }}>
               <Typography
                 variant="body2"
                 sx={{
@@ -262,6 +365,7 @@ const Cover = ({ pageStyle, teamName, teamLeader, categoryData }: CoverProps) =>
                   fontWeight: 500,
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
+                  mb: 0.5,
                 }}
               >
                 Fecha de Elaboración
@@ -288,37 +392,25 @@ const Cover = ({ pageStyle, teamName, teamLeader, categoryData }: CoverProps) =>
         <Box
           sx={{
             position: 'absolute',
-            top: '20%',
-            right: -50,
-            width: 150,
-            height: 150,
+            top: '15%',
+            right: -40,
+            width: 120,
+            height: 120,
+            borderRadius: '50%',
+            border: '3px solid #e3f2fd',
+            opacity: 0.4,
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: '20%',
+            left: -20,
+            width: 80,
+            height: 80,
             borderRadius: '50%',
             border: '2px solid #e3f2fd',
             opacity: 0.3,
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: '25%',
-            left: -30,
-            width: 100,
-            height: 100,
-            borderRadius: '50%',
-            border: '2px solid #e3f2fd',
-            opacity: 0.2,
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '70%',
-            width: 80,
-            height: 80,
-            transform: 'rotate(45deg)',
-            border: '2px solid #e3f2fd',
-            opacity: 0.15,
           }}
         />
       </Box>

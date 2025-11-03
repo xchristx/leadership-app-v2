@@ -94,7 +94,7 @@ export function Header() {
             fontStyle: 'italic',
           }}
         >
-          Hector Ordoñez Cia.
+          Héctor Ordóñez Consultores
         </Typography>
 
         {/* Spacer */}

@@ -154,7 +154,7 @@ export function LoginPage() {
                     textShadow: '0 2px 4px rgba(0,0,0,0.1)',
                   }}
                 >
-                  Hector Ordoñez
+                  Héctor Ordóñez Consultores
                 </Typography>
                 <Typography
                   variant="body1"

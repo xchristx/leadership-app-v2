@@ -1,6 +1,36 @@
 import { Box, Paper, Typography, useTheme, type SxProps } from '@mui/material';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
+// Componente de etiqueta personalizada para puntos (evita superposición mediante alternancia y tamaño)
+const CustomPointLabel = ({
+  x,
+  y,
+  value,
+  index,
+  color,
+}: {
+  x?: number | string;
+  y?: number | string;
+  value?: number | string;
+  index?: number;
+  color?: string;
+}) => {
+  if (typeof x === 'undefined' || typeof y === 'undefined' || typeof index === 'undefined') return null;
+  const xi = typeof x === 'string' ? parseFloat(x) : x;
+  const yi = typeof y === 'string' ? parseFloat(y) : y;
+  const idx = index ?? 0;
+  // Alternar posición para reducir colisiones: índices pares arriba, impares abajo
+  const staggerOffset = idx % 2 === 0 ? -10 : 14;
+  // Formato sencillo del valor (1 decimal si es número)
+  const text = typeof value === 'number' ? value.toFixed(1) : String(value ?? '');
+
+  return (
+    <text x={xi} y={(yi as number) + staggerOffset} fill={color || '#000'} fontSize={10} fontWeight={600} textAnchor="middle">
+      {text}
+    </text>
+  );
+};
+
 interface GeneralGraphicAnalysisProps {
   pageStyle: SxProps;
   leadershipPractices: {
@@ -54,8 +84,8 @@ const GeneralGraphicAnalysis = ({ pageStyle, leadershipPractices, hasSupervisorD
             boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           }}
         >
-          <Box sx={{ height: '380px' }} ref={lineChartRef}>
-            <ResponsiveContainer width="100%" height={380}>
+          <Box sx={{ height: '530px' }} ref={lineChartRef}>
+            <ResponsiveContainer width="100%" height={'100%'}>
               <LineChart
                 data={leadershipPractices.map((practice, index) => ({
                   practica: practice.category.length > 20 ? practice.category.substring(0, 17) + '...' : practice.category,
@@ -76,9 +106,14 @@ const GeneralGraphicAnalysis = ({ pageStyle, leadershipPractices, hasSupervisorD
                   interval={0}
                 />
                 <YAxis
-                  domain={[15, 30]}
+                  domain={[
+                    18,
+                    leadershipPractices.length > 0
+                      ? Math.max(...leadershipPractices.map(p => Math.max(p.auto_total, p.otros_total ?? 0))) + 2
+                      : 30,
+                  ]}
                   tick={{ fontSize: 10, fill: '#475569' }}
-                  tickCount={6}
+                  tickCount={leadershipPractices.length > 0 ? Math.max(6, Math.ceil(leadershipPractices.length / 2)) : 6}
                   label={{
                     value: 'Puntuación',
                     angle: -90,
@@ -105,35 +140,67 @@ const GeneralGraphicAnalysis = ({ pageStyle, leadershipPractices, hasSupervisorD
                     fontWeight: '600',
                   }}
                 />
-                <Line
-                  type="monotone"
-                  dataKey="AUTO"
-                  stroke={palette.primary.main}
-                  strokeWidth={4}
-                  dot={{ fill: palette.primary.main, strokeWidth: 3, r: 3 }}
-                  activeDot={{ r: 8, fill: palette.primary.main, strokeWidth: 3, stroke: '#fff' }}
-                  label={{ position: 'insideTopLeft', fontSize: 10, fill: palette.primary.main, fontWeight: '600' }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="OBSERVADORES"
-                  stroke={palette.secondary.main}
-                  strokeWidth={4}
-                  dot={{ fill: palette.secondary.main, strokeWidth: 3, r: 3 }}
-                  activeDot={{ r: 8, fill: palette.secondary.main, strokeWidth: 3, stroke: '#fff' }}
-                  label={{ position: 'insideTopLeft', fontSize: 10, fill: palette.secondary.main, fontWeight: '600' }}
-                />
-                {hasSupervisorData && (
-                  <Line
-                    type="monotone"
-                    dataKey="DIRECTOR"
-                    stroke={palette.supervisor.main}
-                    strokeWidth={4}
-                    dot={{ fill: palette.supervisor.main, strokeWidth: 3, r: 3 }}
-                    activeDot={{ r: 8, fill: palette.supervisor.main, strokeWidth: 3, stroke: '#fff' }}
-                    label={{ position: 'insideTopLeft', fontSize: 10, fill: palette.supervisor.main, fontWeight: '600' }}
-                  />
-                )}
+                {(() => {
+                  const showPointLabels = leadershipPractices.length <= 12; // no mostrar etiquetas si hay muchos puntos
+                  return (
+                    <Line
+                      type="monotone"
+                      dataKey="AUTO"
+                      stroke={palette.primary.main}
+                      strokeWidth={4}
+                      dot={{ fill: palette.primary.main, strokeWidth: 3, r: 3 }}
+                      activeDot={{ r: 8, fill: palette.primary.main, strokeWidth: 3, stroke: '#fff' }}
+                      label={
+                        showPointLabels
+                          ? (props: { x?: number | string; y?: number | string; value?: number | string; index?: number }) => (
+                              <CustomPointLabel {...props} color={palette.primary.main} />
+                            )
+                          : false
+                      }
+                    />
+                  );
+                })()}
+                {(() => {
+                  const showPointLabels = leadershipPractices.length <= 12;
+                  return (
+                    <Line
+                      type="monotone"
+                      dataKey="OBSERVADORES"
+                      stroke={palette.secondary.main}
+                      strokeWidth={4}
+                      dot={{ fill: palette.secondary.main, strokeWidth: 3, r: 3 }}
+                      activeDot={{ r: 8, fill: palette.secondary.main, strokeWidth: 3, stroke: '#fff' }}
+                      label={
+                        showPointLabels
+                          ? (props: { x?: number | string; y?: number | string; value?: number | string; index?: number }) => (
+                              <CustomPointLabel {...props} color={palette.secondary.main} />
+                            )
+                          : false
+                      }
+                    />
+                  );
+                })()}
+                {hasSupervisorData &&
+                  (() => {
+                    const showPointLabels = leadershipPractices.length <= 12;
+                    return (
+                      <Line
+                        type="monotone"
+                        dataKey="DIRECTOR"
+                        stroke={palette.supervisor.main}
+                        strokeWidth={4}
+                        dot={{ fill: palette.supervisor.main, strokeWidth: 3, r: 3 }}
+                        activeDot={{ r: 8, fill: palette.supervisor.main, strokeWidth: 3, stroke: '#fff' }}
+                        label={
+                          showPointLabels
+                            ? (props: { x?: number | string; y?: number | string; value?: number | string; index?: number }) => (
+                                <CustomPointLabel {...props} color={palette.supervisor.main} />
+                              )
+                            : false
+                        }
+                      />
+                    );
+                  })()}
               </LineChart>
             </ResponsiveContainer>
           </Box>

@@ -334,7 +334,7 @@ const ExecutiveSumary = ({
                           sx={{
                             fontWeight: '700',
                             fontSize: '1rem',
-                            color: palette.supervisor.main,
+                            color: '#1e3a8a',
                             backgroundColor:
                               difference > 0
                                 ? 'rgba(46, 125, 50, 0.1)'
