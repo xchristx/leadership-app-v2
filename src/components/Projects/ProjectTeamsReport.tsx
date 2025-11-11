@@ -307,8 +307,8 @@ export function ProjectTeamsReport({ open, onClose, teams, projectName }: Projec
         </Box>
       </Box>
 
-      <DialogContent sx={{ p: 0, backgroundColor: '#f5f5f5' }}>
-        <Box id="project-teams-report-content" sx={{ p: 3 }}>
+      <DialogContent sx={{ py: 3, backgroundColor: '#f5f5f5' }}>
+        <Box id="project-teams-report-content" sx={{ p: 0 }}>
           {/* ============================================================ */}
           {/* CARÁTULA */}
           {/* ============================================================ */}
