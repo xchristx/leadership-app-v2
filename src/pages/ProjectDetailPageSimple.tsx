@@ -32,6 +32,7 @@ import {
   Add as AddIcon,
   Visibility as VisibilityIcon,
   Star as StarIcon,
+  Assessment as AssessmentIcon,
 } from '@mui/icons-material';
 import { useState } from 'react';
 import { useProjects } from '../hooks/useProjects';
@@ -39,6 +40,7 @@ import { useTeams } from '../hooks/useTeams';
 import { TeamCard } from '../components/Teams/TeamCard';
 import { TeamForm } from '../components/Forms';
 import { CreateProjectLeadershipDialog } from '../components/Teams/CreateProjectLeadershipDialog';
+import { ProjectTeamsReport } from '../components/Projects/ProjectTeamsReport';
 import type { Team, TeamFormData } from '../types';
 import { TeamEditor } from '../components/Teams';
 import type { UpdateTeamData } from '../types/index';
@@ -53,6 +55,7 @@ function ProjectDetailPage() {
   // Estados locales
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showLeadershipDialog, setShowLeadershipDialog] = useState(false);
+  const [showTeamsReport, setShowTeamsReport] = useState(false);
 
   // Hooks para datos
   const { projects, isLoading: projectsLoading, error: projectsError } = useProjects();
@@ -235,6 +238,13 @@ function ProjectDetailPage() {
         </Box>
 
         <Box sx={{ display: 'flex', gap: 2 }}>
+          {/* Botón para ver informe general de equipos */}
+          {regularTeams.length > 0 && (
+            <Button variant="outlined" startIcon={<AssessmentIcon />} onClick={() => setShowTeamsReport(true)} size="large" color="info">
+              Informe General
+            </Button>
+          )}
+
           {/* Botón para crear evaluación de liderazgo si no existe */}
           {!leadershipTeam && (
             <Button
@@ -393,6 +403,14 @@ function ProjectDetailPage() {
           refetch();
           setShowLeadershipDialog(false);
         }}
+      />
+
+      {/* Diálogo para informe general de equipos */}
+      <ProjectTeamsReport
+        open={showTeamsReport}
+        onClose={() => setShowTeamsReport(false)}
+        teams={projectTeams}
+        projectName={currentProject?.name || ''}
       />
     </Container>
   );
