@@ -7,7 +7,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Card, CardContent, Alert, CircularProgress, Container, useMediaQuery, Snackbar } from '@mui/material';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { supabase } from '../lib/supabase';
 import {
@@ -88,28 +87,7 @@ export function EvaluationPage() {
 
   const isMobile = useMediaQuery('(max-width:600px)');
 
-  // ReCAPTCHA site key from environment (Vite uses import.meta.env)
-  const RECAPTCHA_SITE_KEY = (import.meta as unknown as { env?: { VITE_RECAPTCHA_SITE_KEY?: string } }).env?.VITE_RECAPTCHA_SITE_KEY || '';
 
-  // Load reCAPTCHA v3 script for anonymous flows (we will execute grecaptcha.execute on submit)
-  useEffect(() => {
-    const isAnonFlow = state.invitation && state.invitation.role_type !== 'leader' && !state.configuration?.require_evaluator_info;
-    if (!RECAPTCHA_SITE_KEY || !isAnonFlow) return;
-
-    const scriptId = 'recaptcha-v3-script';
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
-      script.id = scriptId;
-      // reCAPTCHA v3 loads with render=site_key
-      script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        // grecaptcha should be available to execute when submitting
-      };
-      document.body.appendChild(script);
-    }
-  }, [RECAPTCHA_SITE_KEY, state.invitation, state.configuration]);
 
   // Función helper para validar email
   const isValidEmail = (email: string): boolean => {
@@ -392,28 +370,8 @@ export function EvaluationPage() {
 
       // Key local para evitar envíos repetidos por navegador en modo anónimo
       const localAnonKey = state.invitation ? `anon_evaluation_submitted:${state.invitation.id}` : null;
-
-      // token temporal para enviar al servidor junto con la evaluación (se obtiene con grecaptcha.execute)
-      let recaptchaToken: string | null = null;
       const isAnonymousSubmission = !(state.invitation?.role_type === 'leader') && !state.configuration?.require_evaluator_info;
-      // If reCAPTCHA v3 is configured and this is an anonymous submission, execute grecaptcha to obtain a token
-      if (RECAPTCHA_SITE_KEY && isAnonymousSubmission) {
-        try {
-          if ((window as any).grecaptcha && (window as any).grecaptcha.execute) {
-            const token = await (window as any).grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'submit' });
-            recaptchaToken = token;
-          } else {
-            showSnackbar('El captcha no está listo. Por favor espera un momento e intenta de nuevo.', 'warning');
-            setIsSubmitting(false);
-            return;
-          }
-        } catch (e) {
-          console.error('Error ejecutando reCAPTCHA v3:', e);
-          showSnackbar('Error al validar captcha. Por favor intenta de nuevo.', 'error');
-          setIsSubmitting(false);
-          return;
-        }
-      }
+      
       // Si es envío anónimo, bloquear si ya se envió desde este navegador (localStorage)
       if (isAnonymousSubmission && localAnonKey && localStorage.getItem(localAnonKey)) {
         showSnackbar('Ya has enviado esta evaluación.', 'info');
@@ -438,8 +396,7 @@ export function EvaluationPage() {
           {
             name: nameToSave,
             email: emailToSave,
-            // incluir token de captcha en additionalInfo como JSON para que el servicio lo persista
-            additionalInfo: JSON.stringify({ additional_info: evaluatorInfo.additionalInfo || '', recaptcha_token: recaptchaToken }),
+            additionalInfo: evaluatorInfo.additionalInfo || '',
           },
           evaluationStartTime,
           deviceInfo
@@ -472,7 +429,6 @@ export function EvaluationPage() {
             evaluator_role: state.invitation!.role_type,
             evaluator_metadata: {
               additional_info: evaluatorInfo.additionalInfo,
-              recaptcha_token: recaptchaToken,
             },
             template_id: state.template!.id,
             project_id: state.project!.id,
@@ -489,7 +445,6 @@ export function EvaluationPage() {
             console.warn('No se pudo guardar marca local de envío anónimo:', e);
           }
         }
-        // limpiar token en memoria (local variable)
       }
 
       // Actualizar contador de usos solo para nuevas evaluaciones
@@ -649,10 +604,7 @@ export function EvaluationPage() {
               Ya has enviado esta evaluación.
             </Alert>
           ) : (
-            <>
-              {/* reCAPTCHA v3 no requiere un contenedor visual; se ejecuta en el submit */}
-              {renderCurrentStep()}
-            </>
+            renderCurrentStep()
           )}
           <Snackbar
             open={snackbarOpen}
